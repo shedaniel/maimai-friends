@@ -109,8 +109,8 @@ export const userRouter = router({
         });
       }
 
-      // Check rate limit (1 minute)
-      const lastFetch = await db
+      // Check rate limit (5 requests per 5 minutes)
+      const recentFetches = await db
         .select()
         .from(fetchSessions)
         .where(
@@ -120,15 +120,19 @@ export const userRouter = router({
           )
         )
         .orderBy(desc(fetchSessions.startedAt))
-        .limit(1);
+        .limit(5);
 
-      if (lastFetch.length > 0) {
-        const timeSinceLastFetch = Date.now() - lastFetch[0].startedAt.getTime();
-        if (timeSinceLastFetch < 60 * 1000) { // 1 minute
-          const remainingTime = Math.ceil((60 * 1000 - timeSinceLastFetch) / 1000);
+      if (recentFetches.length >= 5) {
+        // Check if the 5th most recent fetch is within the last 5 minutes
+        const fifthMostRecentFetch = recentFetches[4]; // 0-indexed, so 4th index is 5th item
+        const timeSinceOldestInWindow = Date.now() - fifthMostRecentFetch.startedAt.getTime();
+        const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+        
+        if (timeSinceOldestInWindow < fiveMinutes) {
+          const remainingTime = Math.ceil((fiveMinutes - timeSinceOldestInWindow) / 1000);
           throw new TRPCError({
             code: 'TOO_MANY_REQUESTS',
-            message: `Rate limited. Try again in ${remainingTime} seconds.`,
+            message: `Rate limited. You can make 5 requests per 5 minutes. Try again in ${remainingTime} seconds.`,
           });
         }
       }

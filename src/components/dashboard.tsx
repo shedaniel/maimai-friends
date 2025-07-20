@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signOut } from "@/lib/auth-client";
-import { RegionSwitcher, Region } from "@/components/region-switcher";
+import { Region } from "@/components/region-switcher";
 import { DataBanner } from "@/components/data-banner";
 import { DataFetcher } from "@/components/data-fetcher";
 import { DataContent } from "@/components/data-content";
@@ -44,7 +44,7 @@ export function Dashboard({ user }: DashboardProps) {
   } = useFetchSession(refreshSnapshots);
 
   // Check if user has a saved token for the current region
-  const { data: tokenData } = trpc.user.hasToken.useQuery(
+  const { data: tokenData, isLoading: isLoadingToken } = trpc.user.hasToken.useQuery(
     { region: selectedRegion },
     { refetchOnWindowFocus: false }
   );
@@ -65,8 +65,8 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   const handleFetchData = async () => {
-    // Check if user has a saved token
-    if (tokenData?.hasToken) {
+    // Only attempt auto-fetch if we're sure the user has a saved token
+    if (!isLoadingToken && tokenData?.hasToken === true) {
       // Start automatic fetch with saved token
       try {
         await startAutomaticFetch(selectedRegion);
@@ -87,7 +87,7 @@ export function Dashboard({ user }: DashboardProps) {
         }
       }
     } else {
-      // Show token input dialog
+      // Show token input dialog (either no token, or still loading token state)
       setIsDataFetcherOpen(true);
     }
   };
@@ -114,26 +114,29 @@ export function Dashboard({ user }: DashboardProps) {
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
-      <UserHeader user={user} onLogout={handleLogout} />
+      <UserHeader 
+        user={user} 
+        selectedRegion={selectedRegion}
+        onRegionChange={handleRegionChange}
+        onLogout={handleLogout} 
+      />
 
-      <RegionSwitcher value={selectedRegion} onChange={handleRegionChange}>
-        <div className="space-y-6">
-          <DataBanner
-            region={selectedRegion}
-            snapshots={snapshots}
-            selectedSnapshot={selectedSnapshot}
-            onSnapshotChange={setSelectedSnapshot}
-            onFetchData={handleFetchData}
-            isFetching={isFetching}
-          />
+      <div className="space-y-6">
+        <DataBanner
+          region={selectedRegion}
+          snapshots={snapshots}
+          selectedSnapshot={selectedSnapshot}
+          onSnapshotChange={setSelectedSnapshot}
+          onFetchData={handleFetchData}
+          isFetching={isFetching}
+        />
 
-          <DataContent
-            region={selectedRegion}
-            selectedSnapshot={selectedSnapshot}
-            isLoading={isLoadingSnapshots}
-          />
-        </div>
-      </RegionSwitcher>
+        <DataContent
+          region={selectedRegion}
+          selectedSnapshot={selectedSnapshot}
+          isLoading={isLoadingSnapshots}
+        />
+      </div>
 
       <DataFetcher
         region={selectedRegion}

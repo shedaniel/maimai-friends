@@ -1,37 +1,58 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ChevronDown, Globe } from "lucide-react";
 
 export type Region = "intl" | "jp";
 
 interface RegionSwitcherProps {
   value: Region;
   onChange: (region: Region) => void;
-  children?: React.ReactNode;
 }
 
-export function RegionSwitcher({ value, onChange, children }: RegionSwitcherProps) {
+export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
+  const getRegionCode = (region: Region) => {
+    switch (region) {
+      case "intl":
+        return "IN";
+      case "jp":
+        return "JP";
+    }
+  };
+
   return (
-    <Tabs
-      value={value}
-      onValueChange={(value) => onChange(value as Region)}
-      className="w-full"
-    >
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="intl">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2 bg-white">
+          <Globe className="h-4 w-4" />
+          {getRegionCode(value)}
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => onChange("intl")}
+          className={value === "intl" ? "bg-accent" : ""}
+        >
           International
-        </TabsTrigger>
-        <TabsTrigger value="jp" className="relative">
-          Japan
-          <Badge variant="warning" className="ml-2 text-xs">
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onChange("jp")}
+          className={`${value === "jp" ? "bg-accent" : ""} justify-between`}
+        >
+          <span>Japan</span>
+          <Badge variant="secondary" className="text-xs">
             WIP
           </Badge>
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value={value} className="mt-4">
-        {children}
-      </TabsContent>
-    </Tabs>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 } 

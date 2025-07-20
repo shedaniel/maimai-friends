@@ -50,7 +50,7 @@ export function useFetchSession(onFetchComplete?: () => void) {
   };
 
   const pollFetchStatus = async (sessionId: string, region: Region) => {
-    const maxAttempts = 60; // 5 minutes max
+    const maxAttempts = 150; // 5 minutes max (300 seconds / 2 seconds = 150 attempts)
     let attempts = 0;
 
     const poll = async () => {
@@ -89,7 +89,7 @@ export function useFetchSession(onFetchComplete?: () => void) {
 
         attempts++;
         if (attempts < maxAttempts) {
-          setTimeout(poll, 5000); // Poll every 5 seconds
+          setTimeout(poll, 2000); // Poll every 2 seconds
         } else {
           setFetchError("Fetch timeout");
           return "timeout";

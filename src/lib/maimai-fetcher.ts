@@ -20,7 +20,18 @@ export async function validateMaimaiToken(
   
   // Check if token contains only ASCII characters
   if (!/^[\x00-\x7F]*$/.test(sanitizedToken)) {
-    console.log("Token contains non-ASCII characters");
+    console.log("Token contains non-ASCII characters, removing from database");
+    
+    // Remove invalid token from database
+    await db
+      .delete(userTokens)
+      .where(
+        and(
+          eq(userTokens.userId, userId),
+          eq(userTokens.region, region)
+        )
+      );
+    
     return {
       isValid: false,
       error: "Invalid token format. Please ensure you copied the JSESSIONID correctly (ASCII characters only).",
@@ -29,6 +40,18 @@ export async function validateMaimaiToken(
 
   // Check if token is not empty
   if (!sanitizedToken) {
+    console.log("Empty token provided, removing from database");
+    
+    // Remove empty token from database
+    await db
+      .delete(userTokens)
+      .where(
+        and(
+          eq(userTokens.userId, userId),
+          eq(userTokens.region, region)
+        )
+      );
+    
     return {
       isValid: false,
       error: "Token cannot be empty.",
