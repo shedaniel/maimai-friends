@@ -1,6 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processMaimaiToken } from "@/lib/maimai-fetcher";
 import { load } from "cheerio";
+import { db } from "@/lib/db";
+import { songs } from "@/lib/schema";
+import { getCurrentVersion } from "@/lib/metadata";
+import { randomUUID } from "crypto";
+import { sql } from "drizzle-orm";
+
+// Helper function to convert level string to precise value (stored as 10x)
+function levelToPrecise(level: string): number {
+  const trimmedLevel = level.trim();
+  
+  if (trimmedLevel.endsWith('+')) {
+    // Plus level: extract base number and add 6
+    const baseLevel = parseInt(trimmedLevel.slice(0, -1), 10);
+    if (isNaN(baseLevel)) {
+      console.warn(`Invalid plus level format: ${level}`);
+      return 10; // Default to 1.0 (10)
+    }
+    return baseLevel * 10 + 6;
+  } else {
+    // Base level: just multiply by 10
+    const baseLevel = parseInt(trimmedLevel, 10);
+    if (isNaN(baseLevel)) {
+      console.warn(`Invalid level format: ${level}`);
+      return 10; // Default to 1.0 (10)
+    }
+    return baseLevel * 10;
+  }
+}
 
 // Helper function to get cookies from redirect URL
 async function getCookiesFromRedirect(redirectUrl: string): Promise<string> {
@@ -247,10 +275,10 @@ function parseSongDetail(html: string): any {
   };
 }
 
-// Helper function to create song entries from scraped difficulty data
-function createSongEntriesFromScrapedData(difficulties: any[], jsonSong?: any): any[] {
+// Helper function to prepare song entries from scraped difficulty data
+function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | undefined, region: "intl" | "jp"): any[] {
   const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
-  const entries: any[] = [];
+  const records: any[] = [];
 
   // Get common song info from first difficulty
   const songInfo = difficulties[0];
@@ -262,33 +290,36 @@ function createSongEntriesFromScrapedData(difficulties: any[], jsonSong?: any): 
     ? `https://maimaidx.jp/maimai-mobile/img/Music/${jsonSong.image_url}`
     : "https://maimaidx.jp/maimai-mobile/img/Music/default.png";
   const genre = jsonSong?.catcode || "Unknown";
+  
+  const gameVersion = getCurrentVersion(region);
 
-  // Create an entry for each scraped difficulty
-  difficulties.forEach(difficulty => {
+  // Prepare each difficulty as a separate record
+  for (const difficulty of difficulties) {
     const difficultyName = difficultyNames[difficulty.difficultyNumber] || `difficulty_${difficulty.difficultyNumber}`;
     
-    const entry = {
+    records.push({
+      id: randomUUID(),
       songName,
       artist,
       cover,
-      difficulty: difficultyName,
+      difficulty: difficultyName as "basic" | "advanced" | "expert" | "master" | "remaster",
       level: difficulty.level,
-      type: musicType,
+      levelPrecise: levelToPrecise(difficulty.level),
+      type: musicType as "std" | "dx",
       genre,
-      difficultyIndex: difficulty.difficultyNumber,
-    };
+      region,
+      gameVersion,
+    });
+  }
 
-    entries.push(entry);
-  });
-
-  console.log(`Created ${entries.length} difficulty entries for ${songName}@${musicType} from scraped data`);
-  return entries;
+  console.log(`Prepared ${records.length} difficulty entries for ${songName}@${musicType} from scraped data`);
+  return records;
 }
 
-// Helper function to create song entries using fetched metadata
-function createSongEntriesWithFetchedData(difficulties: any[], songDetail: any): any[] {
+// Helper function to prepare song entries using fetched metadata
+function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any, region: "intl" | "jp"): any[] {
   const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
-  const entries: any[] = [];
+  const records: any[] = [];
 
   // Get common song info from first difficulty
   const songInfo = difficulties[0];
@@ -296,27 +327,30 @@ function createSongEntriesWithFetchedData(difficulties: any[], songDetail: any):
 
   // Use fetched metadata
   const { artist, coverUrl, genre } = songDetail;
+  
+  const gameVersion = getCurrentVersion(region);
 
-  // Create an entry for each scraped difficulty
-  difficulties.forEach(difficulty => {
+  // Prepare each difficulty as a separate record
+  for (const difficulty of difficulties) {
     const difficultyName = difficultyNames[difficulty.difficultyNumber] || `difficulty_${difficulty.difficultyNumber}`;
     
-    const entry = {
+    records.push({
+      id: randomUUID(),
       songName,
       artist,
       cover: coverUrl,
-      difficulty: difficultyName,
+      difficulty: difficultyName as "basic" | "advanced" | "expert" | "master" | "remaster",
       level: difficulty.level,
-      type: musicType,
+      levelPrecise: levelToPrecise(difficulty.level),
+      type: musicType as "std" | "dx",
       genre,
-      difficultyIndex: difficulty.difficultyNumber,
-    };
+      region,
+      gameVersion,
+    });
+  }
 
-    entries.push(entry);
-  });
-
-  console.log(`Created ${entries.length} difficulty entries for ${songName}@${musicType} from fetched data`);
-  return entries;
+  console.log(`Prepared ${records.length} difficulty entries for ${songName}@${musicType} from fetched data`);
+  return records;
 }
 
  
@@ -432,7 +466,6 @@ export async function GET(request: NextRequest) {
 
     // Step 6: Process songs using scraped data and JSON metadata
     console.log("Step 6: Processing songs with scraped data and JSON metadata...");
-    const songDetailsMap: { [key: string]: any[] } = {};
     const songsNeedingFetch: any[] = [];
 
     // Group songs by song name and type to combine all difficulties
@@ -447,6 +480,10 @@ export async function GET(request: NextRequest) {
 
     console.log(`Found ${songsGrouped.size} unique songs to process...`);
 
+    let processedFromJson = 0;
+    let processedFromFetch = 0;
+    const allRecordsToInsert: any[] = [];
+
     // Process each unique song
     for (const [songKey, difficulties] of songsGrouped) {
       try {
@@ -455,10 +492,11 @@ export async function GET(request: NextRequest) {
         const jsonSong = songsJsonMap.get(songInfo.songName);
         
         if (jsonSong) {
-          // Create song entries from scraped difficulty data with JSON metadata
-          const songEntries = createSongEntriesFromScrapedData(difficulties, jsonSong);
-          songDetailsMap[songKey] = songEntries;
-          console.log(`Successfully processed ${songKey} (with JSON data) - ${songEntries.length} difficulties`);
+          // Prepare song entries from scraped difficulty data with JSON metadata
+          const records = prepareSongEntriesFromScrapedData(difficulties, jsonSong, region);
+          allRecordsToInsert.push(...records);
+          console.log(`Successfully processed ${songKey} (with JSON data) - ${difficulties.length} difficulties`);
+          processedFromJson++;
         } else {
           // Need to fetch individual song details
           console.log(`${songKey} not found in JSON, will fetch individually`);
@@ -472,7 +510,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`Processed ${Object.keys(songDetailsMap).length} songs from JSON`);
+    console.log(`Processed ${processedFromJson} songs from JSON`);
     console.log(`${songsNeedingFetch.length} songs need individual fetching`);
 
     // Step 7: Fetch remaining songs individually (sequential with 500ms delay)
@@ -492,13 +530,12 @@ export async function GET(request: NextRequest) {
           // Get all difficulties for this song from the grouped data
           const difficulties = songsGrouped.get(songKey) || [];
           
-          // Create song entries using fetched metadata
-          const songEntries = createSongEntriesWithFetchedData(difficulties, songDetail);
+          // Prepare song entries using fetched metadata
+          const records = prepareSongEntriesWithFetchedData(difficulties, songDetail, region);
+          allRecordsToInsert.push(...records);
           
-          // Store in the map
-          songDetailsMap[songKey] = songEntries;
-          
-          console.log(`Successfully processed ${songKey} (with fetched data) - ${songEntries.length} difficulties`);
+          console.log(`Successfully processed ${songKey} (with fetched data) - ${difficulties.length} difficulties`);
+          processedFromFetch++;
           
           // Add 500ms delay between requests (except for the last one)
           if (i < songsNeedingFetch.length - 1) {
@@ -512,12 +549,55 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`Successfully processed ${Object.keys(songDetailsMap).length} songs total`);
+    // Step 8: Batch upsert all records
+    if (allRecordsToInsert.length > 0) {
+      console.log(`Step 8: Performing batch upsert of ${allRecordsToInsert.length} records...`);
+      
+      try {
+        // Split into batches of 1000 records to avoid SQL limits
+        const batchSize = 1000;
+        let totalInserted = 0;
+        
+        for (let i = 0; i < allRecordsToInsert.length; i += batchSize) {
+          const batch = allRecordsToInsert.slice(i, i + batchSize);
+          console.log(`Upserting batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allRecordsToInsert.length / batchSize)} (${batch.length} records)`);
+          
+          await db.insert(songs).values(batch).onConflictDoUpdate({
+            target: [songs.songName, songs.difficulty, songs.type, songs.region, songs.gameVersion],
+            set: {
+              artist: sql`excluded.artist`,
+              cover: sql`excluded.cover`,
+              level: sql`excluded.level`,
+              levelPrecise: sql`excluded.levelPrecise`,
+              genre: sql`excluded.genre`,
+            },
+          });
+          
+          totalInserted += batch.length;
+        }
+        
+        console.log(`Successfully upserted ${totalInserted} records to database`);
+      } catch (error) {
+        console.error("Error during batch upsert:", error);
+        throw new Error(`Database upsert failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      }
+    }
+
+    const totalProcessed = processedFromJson + processedFromFetch;
+    console.log(`Successfully processed ${totalProcessed} songs total (${processedFromJson} from JSON, ${processedFromFetch} from individual fetch)`);
 
     return NextResponse.json({
       success: true,
-      message: "Song data scraping completed",
-      data: songDetailsMap,
+      message: "Song data update completed",
+      statistics: {
+        total: totalProcessed,
+        fromJson: processedFromJson,
+        fromFetch: processedFromFetch,
+        totalRecords: allRecordsToInsert.length,
+        region,
+        gameVersion: getCurrentVersion(region),
+        timestamp: new Date().toISOString(),
+      },
     });
 
   } catch (error) {

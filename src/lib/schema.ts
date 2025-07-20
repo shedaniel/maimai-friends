@@ -98,12 +98,11 @@ export const songs = sqliteTable("songs", {
   }).notNull(),
   levelPrecise: integer("levelPrecise").notNull(), // stored as 10x, e.g., 16.5 = 165
   type: text("type", { enum: ["std", "dx"] }).notNull(),
-  addedDate: integer("addedDate", { mode: "timestamp" }).notNull(),
   genre: text("genre").notNull(), // Will define enum later based on maimai genres
   region: text("region", { enum: ["intl", "jp"] }).notNull(),
   gameVersion: integer("gameVersion").notNull(),
 }, (table) => ({
-  songNameRegionVersionUnique: unique("song_name_region_version_unique").on(table.songName, table.region, table.gameVersion),
+  songNameDifficultyTypeRegionVersionUnique: unique("song_name_difficulty_type_region_version_unique").on(table.songName, table.difficulty, table.type, table.region, table.gameVersion),
 }));
 
 export const userScores = sqliteTable("user_scores", {
