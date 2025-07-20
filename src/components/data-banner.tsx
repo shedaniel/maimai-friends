@@ -24,6 +24,7 @@ interface DataBannerProps {
   onSnapshotChange: (snapshotId: string) => void;
   onFetchData: () => void;
   isFetching: boolean;
+  userTimezone?: string | null; // null = Asia/Tokyo (JP default)
 }
 
 export function DataBanner({
@@ -33,17 +34,22 @@ export function DataBanner({
   onSnapshotChange,
   onFetchData,
   isFetching,
+  userTimezone,
 }: DataBannerProps) {
 
   const hasSnapshots = snapshots.length > 0;
 
   const formatDate = (date: Date) => {
+    // Use user's timezone preference, default to Asia/Tokyo if null
+    const timezone = userTimezone || "Asia/Tokyo";
+    
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: timezone,
     }).format(date);
   };
 

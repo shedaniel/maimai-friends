@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '@/lib/trpc';
 import { db } from '@/lib/db';
-import { userSnapshots, fetchSessions, userTokens } from '@/lib/schema';
+import { userSnapshots, fetchSessions, userTokens, user } from '@/lib/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 import { randomUUID } from 'crypto';
@@ -241,5 +241,41 @@ export const userRouter = router({
         completedAt: session.completedAt,
         errorMessage: session.errorMessage,
       };
+    }),
+
+  // Get user timezone
+  getTimezone: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userRecord = await db
+        .select({ timezone: user.timezone })
+        .from(user)
+        .where(eq(user.id, ctx.session.user.id))
+        .limit(1);
+
+      if (userRecord.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      return { timezone: userRecord[0].timezone };
+    }),
+
+  // Update user timezone
+  updateTimezone: protectedProcedure
+    .input(z.object({
+      timezone: z.string().nullable(), // null = Asia/Tokyo (JP default)
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db
+        .update(user)
+        .set({
+          timezone: input.timezone,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, ctx.session.user.id));
+
+      return { success: true };
     }),
 }); 

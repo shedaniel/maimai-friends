@@ -7,6 +7,7 @@ import { DataBanner } from "@/components/data-banner";
 import { DataFetcher } from "@/components/data-fetcher";
 import { DataContent } from "@/components/data-content";
 import { UserHeader } from "@/components/user-header";
+import { SettingsDialog } from "@/components/settings-dialog";
 import { useSnapshots } from "@/hooks/useSnapshots";
 import { useFetchSession } from "@/hooks/useFetchSession";
 import { trpc } from "@/lib/trpc-client";
@@ -26,6 +27,7 @@ interface DashboardProps {
 export function Dashboard({ user }: DashboardProps) {
   const [selectedRegion, setSelectedRegion] = useState<Region>("intl");
   const [isDataFetcherOpen, setIsDataFetcherOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const {
     snapshots,
@@ -48,6 +50,23 @@ export function Dashboard({ user }: DashboardProps) {
     { region: selectedRegion },
     { refetchOnWindowFocus: false }
   );
+
+  // Get user timezone
+  const { data: timezoneData, refetch: refetchTimezone } = trpc.user.getTimezone.useQuery(
+    undefined,
+    { refetchOnWindowFocus: false }
+  );
+
+  // Update timezone mutation
+  const updateTimezoneMutation = trpc.user.updateTimezone.useMutation({
+    onSuccess: () => {
+      toast.success("Timezone updated successfully!");
+      refetchTimezone();
+    },
+    onError: (error) => {
+      toast.error(`Failed to update timezone: ${error.message}`);
+    },
+  });
 
   const handleLogout = async () => {
     try {
@@ -112,13 +131,22 @@ export function Dashboard({ user }: DashboardProps) {
     }
   };
 
+  const handleSettings = () => {
+    setIsSettingsOpen(true);
+  };
+
+  const handleTimezoneUpdate = async (timezone: string | null) => {
+    await updateTimezoneMutation.mutateAsync({ timezone });
+  };
+
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <UserHeader 
         user={user} 
         selectedRegion={selectedRegion}
         onRegionChange={handleRegionChange}
-        onLogout={handleLogout} 
+        onLogout={handleLogout}
+        onSettings={handleSettings}
       />
 
       <div className="space-y-6">
@@ -129,6 +157,7 @@ export function Dashboard({ user }: DashboardProps) {
           onSnapshotChange={setSelectedSnapshot}
           onFetchData={handleFetchData}
           isFetching={isFetching}
+          userTimezone={timezoneData?.timezone ?? null}
         />
 
         <DataContent
@@ -143,6 +172,13 @@ export function Dashboard({ user }: DashboardProps) {
         isOpen={isDataFetcherOpen}
         onClose={closeFetcher}
         onTokenUpdate={handleTokenUpdate}
+      />
+
+      <SettingsDialog
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        currentTimezone={timezoneData?.timezone ?? null}
+        onTimezoneUpdate={handleTimezoneUpdate}
       />
     </div>
   );

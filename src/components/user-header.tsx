@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User } from "lucide-react";
+import { LogOut, Settings, User } from "lucide-react";
 import Image from "next/image";
 import { RegionSwitcher, Region } from "@/components/region-switcher";
 
@@ -23,9 +23,10 @@ interface UserHeaderProps {
   selectedRegion: Region;
   onRegionChange: (region: Region) => void;
   onLogout: () => void;
+  onSettings: () => void;
 }
 
-export function UserHeader({ user, selectedRegion, onRegionChange, onLogout }: UserHeaderProps) {
+export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onSettings }: UserHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-8">
       <div className="flex items-center space-x-3">
@@ -64,6 +65,10 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout }: U
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onSettings}>
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={onLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>

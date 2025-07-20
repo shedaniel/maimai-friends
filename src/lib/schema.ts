@@ -9,6 +9,7 @@ export const user = sqliteTable("user", {
   image: text("image"),
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
+  timezone: text("timezone"), // nullable, null = Asia/Tokyo (JP default)
 });
 
 export const session = sqliteTable("session", {
