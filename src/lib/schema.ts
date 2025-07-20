@@ -109,8 +109,6 @@ export const userScores = sqliteTable("user_scores", {
   id: text("id").primaryKey(),
   snapshotId: text("snapshotId").notNull().references(() => userSnapshots.id, { onDelete: "cascade" }),
   songId: text("songId").notNull().references(() => songs.id, { onDelete: "cascade" }),
-  playCount: integer("playCount").notNull(),
-  lastPlayed: integer("lastPlayed", { mode: "timestamp" }).notNull(),
   achievement: integer("achievement").notNull(), // stored as 10000x, e.g., 99.1234% = 991234
   dxScore: integer("dxScore").notNull(),
   fc: text("fc", { enum: ["none", "fc", "fc+", "ap", "ap+"] }).notNull(),

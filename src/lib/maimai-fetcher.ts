@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { userTokens, userSnapshots } from "./schema";
+import { userTokens, userSnapshots, songs, userScores } from "./schema";
 import { eq, and } from "drizzle-orm";
 import { load } from "cheerio";
 import { randomUUID } from "crypto";
@@ -428,8 +428,177 @@ async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<{ html: st
   return { html: playerDataHtml, cookies };
 }
 
+// Parse score data from HTML for a specific difficulty
+function parseScoreData(html: string, difficulty: number): ScoreData[] {
+  const $ = load(html);
+  
+  // Use correct selector based on difficulty
+  const difficultySelectors = [
+    ".music_basic_score_back",      // difficulty 0
+    ".music_advanced_score_back",   // difficulty 1
+    ".music_expert_score_back",     // difficulty 2
+    ".music_master_score_back",     // difficulty 3
+    ".music_remaster_score_back"    // difficulty 4
+  ];
+  
+  const selector = difficultySelectors[difficulty];
+  if (!selector) {
+    console.error(`Invalid difficulty: ${difficulty}`);
+    return [];
+  }
+  
+  const blocks = $(selector);
+  const scores: ScoreData[] = [];
+
+  console.log(`Found ${blocks.length} score blocks for difficulty ${difficulty} using selector ${selector}`);
+
+  blocks.each((index, element) => {
+    try {
+      const block = $(element);
+      
+      // Only consider blocks that contain .music_score_block (played songs)
+      const scoreBlocks = block.find('.music_score_block');
+      if (scoreBlocks.length === 0) {
+        return; // Skip unplayed songs
+      }
+      
+      const parent = block.parent();
+
+      // Extract music type (dx/std) from icon image
+      const iconElement = parent.find('img.music_kind_icon');
+      if (iconElement.length === 0) {
+        console.warn(`No music kind icon found for score block ${index}`);
+        return;
+      }
+
+      const iconSrc = iconElement.attr('src');
+      if (!iconSrc) {
+        console.warn(`No src attribute found for music kind icon in score block ${index}`);
+        return;
+      }
+
+      let musicType: "dx" | "std";
+      if (iconSrc.includes('music_dx.png')) {
+        musicType = "dx";
+      } else if (iconSrc.includes('music_standard.png')) {
+        musicType = "std";
+      } else {
+        console.warn(`Unknown music type icon: ${iconSrc} in score block ${index}`);
+        return;
+      }
+
+      // Extract song name
+      const nameElement = block.find('.music_name_block');
+      if (nameElement.length === 0) {
+        console.warn(`No music name block found for score block ${index}`);
+        return;
+      }
+      const songName = nameElement.text().trim();
+
+      // Extract level
+      const levelElement = block.find('.music_lv_block');
+      if (levelElement.length === 0) {
+        console.warn(`No music level block found for score block ${index}`);
+        return;
+      }
+      const level = levelElement.text().trim();
+
+      // Extract achievement and dx score from the two .music_score_block elements
+      if (scoreBlocks.length < 2) {
+        console.warn(`Expected 2 score blocks, found ${scoreBlocks.length} for song ${songName}`);
+        return;
+      }
+
+      // First score block: achievement (e.g., "97.6977%")
+      const achievementText = scoreBlocks.eq(0).text().trim();
+      const achievementMatch = achievementText.match(/(\d+\.?\d*)%/);
+      if (!achievementMatch) {
+        console.warn(`Could not parse achievement: ${achievementText} for song ${songName}`);
+        return;
+      }
+      const achievementFloat = parseFloat(achievementMatch[1]);
+      const achievement = Math.round(achievementFloat * 10000); // Convert to 10000x format
+
+      // Second score block: dx score (e.g., "758 / 963")
+      const dxScoreText = scoreBlocks.eq(1).text().trim();
+      const dxScoreMatch = dxScoreText.match(/(\d+)\s*\/\s*\d+/);
+      if (!dxScoreMatch) {
+        console.warn(`Could not parse dx score: ${dxScoreText} for song ${songName}`);
+        return;
+      }
+      const dxScore = parseInt(dxScoreMatch[1], 10);
+
+      // Extract fs and fc from the three .h_30 elements
+      const h30Elements = block.find('.h_30');
+      if (h30Elements.length < 2) {
+        console.warn(`Expected at least 2 h_30 elements, found ${h30Elements.length} for song ${songName}`);
+        return;
+      }
+
+      // First .h_30 is fs (sync status)
+      let fs: "none" | "sync" | "fs" | "fs+" | "fdx" | "fdx+" = "none";
+      const fsElement = h30Elements.eq(0);
+      const fsSrc = fsElement.attr('src');
+      if (fsSrc) {
+        if (fsSrc.includes('_fdxp.png')) {
+          fs = "fdx+";
+        } else if (fsSrc.includes('_fdx.png')) {
+          fs = "fdx";
+        } else if (fsSrc.includes('_fsp.png')) {
+          fs = "fs+";
+        } else if (fsSrc.includes('_fs.png')) {
+          fs = "fs";
+        } else if (fsSrc.includes('_sync.png')) {
+          fs = "sync";
+        }
+      }
+
+      // Second .h_30 is fc (full combo status)
+      let fc: "none" | "fc" | "fc+" | "ap" | "ap+" = "none";
+      const fcElement = h30Elements.eq(1);
+      const fcSrc = fcElement.attr('src');
+      if (fcSrc) {
+        if (fcSrc.includes('_app.png')) {
+          fc = "ap+";
+        } else if (fcSrc.includes('_ap.png')) {
+          fc = "ap";
+        } else if (fcSrc.includes('_fcp.png')) {
+          fc = "fc+";
+        } else if (fcSrc.includes('_fc.png')) {
+          fc = "fc";
+        }
+      }
+
+      // Map difficulty number to difficulty name
+      const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
+      const difficultyName = difficultyNames[difficulty] || "unknown";
+
+      const scoreData: ScoreData = {
+        songName,
+        level,
+        musicType,
+        difficulty: difficultyName,
+        difficultyNumber: difficulty,
+        achievement,
+        dxScore,
+        fc,
+        fs,
+      };
+
+      scores.push(scoreData);
+
+      console.log(`Extracted score ${index}: ${songName} (${level}, ${musicType}, ${difficultyName}) - ${achievementFloat}%, ${dxScore} dx, ${fc}/${fs}`);
+    } catch (error) {
+      console.error(`Error processing score block ${index}:`, error);
+    }
+  });
+
+  console.log(`Successfully extracted ${scores.length} scores for difficulty ${difficulty}`);
+  return scores;
+}
+
 // Fetch songs data for a specific difficulty using existing cookies
-async function fetchSongsData(cookies: string, difficulty: number): Promise<string> {
+async function fetchSongsData(cookies: string, difficulty: number): Promise<ScoreData[]> {
   const songsUrl = `https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=${difficulty}`;
   console.log(`Fetching songs data for difficulty ${difficulty} from: ${songsUrl}`);
 
@@ -451,20 +620,23 @@ async function fetchSongsData(cookies: string, difficulty: number): Promise<stri
   const songsHtml = await songsResponse.text();
   console.log(`Songs data for difficulty ${difficulty} fetched successfully, length: ${songsHtml.length} characters`);
   
-  return songsHtml;
+  // Parse the HTML to extract score data
+  const scoreData = parseScoreData(songsHtml, difficulty);
+  
+  return scoreData;
 }
 
 // Fetch all songs data for all difficulties (0-4)
-async function fetchAllSongsData(cookies: string): Promise<{ [difficulty: number]: string }> {
-  const songsData: { [difficulty: number]: string } = {};
+async function fetchAllSongsData(cookies: string): Promise<{ [difficulty: number]: ScoreData[] }> {
+  const songsData: { [difficulty: number]: ScoreData[] } = {};
   
   console.log(`Fetching songs data for all difficulties (0-4)`);
   
   for (let difficulty = 0; difficulty <= 4; difficulty++) {
     try {
-      const html = await fetchSongsData(cookies, difficulty);
-      songsData[difficulty] = html;
-      console.log(`Successfully fetched songs for difficulty ${difficulty}`);
+      const scoreData = await fetchSongsData(cookies, difficulty);
+      songsData[difficulty] = scoreData;
+      console.log(`Successfully fetched ${scoreData.length} scores for difficulty ${difficulty}`);
     } catch (error) {
       console.error(`Failed to fetch songs for difficulty ${difficulty}:`, error);
       throw new Error(`Failed to fetch songs for difficulty ${difficulty}: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -485,6 +657,18 @@ interface PlayerData {
   totalPlayCount: number;
   courseRankUrl: string;
   classRankUrl: string;
+}
+
+interface ScoreData {
+  songName: string;
+  level: string;
+  musicType: "dx" | "std";
+  difficulty: string;
+  difficultyNumber: number;
+  achievement: number; // stored as 10000x
+  dxScore: number;
+  fc: "none" | "fc" | "fc+" | "ap" | "ap+";
+  fs: "none" | "sync" | "fs" | "fs+" | "fdx" | "fdx+";
 }
 
 async function extractPlayerData(html: string): Promise<PlayerData> {
@@ -641,7 +825,7 @@ async function createUserSnapshot(
   region: "intl" | "jp",
   playerData: PlayerData,
   iconBase64: string
-): Promise<void> {
+): Promise<string> {
   const snapshotId = randomUUID();
   
   console.log(`Creating user snapshot with ID: ${snapshotId}`);
@@ -664,6 +848,101 @@ async function createUserSnapshot(
   });
   
   console.log(`User snapshot created successfully`);
+  return snapshotId;
+}
+
+async function insertUserScores(
+  snapshotId: string,
+  region: "intl" | "jp",
+  allScoreData: { [difficulty: number]: ScoreData[] }
+): Promise<void> {
+  const gameVersion = getCurrentVersion(region);
+  
+  console.log(`Starting user scores insertion for snapshot ${snapshotId}`);
+  
+  // Flatten all score data from all difficulties
+  const allScores: ScoreData[] = [];
+  for (const difficulty of Object.keys(allScoreData)) {
+    allScores.push(...allScoreData[parseInt(difficulty)]);
+  }
+  
+  console.log(`Total scores to insert: ${allScores.length}`);
+  
+  if (allScores.length === 0) {
+    console.warn("No scores to insert");
+    return;
+  }
+  
+  // Batch query all songs for this region and game version
+  console.log(`Batch querying songs for region ${region}, game version ${gameVersion}`);
+  const allSongs = await db.query.songs.findMany({
+    where: and(
+      eq(songs.region, region),
+      eq(songs.gameVersion, gameVersion)
+    ),
+    columns: {
+      id: true,
+      songName: true,
+      difficulty: true,
+      type: true,
+    }
+  });
+  
+  console.log(`Found ${allSongs.length} songs in database for this region/version`);
+  
+  // Create lookup map for fast song finding
+  const songLookup = new Map<string, string>(); // key: "songName|difficulty|type", value: songId
+  for (const song of allSongs) {
+    const key = `${song.songName}|${song.difficulty}|${song.type}`;
+    songLookup.set(key, song.id);
+  }
+  
+  console.log(`Created song lookup map with ${songLookup.size} entries`);
+  
+  // Process all scores using the lookup map
+  const scoreInserts: any[] = [];
+  let foundCount = 0;
+  let notFoundCount = 0;
+  
+  for (const scoreData of allScores) {
+    try {
+      const lookupKey = `${scoreData.songName}|${scoreData.difficulty}|${scoreData.musicType}`;
+      const songId = songLookup.get(lookupKey);
+
+      if (!songId) {
+        console.warn(`Could not find song in database: ${scoreData.songName} (${scoreData.difficulty}, ${scoreData.musicType})`);
+        notFoundCount++;
+        continue;
+      }
+
+      // Create user score record
+      const userScoreId = randomUUID();
+      scoreInserts.push({
+        id: userScoreId,
+        snapshotId: snapshotId,
+        songId: songId,
+        achievement: scoreData.achievement,
+        dxScore: scoreData.dxScore,
+        fc: scoreData.fc,
+        fs: scoreData.fs,
+      });
+
+      foundCount++;
+    } catch (error) {
+      console.error(`Error processing score for ${scoreData.songName}:`, error);
+      notFoundCount++;
+    }
+  }
+  
+  console.log(`Prepared ${foundCount} score inserts, ${notFoundCount} songs not found in database`);
+  
+  if (scoreInserts.length > 0) {
+    console.log(`Batch inserting ${scoreInserts.length} user scores`);
+    await db.insert(userScores).values(scoreInserts);
+    console.log(`Successfully inserted ${scoreInserts.length} user scores`);
+  } else {
+    console.warn("No valid scores to insert");
+  }
 }
 
 export async function fetchMaimaiData(
@@ -712,7 +991,12 @@ export async function fetchMaimaiData(
     console.log("Songs data fetch completed");
     
     // Create user snapshot with real player data
-    await createUserSnapshot(userId, region, playerData, iconBase64);
+    const snapshotId = await createUserSnapshot(userId, region, playerData, iconBase64);
+    
+    // Insert user scores into database
+    console.log("Starting user scores insertion...");
+    await insertUserScores(snapshotId, region, allSongsData);
+    console.log("User scores insertion completed");
     
     console.log("Player data processed and snapshot created successfully");
     console.log(`Session ID: ${sessionId}`);
