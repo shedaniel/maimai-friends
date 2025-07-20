@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '@/lib/trpc';
 import { db } from '@/lib/db';
-import { userSnapshots, fetchSessions, userTokens, user } from '@/lib/schema';
+import { userSnapshots, fetchSessions, userTokens, user, songs, userScores } from '@/lib/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 import { randomUUID } from 'crypto';
@@ -37,6 +37,61 @@ export const userRouter = router({
         .orderBy(desc(userSnapshots.fetchedAt));
 
       return { snapshots };
+    }),
+
+  // Get complete snapshot data including songs for a specific snapshot
+  getSnapshotData: protectedProcedure
+    .input(z.object({ 
+      snapshotId: z.string(),
+      region: regionSchema 
+    }))
+    .query(async ({ ctx, input }) => {
+      // First verify the snapshot belongs to the user
+      const snapshot = await db
+        .select()
+        .from(userSnapshots)
+        .where(
+          and(
+            eq(userSnapshots.id, input.snapshotId),
+            eq(userSnapshots.userId, ctx.session.user.id),
+            eq(userSnapshots.region, input.region)
+          )
+        )
+        .limit(1);
+
+      if (snapshot.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Snapshot not found or access denied',
+        });
+      }
+
+      // Get songs with scores for this snapshot
+      const songsWithScores = await db
+        .select({
+          songId: songs.id,
+          songName: songs.songName,
+          artist: songs.artist,
+          cover: songs.cover,
+          difficulty: songs.difficulty,
+          level: songs.level,
+          levelPrecise: songs.levelPrecise,
+          type: songs.type,
+          genre: songs.genre,
+          achievement: userScores.achievement,
+          dxScore: userScores.dxScore,
+          fc: userScores.fc,
+          fs: userScores.fs,
+        })
+        .from(userScores)
+        .innerJoin(songs, eq(userScores.songId, songs.id))
+        .where(eq(userScores.snapshotId, input.snapshotId))
+        .orderBy(songs.songName, songs.difficulty);
+
+      return {
+        snapshot: snapshot[0],
+        songs: songsWithScores,
+      };
     }),
 
   // Check if user has a saved token for a region

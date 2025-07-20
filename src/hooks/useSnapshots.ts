@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc-client";
-import { Region, Snapshot } from "@/lib/types";
+import { Region, Snapshot, SnapshotWithSongs } from "@/lib/types";
 
 export function useSnapshots(region: Region, isAuthenticated: boolean) {
   const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);
   const previousLengthRef = useRef<number>(0);
 
-  // Use tRPC query to fetch snapshots
+  // Use tRPC query to fetch snapshots metadata only
   const {
     data: snapshotsData,
-    isLoading,
+    isLoading: isLoadingSnapshots,
     refetch: refreshSnapshots,
   } = trpc.user.getSnapshots.useQuery(
     { region },
@@ -20,7 +20,25 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
     }
   );
 
+  // Fetch complete snapshot data only when a snapshot is selected
+  const {
+    data: selectedSnapshotData,
+    isLoading: isLoadingSnapshotData,
+    refetch: refreshSnapshotData,
+  } = trpc.user.getSnapshotData.useQuery(
+    { 
+      snapshotId: selectedSnapshot!, 
+      region 
+    },
+    {
+      enabled: isAuthenticated && !!selectedSnapshot,
+      refetchOnWindowFocus: false,
+      staleTime: 10 * 60 * 1000, // 10 minutes - snapshot data changes less frequently
+    }
+  );
+
   const snapshots: Snapshot[] = snapshotsData?.snapshots || [];
+  const isLoading = isLoadingSnapshots || (!!selectedSnapshot && isLoadingSnapshotData);
 
   // Auto-select the latest snapshot if none selected and we have snapshots
   if (snapshots.length > 0 && !selectedSnapshot) {
@@ -48,12 +66,20 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
 
   const refreshSnapshotsCallback = () => {
     refreshSnapshots();
+    if (selectedSnapshot) {
+      refreshSnapshotData();
+    }
+  };
+
+  const handleSnapshotSelect = (snapshotId: string | null) => {
+    setSelectedSnapshot(snapshotId);
   };
 
   return {
     snapshots,
     selectedSnapshot,
-    setSelectedSnapshot,
+    selectedSnapshotData: selectedSnapshotData || undefined,
+    setSelectedSnapshot: handleSnapshotSelect,
     isLoading,
     resetSnapshots,
     refreshSnapshots: refreshSnapshotsCallback,

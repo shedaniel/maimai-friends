@@ -2,17 +2,44 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Database } from "lucide-react";
-import { Region, Snapshot } from "@/lib/types";
+import { Region, SnapshotWithSongs } from "@/lib/types";
+import { addRatingsAndSort, SongWithRating } from "@/lib/rating-calculator";
 
 interface DataContentProps {
   region: Region;
-  selectedSnapshot: Snapshot | null;
+  selectedSnapshotData: SnapshotWithSongs | null;
   isLoading: boolean;
+}
+
+// Component for rendering the songs list
+function SongsList({ songs }: { songs: SongWithRating[] }) {
+  return (
+    <div className="bg-muted/50 rounded-md p-4">
+      <h4 className="font-medium mb-2">Songs ({songs.length} total)</h4>
+      <div className="space-y-2">
+        {songs.map(song => (
+          <div key={`${song.songId}-${song.difficulty}`} className="flex justify-between items-center text-sm border-b border-gray-200 pb-1.5 h-12">
+            <div className="flex-1 min-w-0">
+              <div className="truncate font-medium">{song.songName}&#8203;</div>
+              <div className="text-muted-foreground text-xs">{song.artist} • {song.difficulty} {song.level}</div>
+            </div>
+            <div className="text-right ml-2">
+              <div className="font-mono">{(song.achievement / 10000).toFixed(4)}%</div>
+              <div className="text-xs text-muted-foreground">{song.fc !== 'none' ? song.fc.toUpperCase() : ''} {song.fs !== 'none' ? song.fs.toUpperCase() : ''}&#8203;</div>
+            </div>
+            <div className="text-right ml-4 mr-2">
+              <div className="font-mono text-md font-semibold">{song.rating}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function DataContent({ 
   region, 
-  selectedSnapshot, 
+  selectedSnapshotData, 
   isLoading
 }: DataContentProps) {
   if (isLoading) {
@@ -28,20 +55,35 @@ export function DataContent({
     );
   }
 
-  if (selectedSnapshot) {
+  if (selectedSnapshotData) {
+    const { snapshot, songs } = selectedSnapshotData;
+    
+    // Calculate ratings and sort by highest rating first
+    const songsWithRating: SongWithRating[] = addRatingsAndSort(songs);
+    
     return (
       <Card>
         <CardHeader>
           <CardTitle>Snapshot Data</CardTitle>
           <CardDescription>
-            Snapshot from {selectedSnapshot.fetchedAt.toLocaleString()} • {selectedSnapshot.displayName}
+            Snapshot from {snapshot.fetchedAt.toLocaleString()} • {snapshot.displayName} • {songs.length} songs
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="bg-muted/50 rounded-md p-4">
-            <pre className="text-sm overflow-auto max-h-96">
-              {JSON.stringify(selectedSnapshot, null, 2)}
-            </pre>
+          <div className="space-y-4">
+            {/* Player Info */}
+            <div className="bg-muted/50 rounded-md p-4">
+              <h4 className="font-medium mb-2">Player Info</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>Rating: {snapshot.rating}</div>
+                <div>Stars: {snapshot.stars}</div>
+                <div>Version Plays: {snapshot.versionPlayCount}</div>
+                <div>Total Plays: {snapshot.totalPlayCount}</div>
+              </div>
+            </div>
+            
+            {/* Songs Preview */}
+            <SongsList songs={songsWithRating} />
           </div>
         </CardContent>
       </Card>

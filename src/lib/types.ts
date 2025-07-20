@@ -24,6 +24,32 @@ export interface Snapshot {
   totalPlayCount: number;
 }
 
+// Song data with score information
+export interface SongWithScore {
+  songId: string;
+  songName: string;
+  artist: string;
+  cover: string;
+  difficulty: string;
+  level: string;
+  levelPrecise: number;
+  type: "std" | "dx";
+  genre: string;
+  achievement: number;
+  dxScore: number;
+  fc: "none" | "fc" | "fc+" | "ap" | "ap+";
+  fs: "none" | "sync" | "fs" | "fs+" | "fdx" | "fdx+";
+}
+
+// Complete snapshot data including songs
+export interface SnapshotWithSongs {
+  snapshot: Snapshot & {
+    title: string;
+    iconUrl: string;
+  };
+  songs: SongWithScore[];
+}
+
 export interface FetchSession {
   id: string;
   status: "pending" | "completed" | "failed";

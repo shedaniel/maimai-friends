@@ -25,6 +25,7 @@ export function Dashboard({ user }: DashboardProps) {
   const {
     snapshots,
     selectedSnapshot,
+    selectedSnapshotData,
     setSelectedSnapshot,
     isLoading: isLoadingSnapshots,
     resetSnapshots,
@@ -160,7 +161,7 @@ export function Dashboard({ user }: DashboardProps) {
 
         <DataContent
           region={selectedRegion}
-          selectedSnapshot={selectedSnapshot ? snapshots.find(s => s.id === selectedSnapshot) || null : null}
+          selectedSnapshotData={selectedSnapshotData || null}
           isLoading={isLoadingSnapshots}
         />
       </div>
