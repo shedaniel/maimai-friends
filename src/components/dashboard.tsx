@@ -1,0 +1,146 @@
+"use client";
+
+import { useState } from "react";
+import { signOut } from "@/lib/auth-client";
+import { RegionSwitcher, Region } from "@/components/region-switcher";
+import { DataBanner } from "@/components/data-banner";
+import { DataFetcher } from "@/components/data-fetcher";
+import { DataContent } from "@/components/data-content";
+import { UserHeader } from "@/components/user-header";
+import { useSnapshots } from "@/hooks/useSnapshots";
+import { useFetchSession } from "@/hooks/useFetchSession";
+import { trpc } from "@/lib/trpc-client";
+import { toast } from "sonner";
+
+interface User {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
+
+interface DashboardProps {
+  user: User;
+}
+
+export function Dashboard({ user }: DashboardProps) {
+  const [selectedRegion, setSelectedRegion] = useState<Region>("intl");
+  const [isDataFetcherOpen, setIsDataFetcherOpen] = useState(false);
+
+  const {
+    snapshots,
+    selectedSnapshot,
+    setSelectedSnapshot,
+    isLoading: isLoadingSnapshots,
+    resetSnapshots,
+    refreshSnapshots,
+  } = useSnapshots(selectedRegion, true);
+
+  const {
+    isFetching,
+    startDataFetch,
+    startAutomaticFetch,
+    resetFetchSession,
+  } = useFetchSession(refreshSnapshots);
+
+  // Check if user has a saved token for the current region
+  const { data: tokenData } = trpc.user.hasToken.useQuery(
+    { region: selectedRegion },
+    { refetchOnWindowFocus: false }
+  );
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const handleRegionChange = (region: Region) => {
+    setSelectedRegion(region);
+    setSelectedSnapshot(null);
+    resetSnapshots();
+    resetFetchSession();
+  };
+
+  const handleFetchData = async () => {
+    // Check if user has a saved token
+    if (tokenData?.hasToken) {
+      // Start automatic fetch with saved token
+      try {
+        await startAutomaticFetch(selectedRegion);
+      } catch (error) {
+        console.error("Auto fetch failed:", error);
+        
+        // Show toast error and open token dialog for rate limiting or other errors
+        if (error instanceof Error) {
+          toast.error(error.message);
+          
+          // If it's not a rate limit error, open the token dialog
+          if (!error.message.includes("Rate limited")) {
+            setIsDataFetcherOpen(true);
+          }
+        } else {
+          toast.error("Failed to start data fetch");
+          setIsDataFetcherOpen(true);
+        }
+      }
+    } else {
+      // Show token input dialog
+      setIsDataFetcherOpen(true);
+    }
+  };
+
+  const closeFetcher = () => {
+    setIsDataFetcherOpen(false);
+  };
+
+  const handleTokenUpdate = async (token: string) => {
+    try {
+      // Just start the fetch with the new token (this will save and use it)
+      await startDataFetch(selectedRegion, token);
+      toast.success("Token saved successfully!");
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to save token");
+      }
+      // Re-throw the error so DataFetcher doesn't close on failure
+      throw error;
+    }
+  };
+
+  return (
+    <div className="container mx-auto max-w-6xl px-4 py-8">
+      <UserHeader user={user} onLogout={handleLogout} />
+
+      <RegionSwitcher value={selectedRegion} onChange={handleRegionChange}>
+        <div className="space-y-6">
+          <DataBanner
+            region={selectedRegion}
+            snapshots={snapshots}
+            selectedSnapshot={selectedSnapshot}
+            onSnapshotChange={setSelectedSnapshot}
+            onFetchData={handleFetchData}
+            isFetching={isFetching}
+          />
+
+          <DataContent
+            region={selectedRegion}
+            selectedSnapshot={selectedSnapshot}
+            isLoading={isLoadingSnapshots}
+          />
+        </div>
+      </RegionSwitcher>
+
+      <DataFetcher
+        region={selectedRegion}
+        isOpen={isDataFetcherOpen}
+        onClose={closeFetcher}
+        onTokenUpdate={handleTokenUpdate}
+      />
+    </div>
+  );
+} 
