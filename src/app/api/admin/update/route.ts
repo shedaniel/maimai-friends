@@ -1,4 +1,325 @@
 import { NextRequest, NextResponse } from "next/server";
+import { processMaimaiToken } from "@/lib/maimai-fetcher";
+import { load } from "cheerio";
+
+// Helper function to get cookies from redirect URL
+async function getCookiesFromRedirect(redirectUrl: string): Promise<string> {
+  console.log(`Fetching redirect URL to get login cookies: ${redirectUrl}`);
+  
+  const loginResponse = await fetch(redirectUrl, {
+    method: "GET",
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    },
+    redirect: "manual", // Don't follow redirects
+  });
+
+  console.log(`Login response status: ${loginResponse.status}`);
+
+  // Extract Set-Cookie headers
+  let setCookieHeaders: string[] = [];
+  if (loginResponse.headers.getSetCookie) {
+    setCookieHeaders = loginResponse.headers.getSetCookie();
+  } else {
+    // Fallback for environments that don't support getSetCookie()
+    const cookieHeader = loginResponse.headers.get('set-cookie');
+    if (cookieHeader) {
+      setCookieHeaders = [cookieHeader];
+    }
+  }
+  
+  if (setCookieHeaders.length === 0) {
+    throw new Error("No cookies received from login redirect");
+  }
+
+  console.log(`Received ${setCookieHeaders.length} cookies from login`);
+
+  // Parse cookies into a single Cookie header value
+  const cookies = setCookieHeaders.map(header => {
+    // Extract just the name=value part (before first semicolon)
+    const cookiePart = header.split(';')[0];
+    return cookiePart;
+  }).join('; ');
+
+  console.log(`Parsed cookies for song data request`);
+  return cookies;
+}
+
+// Helper function to fetch and parse song data for a specific difficulty
+async function fetchSongDataForDifficulty(cookies: string, difficulty: number): Promise<any[]> {
+  const songsUrl = `https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=${difficulty}`;
+  console.log(`Fetching songs data for difficulty ${difficulty} from: ${songsUrl}`);
+
+  const songsResponse = await fetch(songsUrl, {
+    method: "GET",
+    headers: {
+      "Cookie": cookies,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "Referer": "https://maimaidx-eng.com/maimai-mobile/",
+    },
+  });
+
+  console.log(`Songs data response status for difficulty ${difficulty}: ${songsResponse.status}`);
+
+  if (songsResponse.status !== 200) {
+    throw new Error(`Failed to fetch songs data for difficulty ${difficulty}: HTTP ${songsResponse.status}`);
+  }
+
+  const songsHtml = await songsResponse.text();
+  console.log(`Songs data for difficulty ${difficulty} fetched successfully, length: ${songsHtml.length} characters`);
+  
+  return parseSongData(songsHtml, difficulty);
+}
+
+// Helper function to parse song data from HTML
+function parseSongData(html: string, difficulty: number): any[] {
+  const $ = load(html);
+  
+  // Use correct selector based on difficulty
+  const difficultySelectors = [
+    ".music_basic_score_back",      // difficulty 0
+    ".music_advanced_score_back",   // difficulty 1
+    ".music_expert_score_back",     // difficulty 2
+    ".music_master_score_back",     // difficulty 3
+    ".music_remaster_score_back"    // difficulty 4
+  ];
+  
+  const selector = difficultySelectors[difficulty];
+  if (!selector) {
+    console.error(`Invalid difficulty: ${difficulty}`);
+    return [];
+  }
+  
+  const blocks = $(selector);
+  const songs: any[] = [];
+
+  console.log(`Found ${blocks.length} song blocks for difficulty ${difficulty} using selector ${selector}`);
+
+  blocks.each((index, element) => {
+    try {
+      const block = $(element);
+      const parent = block.parent();
+
+      // Extract music type (dx/std) from icon image
+      const iconElement = parent.find('img.music_kind_icon');
+      if (iconElement.length === 0) {
+        console.warn(`No music kind icon found for block ${index}`);
+        return; // Skip this block
+      }
+
+      const iconSrc = iconElement.attr('src');
+      if (!iconSrc) {
+        console.warn(`No src attribute found for music kind icon in block ${index}`);
+        return; // Skip this block
+      }
+
+      let musicType: "dx" | "std";
+      if (iconSrc.includes('music_dx.png')) {
+        musicType = "dx";
+      } else if (iconSrc.includes('music_standard.png')) {
+        musicType = "std";
+      } else {
+        console.warn(`Unknown music type icon: ${iconSrc} in block ${index}`);
+        return; // Skip this block
+      }
+
+      // Extract song name
+      const nameElement = block.find('.music_name_block');
+      if (nameElement.length === 0) {
+        console.warn(`No music name block found for block ${index}`);
+        return; // Skip this block
+      }
+      const songName = nameElement.text().trim();
+
+      // Extract level
+      const levelElement = block.find('.music_lv_block');
+      if (levelElement.length === 0) {
+        console.warn(`No music level block found for block ${index}`);
+        return; // Skip this block
+      }
+      const level = levelElement.text().trim();
+
+      // Extract input value and name
+      const inputElement = block.find('input');
+      if (inputElement.length === 0) {
+        console.warn(`No input element found for block ${index}`);
+        return; // Skip this block
+      }
+      const inputValue = inputElement.attr('value');
+      const inputName = inputElement.attr('name');
+
+      if (!inputValue || !inputName) {
+        console.warn(`Input element missing value or name attribute in block ${index}`);
+        return; // Skip this block
+      }
+
+      // Map difficulty number to difficulty name
+      const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
+      const difficultyName = difficultyNames[difficulty] || "unknown";
+
+      const songData = {
+        songName,
+        level,
+        musicType,
+        difficulty: difficultyName,
+        inputValue,
+        inputName,
+        // Additional metadata
+        difficultyNumber: difficulty,
+        index,
+      };
+
+      songs.push(songData);
+
+      console.log(`Extracted song ${index}: ${songName} (${level}, ${musicType}, ${difficultyName})`);
+    } catch (error) {
+      console.error(`Error processing song block ${index}:`, error);
+    }
+  });
+
+  console.log(`Successfully extracted ${songs.length} songs for difficulty ${difficulty}`);
+  return songs;
+}
+
+// Helper function to fetch detailed song information
+async function fetchSongDetail(cookies: string, inputName: string, inputValue: string): Promise<any> {
+  const params = new URLSearchParams();
+  params.append(inputName, inputValue);
+  const detailUrl = `https://maimaidx-eng.com/maimai-mobile/record/musicDetail/?${params.toString()}`;
+  console.log(`Fetching song detail from: ${detailUrl}`);
+
+  const detailResponse = await fetch(detailUrl, {
+    method: "GET",
+    headers: {
+      "Cookie": cookies,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "Referer": "https://maimaidx-eng.com/maimai-mobile/",
+    },
+  });
+
+  console.log(`Song detail response status: ${detailResponse.status}`);
+
+  if (detailResponse.status !== 200) {
+    throw new Error(`Failed to fetch song detail: HTTP ${detailResponse.status}`);
+  }
+
+  const detailHtml = await detailResponse.text();
+  console.log(`Song detail fetched successfully, length: ${detailHtml.length} characters`);
+  
+  return parseSongDetail(detailHtml);
+}
+
+// Helper function to parse detailed song information from HTML
+function parseSongDetail(html: string): any {
+  const $ = load(html);
+  
+  // Extract cover image URL
+  const coverElement = $('.basic_block > img');
+  if (coverElement.length === 0) {
+    throw new Error("Could not find cover image in song detail");
+  }
+  const coverSrc = coverElement.attr('src');
+  if (!coverSrc) {
+    throw new Error("Cover image element found but src attribute is missing");
+  }
+  const coverUrl = coverSrc.startsWith('http') ? coverSrc : `https://maimaidx-eng.com${coverSrc}`;
+
+  // Extract genre
+  const genreElement = $('.basic_block .blue');
+  if (genreElement.length === 0) {
+    throw new Error("Could not find genre element in song detail");
+  }
+  const genre = genreElement.text().trim();
+
+  // Extract artist
+  const artistElement = $('.basic_block .f_12.break');
+  if (artistElement.length === 0) {
+    throw new Error("Could not find artist element in song detail");
+  }
+  const artist = artistElement.text().trim();
+
+  console.log(`Extracted song detail: cover=${coverUrl}, genre=${genre}, artist=${artist}`);
+
+  return {
+    coverUrl,
+    genre,
+    artist,
+  };
+}
+
+// Helper function to create song entries from scraped difficulty data
+function createSongEntriesFromScrapedData(difficulties: any[], jsonSong?: any): any[] {
+  const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
+  const entries: any[] = [];
+
+  // Get common song info from first difficulty
+  const songInfo = difficulties[0];
+  const { songName, musicType } = songInfo;
+
+  // Use JSON data for metadata if available
+  const artist = jsonSong?.artist || "Unknown Artist";
+  const cover = jsonSong?.image_url 
+    ? `https://maimaidx.jp/maimai-mobile/img/Music/${jsonSong.image_url}`
+    : "https://maimaidx.jp/maimai-mobile/img/Music/default.png";
+  const genre = jsonSong?.catcode || "Unknown";
+
+  // Create an entry for each scraped difficulty
+  difficulties.forEach(difficulty => {
+    const difficultyName = difficultyNames[difficulty.difficultyNumber] || `difficulty_${difficulty.difficultyNumber}`;
+    
+    const entry = {
+      songName,
+      artist,
+      cover,
+      difficulty: difficultyName,
+      level: difficulty.level,
+      type: musicType,
+      genre,
+      difficultyIndex: difficulty.difficultyNumber,
+    };
+
+    entries.push(entry);
+  });
+
+  console.log(`Created ${entries.length} difficulty entries for ${songName}@${musicType} from scraped data`);
+  return entries;
+}
+
+// Helper function to create song entries using fetched metadata
+function createSongEntriesWithFetchedData(difficulties: any[], songDetail: any): any[] {
+  const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
+  const entries: any[] = [];
+
+  // Get common song info from first difficulty
+  const songInfo = difficulties[0];
+  const { songName, musicType } = songInfo;
+
+  // Use fetched metadata
+  const { artist, coverUrl, genre } = songDetail;
+
+  // Create an entry for each scraped difficulty
+  difficulties.forEach(difficulty => {
+    const difficultyName = difficultyNames[difficulty.difficultyNumber] || `difficulty_${difficulty.difficultyNumber}`;
+    
+    const entry = {
+      songName,
+      artist,
+      cover: coverUrl,
+      difficulty: difficultyName,
+      level: difficulty.level,
+      type: musicType,
+      genre,
+      difficultyIndex: difficulty.difficultyNumber,
+    };
+
+    entries.push(entry);
+  });
+
+  console.log(`Created ${entries.length} difficulty entries for ${songName}@${musicType} from fetched data`);
+  return entries;
+}
+
+ 
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,23 +352,178 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log("Admin update requested: updating all data");
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const maimaiToken = searchParams.get('token');
+    const region = searchParams.get('region') as "intl" | "jp";
 
-    // TODO: Implement data updates
-    console.log("TODO: Update songs database");
-    console.log("TODO: Update level data");
-    console.log("TODO: Update all data sources");
+    if (!maimaiToken) {
+      return NextResponse.json(
+        { error: "Missing 'token' query parameter" },
+        { status: 400 }
+      );
+    }
+
+    if (!region || (region !== "intl" && region !== "jp")) {
+      return NextResponse.json(
+        { error: "Missing or invalid 'region' query parameter. Must be 'intl' or 'jp'" },
+        { status: 400 }
+      );
+    }
+
+    console.log(`Admin update requested: scraping maimai data for region ${region}`);
+
+    // Step 1: Validate the maimai token
+    console.log("Step 1: Validating maimai token...");
+    const validation = await processMaimaiToken(null, region, maimaiToken);
+    
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { error: validation.error || "Token validation failed" },
+        { status: 400 }
+      );
+    }
+
+    if (!validation.redirectUrl) {
+      return NextResponse.json(
+        { error: "No redirect URL received from token validation" },
+        { status: 400 }
+      );
+    }
+
+    console.log("Token validation successful, proceeding with data scraping...");
+
+    // Step 2: Get cookies from redirect URL
+    console.log("Step 2: Getting cookies from redirect URL...");
+    const cookies = await getCookiesFromRedirect(validation.redirectUrl);
+
+    // Step 3: Fetch and parse song data for all difficulties (0-4)
+    console.log("Step 3: Fetching and parsing song data for all difficulties...");
+    const allSongData: any[] = [];
+    
+    for (let difficulty = 0; difficulty <= 4; difficulty++) {
+      console.log(`Fetching songs for difficulty ${difficulty}...`);
+      const difficultyData = await fetchSongDataForDifficulty(cookies, difficulty);
+      allSongData.push(...difficultyData);
+    }
+
+    console.log(`Total songs fetched from all difficulties: ${allSongData.length}`);
+
+    // Step 4: Fetch maimai songs JSON data
+    console.log("Step 4: Fetching maimai songs JSON data...");
+    const songsJsonResponse = await fetch("https://maimai.sega.jp/data/maimai_songs.json", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      },
+    });
+
+    if (songsJsonResponse.status !== 200) {
+      throw new Error(`Failed to fetch maimai songs JSON: HTTP ${songsJsonResponse.status}`);
+    }
+
+    const songsJsonData = await songsJsonResponse.json();
+    console.log(`Loaded ${songsJsonData.length} songs from JSON data`);
+
+    // Step 5: Create a map of songs by title for quick lookup
+    const songsJsonMap = new Map<string, any>();
+    songsJsonData.forEach((song: any) => {
+      songsJsonMap.set(song.title, song);
+    });
+
+    // Step 6: Process songs using scraped data and JSON metadata
+    console.log("Step 6: Processing songs with scraped data and JSON metadata...");
+    const songDetailsMap: { [key: string]: any[] } = {};
+    const songsNeedingFetch: any[] = [];
+
+    // Group songs by song name and type to combine all difficulties
+    const songsGrouped = new Map<string, any[]>();
+    allSongData.forEach(song => {
+      const songKey = `${song.songName}@${song.musicType}`;
+      if (!songsGrouped.has(songKey)) {
+        songsGrouped.set(songKey, []);
+      }
+      songsGrouped.get(songKey)!.push(song);
+    });
+
+    console.log(`Found ${songsGrouped.size} unique songs to process...`);
+
+    // Process each unique song
+    for (const [songKey, difficulties] of songsGrouped) {
+      try {
+        // Get the first song to extract common info
+        const songInfo = difficulties[0];
+        const jsonSong = songsJsonMap.get(songInfo.songName);
+        
+        if (jsonSong) {
+          // Create song entries from scraped difficulty data with JSON metadata
+          const songEntries = createSongEntriesFromScrapedData(difficulties, jsonSong);
+          songDetailsMap[songKey] = songEntries;
+          console.log(`Successfully processed ${songKey} (with JSON data) - ${songEntries.length} difficulties`);
+        } else {
+          // Need to fetch individual song details
+          console.log(`${songKey} not found in JSON, will fetch individually`);
+          songsNeedingFetch.push(songInfo);
+        }
+        
+      } catch (error) {
+        console.error(`Error processing song ${songKey}:`, error);
+        // Add to fetch queue as fallback
+        songsNeedingFetch.push(difficulties[0]);
+      }
+    }
+
+    console.log(`Processed ${Object.keys(songDetailsMap).length} songs from JSON`);
+    console.log(`${songsNeedingFetch.length} songs need individual fetching`);
+
+    // Step 7: Fetch remaining songs individually (sequential with 500ms delay)
+    if (songsNeedingFetch.length > 0) {
+      console.log("Step 7: Fetching remaining songs individually...");
+
+      for (let i = 0; i < songsNeedingFetch.length; i++) {
+        const song = songsNeedingFetch[i];
+        const songKey = `${song.songName}@${song.musicType}`;
+        
+        try {
+          console.log(`Fetching details for song ${i + 1}/${songsNeedingFetch.length}: ${songKey}`);
+          
+          // Fetch detailed song information
+          const songDetail = await fetchSongDetail(cookies, song.inputName, song.inputValue);
+          
+          // Get all difficulties for this song from the grouped data
+          const difficulties = songsGrouped.get(songKey) || [];
+          
+          // Create song entries using fetched metadata
+          const songEntries = createSongEntriesWithFetchedData(difficulties, songDetail);
+          
+          // Store in the map
+          songDetailsMap[songKey] = songEntries;
+          
+          console.log(`Successfully processed ${songKey} (with fetched data) - ${songEntries.length} difficulties`);
+          
+          // Add 500ms delay between requests (except for the last one)
+          if (i < songsNeedingFetch.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+          
+        } catch (error) {
+          console.error(`Error processing song ${songKey}:`, error);
+          // Continue with other songs even if one fails
+        }
+      }
+    }
+
+    console.log(`Successfully processed ${Object.keys(songDetailsMap).length} songs total`);
 
     return NextResponse.json({
       success: true,
-      message: "Data update completed",
-      timestamp: new Date().toISOString(),
+      message: "Song data scraping completed",
+      data: songDetailsMap,
     });
 
   } catch (error) {
     console.error("Error in admin update route:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     );
   }

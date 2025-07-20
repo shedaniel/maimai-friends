@@ -12,7 +12,7 @@ export interface TokenValidationResult {
 }
 
 export async function processMaimaiToken(
-  userId: string,
+  userId: string | null,
   region: "intl" | "jp",
   token: string
 ): Promise<TokenValidationResult> {
@@ -52,7 +52,9 @@ export async function processMaimaiToken(
       password = parts[2];
     } else {
       console.log("Invalid account token format, removing from database");
-      await deleteToken(userId, region);
+      if (userId) {
+        await deleteToken(userId, region);
+      }
       return {
         isValid: false,
         error: "Invalid account token format. Expected account://USERNAME:://PASSWORD or account://COOKIE:://USERNAME:://PASSWORD",
@@ -62,7 +64,9 @@ export async function processMaimaiToken(
     // Validate that we have all required parts
     if (!username || !password) {
       console.log("Invalid account token format, missing username or password");
-      await deleteToken(userId, region);
+      if (userId) {
+        await deleteToken(userId, region);
+      }
       return {
         isValid: false,
         error: "Invalid account token format. Username and password cannot be empty.",
@@ -85,7 +89,9 @@ export async function processMaimaiToken(
 
   // Invalid token format
   console.log("Invalid token format, removing from database");
-  await deleteToken(userId, region);
+  if (userId) {
+    await deleteToken(userId, region);
+  }
   return {
     isValid: false,
     error: "Invalid token format. Token must start with 'cookie://' or 'account://'",
@@ -104,7 +110,7 @@ async function deleteToken(userId: string, region: "intl" | "jp"): Promise<void>
 }
 
 async function performAccountLogin(
-  userId: string,
+  userId: string | null,
   region: "intl" | "jp",
   username: string,
   password: string
@@ -138,7 +144,9 @@ async function performAccountLogin(
         console.log(`Extracted JSESSIONID: ${jsessionId.substring(0, 10)}...`);
       } else {
         console.log("Could not extract JSESSIONID from Set-Cookie header");
-        await deleteToken(userId, region);
+        if (userId) {
+          await deleteToken(userId, region);
+        }
         return {
           isValid: false,
           error: "Failed to obtain session ID. Please try again later.",
@@ -146,7 +154,9 @@ async function performAccountLogin(
       }
     } else {
       console.log("No Set-Cookie header in login page response");
-      await deleteToken(userId, region);
+      if (userId) {
+        await deleteToken(userId, region);
+      }
       return {
         isValid: false,
         error: "Failed to obtain session ID. Please try again later.",
@@ -187,18 +197,20 @@ async function performAccountLogin(
           // Update token in database with new format including cookie
           const newToken = `account://${clalValue}:://${username}:://${password}`;
           
-          await db
-            .update(userTokens)
-            .set({ 
-              token: newToken,
-              updatedAt: new Date()
-            })
-            .where(
-              and(
-                eq(userTokens.userId, userId),
-                eq(userTokens.region, region)
-              )
-            );
+          if (userId) {
+            await db
+              .update(userTokens)
+              .set({
+                token: newToken,
+                updatedAt: new Date()
+              })
+              .where(
+                and(
+                  eq(userTokens.userId, userId),
+                  eq(userTokens.region, region)
+                )
+              );
+          }
 
           console.log("Token updated in database with extracted cookie");
 
@@ -212,7 +224,9 @@ async function performAccountLogin(
           };
         } else {
           console.log("Could not extract clal cookie from Set-Cookie header");
-          await deleteToken(userId, region);
+          if (userId) {
+            await deleteToken(userId, region);
+          }
           return {
             isValid: false,
             error: "Login successful but could not extract authentication cookie.",
@@ -220,7 +234,9 @@ async function performAccountLogin(
         }
       } else {
         console.log("No Set-Cookie header in login response");
-        await deleteToken(userId, region);
+        if (userId) {
+          await deleteToken(userId, region);
+        }
         return {
           isValid: false,
           error: "Login successful but no authentication cookie received.",
@@ -229,7 +245,9 @@ async function performAccountLogin(
     } else {
       // Login failed
       console.log(`Account login failed with status: ${response.status}`);
-      await deleteToken(userId, region);
+      if (userId) {
+        await deleteToken(userId, region);
+      }
       return {
         isValid: false,
         error: "Login failed. Please check your username and password.",
@@ -237,7 +255,9 @@ async function performAccountLogin(
     }
   } catch (error) {
     console.error("Error during account login:", error);
-    await deleteToken(userId, region);
+    if (userId) {
+      await deleteToken(userId, region);
+    }
     return {
       isValid: false,
       error: "Failed to login. Please try again later.",
@@ -246,7 +266,7 @@ async function performAccountLogin(
 }
 
 export async function validateMaimaiToken(
-  userId: string, 
+  userId: string | null, 
   region: "intl" | "jp", 
   token: string
 ): Promise<TokenValidationResult> {
@@ -260,14 +280,9 @@ export async function validateMaimaiToken(
     console.log("Token contains non-ASCII characters, removing from database");
     
     // Remove invalid token from database
-    await db
-      .delete(userTokens)
-      .where(
-        and(
-          eq(userTokens.userId, userId),
-          eq(userTokens.region, region)
-        )
-      );
+    if (userId) {
+      await deleteToken(userId, region);
+    }
     
     return {
       isValid: false,
@@ -280,14 +295,9 @@ export async function validateMaimaiToken(
     console.log("Empty token provided, removing from database");
     
     // Remove empty token from database
-    await db
-      .delete(userTokens)
-      .where(
-        and(
-          eq(userTokens.userId, userId),
-          eq(userTokens.region, region)
-        )
-      );
+    if (userId) {
+      await deleteToken(userId, region);
+    }
     
     return {
       isValid: false,
@@ -322,14 +332,9 @@ export async function validateMaimaiToken(
       // Token expired, clear from database
       console.log("Token expired, clearing from database");
       
-      await db
-        .delete(userTokens)
-        .where(
-          and(
-            eq(userTokens.userId, userId),
-            eq(userTokens.region, region)
-          )
-        );
+      if (userId) {
+        await deleteToken(userId, region);
+      }
 
       return {
         isValid: false,
