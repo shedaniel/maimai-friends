@@ -99,11 +99,11 @@ export const songs = sqliteTable("songs", {
   type: text("type", { enum: ["std", "dx"] }).notNull(),
   addedDate: integer("addedDate", { mode: "timestamp" }).notNull(),
   genre: text("genre").notNull(), // Will define enum later based on maimai genres
-  intlLevelOverride: text("intlLevelOverride", { 
-    enum: ["1", "1+", "2", "2+", "3", "3+", "4", "4+", "5", "5+", "6", "6+", "7", "7+", "8", "8+", "9", "9+", "10", "10+", "11", "11+", "12", "12+", "13", "13+", "14", "14+", "15", "15+", "16", "16+"] 
-  }),
-  intlLevelPreciseOverride: integer("intlLevelPreciseOverride"), // stored as 10x
-});
+  region: text("region", { enum: ["intl", "jp"] }).notNull(),
+  gameVersion: integer("gameVersion").notNull(),
+}, (table) => ({
+  songNameRegionVersionUnique: unique("song_name_region_version_unique").on(table.songName, table.region, table.gameVersion),
+}));
 
 export const userScores = sqliteTable("user_scores", {
   id: text("id").primaryKey(),

@@ -7,12 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Download } from "lucide-react";
 import { Region } from "./region-switcher";
+import { getVersionInfo } from "@/lib/metadata";
 
 interface Snapshot {
   id: string;
   fetchedAt: Date;
   rating: number;
   displayName: string;
+  gameVersion: number;
 }
 
 interface DataBannerProps {
@@ -67,7 +69,7 @@ export function DataBanner({
                       <div className="flex flex-col items-start">
                         <span>{formatDate(snapshot.fetchedAt)}</span>
                         <span className="text-xs text-muted-foreground">
-                          {snapshot.displayName} • {snapshot.rating} rating
+                          {snapshot.displayName} • {snapshot.rating} rating • {getVersionInfo(snapshot.gameVersion)?.shortName || "Unknown"}
                         </span>
                       </div>
                     </SelectItem>

@@ -35,7 +35,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout }: U
         </div>
       </div>
       
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-4">
         <RegionSwitcher value={selectedRegion} onChange={onRegionChange} />
         
         <DropdownMenu>

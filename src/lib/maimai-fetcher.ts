@@ -3,6 +3,7 @@ import { userTokens, userSnapshots } from "./schema";
 import { eq, and } from "drizzle-orm";
 import { load } from "cheerio";
 import { randomUUID } from "crypto";
+import { getCurrentVersion } from "./metadata";
 
 export interface TokenValidationResult {
   isValid: boolean;
@@ -364,7 +365,7 @@ async function createUserSnapshot(
     userId: userId,
     region: region,
     fetchedAt: new Date(),
-    gameVersion: 2024, // Placeholder
+    gameVersion: getCurrentVersion(region),
     rating: playerData.rating,
     courseRankUrl: playerData.courseRankUrl,
     classRankUrl: playerData.classRankUrl,
