@@ -4,7 +4,7 @@ import { useState } from "react";
 import { signOut } from "@/lib/auth-client";
 import { Region } from "@/components/region-switcher";
 import { DataBanner } from "@/components/data-banner";
-import { DataFetcher } from "@/components/data-fetcher";
+import { TokenDialog } from "@/components/token-dialog";
 import { DataContent } from "@/components/data-content";
 import { UserHeader } from "@/components/user-header";
 import { SettingsDialog } from "@/components/settings-dialog";
@@ -26,7 +26,7 @@ interface DashboardProps {
 
 export function Dashboard({ user }: DashboardProps) {
   const [selectedRegion, setSelectedRegion] = useState<Region>("intl");
-  const [isDataFetcherOpen, setIsDataFetcherOpen] = useState(false);
+  const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const {
@@ -98,21 +98,21 @@ export function Dashboard({ user }: DashboardProps) {
           
           // If it's not a rate limit error, open the token dialog
           if (!error.message.includes("Rate limited")) {
-            setIsDataFetcherOpen(true);
+            setIsTokenDialogOpen(true);
           }
         } else {
           toast.error("Failed to start data fetch");
-          setIsDataFetcherOpen(true);
+          setIsTokenDialogOpen(true);
         }
       }
     } else {
       // Show token input dialog (either no token, or still loading token state)
-      setIsDataFetcherOpen(true);
+      setIsTokenDialogOpen(true);
     }
   };
 
-  const closeFetcher = () => {
-    setIsDataFetcherOpen(false);
+  const closeTokenDialog = () => {
+    setIsTokenDialogOpen(false);
   };
 
   const handleTokenUpdate = async (token: string) => {
@@ -126,13 +126,18 @@ export function Dashboard({ user }: DashboardProps) {
       } else {
         toast.error("Failed to save token");
       }
-      // Re-throw the error so DataFetcher doesn't close on failure
+      // Re-throw the error so TokenDialog doesn't close on failure
       throw error;
     }
   };
 
   const handleSettings = () => {
     setIsSettingsOpen(true);
+  };
+
+  const handleOpenTokenDialog = () => {
+    setIsSettingsOpen(false); // Close settings dialog
+    setIsTokenDialogOpen(true); // Open token dialog
   };
 
   const handleTimezoneUpdate = async (timezone: string | null) => {
@@ -167,10 +172,10 @@ export function Dashboard({ user }: DashboardProps) {
         />
       </div>
 
-      <DataFetcher
+      <TokenDialog
         region={selectedRegion}
-        isOpen={isDataFetcherOpen}
-        onClose={closeFetcher}
+        isOpen={isTokenDialogOpen}
+        onClose={closeTokenDialog}
         onTokenUpdate={handleTokenUpdate}
       />
 
@@ -179,6 +184,7 @@ export function Dashboard({ user }: DashboardProps) {
         onClose={() => setIsSettingsOpen(false)}
         currentTimezone={timezoneData?.timezone ?? null}
         onTimezoneUpdate={handleTimezoneUpdate}
+        onOpenTokenDialog={handleOpenTokenDialog}
       />
     </div>
   );

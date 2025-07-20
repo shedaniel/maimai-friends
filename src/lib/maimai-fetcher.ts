@@ -11,6 +11,240 @@ export interface TokenValidationResult {
   error?: string;
 }
 
+export async function processMaimaiToken(
+  userId: string,
+  region: "intl" | "jp",
+  token: string
+): Promise<TokenValidationResult> {
+  const sanitizedToken = token.trim();
+
+  // Handle cookie:// format
+  if (sanitizedToken.startsWith('cookie://')) {
+    let cookieValue = sanitizedToken.substring('cookie://'.length);
+    
+    // Strip clal= prefix if present since validateMaimaiToken expects just the cookie value
+    if (cookieValue.startsWith('clal=')) {
+      cookieValue = cookieValue.substring('clal='.length);
+    }
+    
+    return await validateMaimaiToken(userId, region, cookieValue);
+  }
+
+  // Handle account:// format
+  if (sanitizedToken.startsWith('account://')) {
+    const accountData = sanitizedToken.substring('account://'.length);
+    
+    let cookieValue: string | null = null;
+    let username: string;
+    let password: string;
+
+    // Use :://  as delimiter to avoid conflicts with @ in passwords
+    const parts = accountData.split(':://');
+
+    if (parts.length === 2) {
+      // Format: account://USERNAME:://PASSWORD
+      username = parts[0];
+      password = parts[1];
+    } else if (parts.length === 3) {
+      // Format: account://COOKIE:://USERNAME:://PASSWORD
+      cookieValue = parts[0];
+      username = parts[1];
+      password = parts[2];
+    } else {
+      console.log("Invalid account token format, removing from database");
+      await deleteToken(userId, region);
+      return {
+        isValid: false,
+        error: "Invalid account token format. Expected account://USERNAME:://PASSWORD or account://COOKIE:://USERNAME:://PASSWORD",
+      };
+    }
+
+    // Validate that we have all required parts
+    if (!username || !password) {
+      console.log("Invalid account token format, missing username or password");
+      await deleteToken(userId, region);
+      return {
+        isValid: false,
+        error: "Invalid account token format. Username and password cannot be empty.",
+      };
+    }
+
+    // If we have a cookie, try to validate it first
+    if (cookieValue) {
+      console.log(`Trying to validate existing cookie for user ${userId}`);
+      const cookieResult = await validateMaimaiToken(userId, region, cookieValue);
+      if (cookieResult.isValid) {
+        return cookieResult;
+      }
+      console.log("Existing cookie failed validation, proceeding with login");
+    }
+
+    // Proceed with login flow
+    return await performAccountLogin(userId, region, username, password);
+  }
+
+  // Invalid token format
+  console.log("Invalid token format, removing from database");
+  await deleteToken(userId, region);
+  return {
+    isValid: false,
+    error: "Invalid token format. Token must start with 'cookie://' or 'account://'",
+  };
+}
+
+async function deleteToken(userId: string, region: "intl" | "jp"): Promise<void> {
+  await db
+    .delete(userTokens)
+    .where(
+      and(
+        eq(userTokens.userId, userId),
+        eq(userTokens.region, region)
+      )
+    );
+}
+
+async function performAccountLogin(
+  userId: string,
+  region: "intl" | "jp",
+  username: string,
+  password: string
+): Promise<TokenValidationResult> {
+  const loginPageUrl = "https://lng-tgk-aime-gw.am-all.net/common_auth/login?site_id=maimaidxex&redirect_url=https://maimaidx-eng.com/maimai-mobile/&back_url=https://maimai.sega.com/";
+  const loginUrl = "https://lng-tgk-aime-gw.am-all.net/common_auth/login/sid/";
+
+  console.log(`Attempting account login for user ${userId} with username ${username}`);
+
+  try {
+    // Step 1: Get the login page to obtain JSESSIONID
+    console.log("Step 1: Fetching login page to get JSESSIONID");
+    const loginPageResponse = await fetch(loginPageUrl, {
+      method: "GET",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      },
+      redirect: "manual", // Don't follow redirects
+    });
+
+    console.log(`Login page response status: ${loginPageResponse.status}`);
+
+    // Extract JSESSIONID from Set-Cookie header
+    const setCookieHeader = loginPageResponse.headers.get("Set-Cookie");
+    let jsessionId = "";
+    
+    if (setCookieHeader) {
+      const jsessionMatch = setCookieHeader.match(/JSESSIONID=([^;]+)/);
+      if (jsessionMatch) {
+        jsessionId = jsessionMatch[1];
+        console.log(`Extracted JSESSIONID: ${jsessionId.substring(0, 10)}...`);
+      } else {
+        console.log("Could not extract JSESSIONID from Set-Cookie header");
+        await deleteToken(userId, region);
+        return {
+          isValid: false,
+          error: "Failed to obtain session ID. Please try again later.",
+        };
+      }
+    } else {
+      console.log("No Set-Cookie header in login page response");
+      await deleteToken(userId, region);
+      return {
+        isValid: false,
+        error: "Failed to obtain session ID. Please try again later.",
+      };
+    }
+
+    // Step 2: POST credentials with JSESSIONID cookie
+    console.log("Step 2: Posting credentials with JSESSIONID");
+    const params = new URLSearchParams({
+      retention: '1',
+      sid: username,
+      password: password
+    });
+
+    const response = await fetch(`${loginUrl}?${params.toString()}`, {
+      method: "POST",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Cookie": `JSESSIONID=${jsessionId}`,
+      },
+      redirect: "manual", // Don't follow redirects
+    });
+
+    console.log(`Account login response status: ${response.status}`);
+
+    if (response.status === 302) {
+      // Login successful, extract clal cookie from Set-Cookie header
+      const loginSetCookieHeader = response.headers.get("Set-Cookie");
+      console.log(`Login Set-Cookie header: ${loginSetCookieHeader}`);
+
+      if (loginSetCookieHeader) {
+        // Extract clal cookie value
+        const clalMatch = loginSetCookieHeader.match(/clal=([^;]+)/);
+        if (clalMatch) {
+          const clalValue = clalMatch[1];
+          console.log(`Extracted clal cookie: ${clalValue.substring(0, 10)}...`);
+
+          // Update token in database with new format including cookie
+          const newToken = `account://${clalValue}:://${username}:://${password}`;
+          
+          await db
+            .update(userTokens)
+            .set({ 
+              token: newToken,
+              updatedAt: new Date()
+            })
+            .where(
+              and(
+                eq(userTokens.userId, userId),
+                eq(userTokens.region, region)
+              )
+            );
+
+          console.log("Token updated in database with extracted cookie");
+
+          // Get redirect URL for validation result
+          const redirectUrl = response.headers.get("Location");
+          console.log(`Login successful. Redirect URL: ${redirectUrl}`);
+
+          return {
+            isValid: true,
+            redirectUrl: redirectUrl || undefined,
+          };
+        } else {
+          console.log("Could not extract clal cookie from Set-Cookie header");
+          await deleteToken(userId, region);
+          return {
+            isValid: false,
+            error: "Login successful but could not extract authentication cookie.",
+          };
+        }
+      } else {
+        console.log("No Set-Cookie header in login response");
+        await deleteToken(userId, region);
+        return {
+          isValid: false,
+          error: "Login successful but no authentication cookie received.",
+        };
+      }
+    } else {
+      // Login failed
+      console.log(`Account login failed with status: ${response.status}`);
+      await deleteToken(userId, region);
+      return {
+        isValid: false,
+        error: "Login failed. Please check your username and password.",
+      };
+    }
+  } catch (error) {
+    console.error("Error during account login:", error);
+    await deleteToken(userId, region);
+    return {
+      isValid: false,
+      error: "Failed to login. Please try again later.",
+    };
+  }
+}
+
 export async function validateMaimaiToken(
   userId: string, 
   region: "intl" | "jp", 
@@ -118,7 +352,7 @@ export async function validateMaimaiToken(
   }
 }
 
-async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<string> {
+async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<{ html: string; cookies: string }> {
   // Step 1: Follow the redirect URL to get login cookies
   console.log(`Fetching redirect URL to get login cookies: ${redirectUrl}`);
   
@@ -186,7 +420,54 @@ async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<string> {
     throw new Error("Session expired or invalid. Please provide a new token.");
   }
 
-  return playerDataHtml;
+  return { html: playerDataHtml, cookies };
+}
+
+// Fetch songs data for a specific difficulty using existing cookies
+async function fetchSongsData(cookies: string, difficulty: number): Promise<string> {
+  const songsUrl = `https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=${difficulty}`;
+  console.log(`Fetching songs data for difficulty ${difficulty} from: ${songsUrl}`);
+
+  const songsResponse = await fetch(songsUrl, {
+    method: "GET",
+    headers: {
+      "Cookie": cookies,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "Referer": "https://maimaidx-eng.com/maimai-mobile/",
+    },
+  });
+
+  console.log(`Songs data response status for difficulty ${difficulty}: ${songsResponse.status}`);
+
+  if (songsResponse.status !== 200) {
+    throw new Error(`Failed to fetch songs data for difficulty ${difficulty}: HTTP ${songsResponse.status}`);
+  }
+
+  const songsHtml = await songsResponse.text();
+  console.log(`Songs data for difficulty ${difficulty} fetched successfully, length: ${songsHtml.length} characters`);
+  
+  return songsHtml;
+}
+
+// Fetch all songs data for all difficulties (0-4)
+async function fetchAllSongsData(cookies: string): Promise<{ [difficulty: number]: string }> {
+  const songsData: { [difficulty: number]: string } = {};
+  
+  console.log(`Fetching songs data for all difficulties (0-4)`);
+  
+  for (let difficulty = 0; difficulty <= 4; difficulty++) {
+    try {
+      const html = await fetchSongsData(cookies, difficulty);
+      songsData[difficulty] = html;
+      console.log(`Successfully fetched songs for difficulty ${difficulty}`);
+    } catch (error) {
+      console.error(`Failed to fetch songs for difficulty ${difficulty}:`, error);
+      throw new Error(`Failed to fetch songs for difficulty ${difficulty}: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+  
+  console.log(`Successfully fetched songs data for all difficulties`);
+  return songsData;
 }
 
 interface PlayerData {
@@ -398,7 +679,7 @@ export async function fetchMaimaiData(
   }
 
   // Validate the token first
-  const validation = await validateMaimaiToken(userId, region, tokenRecord.token);
+  const validation = await processMaimaiToken(userId, region, tokenRecord.token);
   
   if (!validation.isValid) {
     throw new Error(validation.error || "Token validation failed");
@@ -412,13 +693,18 @@ export async function fetchMaimaiData(
 
   try {
     // Fetch player data HTML using login flow
-    const playerDataHtml = await fetchPlayerDataWithLogin(validation.redirectUrl);
+    const { html: playerDataHtml, cookies } = await fetchPlayerDataWithLogin(validation.redirectUrl);
     
     // Extract player data from HTML
     const playerData = await extractPlayerData(playerDataHtml);
     
     // Fetch and encode icon as base64
     const iconBase64 = await fetchImageAsBase64(playerData.iconUrl);
+    
+    // Fetch all songs data using the same cookies
+    console.log("Starting songs data fetch...");
+    const allSongsData = await fetchAllSongsData(cookies);
+    console.log("Songs data fetch completed");
     
     // Create user snapshot with real player data
     await createUserSnapshot(userId, region, playerData, iconBase64);

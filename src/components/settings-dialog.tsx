@@ -17,12 +17,14 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Key } from "lucide-react";
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   currentTimezone?: string | null;
   onTimezoneUpdate: (timezone: string | null) => Promise<void>;
+  onOpenTokenDialog: () => void;
 }
 
 // Common timezones
@@ -56,7 +58,7 @@ const TIMEZONES = [
   { value: "UTC", label: "Coordinated Universal Time (UTC)", region: "UTC" },
 ];
 
-export function SettingsDialog({ isOpen, onClose, currentTimezone, onTimezoneUpdate }: SettingsDialogProps) {
+export function SettingsDialog({ isOpen, onClose, currentTimezone, onTimezoneUpdate, onOpenTokenDialog }: SettingsDialogProps) {
   const [selectedTimezone, setSelectedTimezone] = useState<string | null>(currentTimezone ?? null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -126,6 +128,21 @@ export function SettingsDialog({ isOpen, onClose, currentTimezone, onTimezoneUpd
             <p className="text-xs text-muted-foreground">
               This affects how dates and times are displayed throughout the app.
               Japan timezone is the default as it matches maimai&apos;s server time.
+            </p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Account Authentication</Label>
+            <Button 
+              variant="outline" 
+              onClick={onOpenTokenDialog}
+              className="justify-start"
+            >
+              <Key className="h-4 w-4 mr-2" />
+              Update Token
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Update your maimai token for data fetching. This is required to sync your player data.
             </p>
           </div>
         </div>
