@@ -1,6 +1,8 @@
 import { db } from "./db";
-import { userTokens } from "./schema";
+import { userTokens, userSnapshots } from "./schema";
 import { eq, and } from "drizzle-orm";
+import { load } from "cheerio";
+import { randomUUID } from "crypto";
 
 export interface TokenValidationResult {
   isValid: boolean;
@@ -186,6 +188,197 @@ async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<string> {
   return playerDataHtml;
 }
 
+interface PlayerData {
+  iconUrl: string;
+  displayName: string;
+  rating: number;
+  title: string;
+  stars: number;
+  versionPlayCount: number;
+  totalPlayCount: number;
+  courseRankUrl: string;
+  classRankUrl: string;
+}
+
+async function extractPlayerData(html: string): Promise<PlayerData> {
+  const $ = load(html);
+  const block = $('.see_through_block');
+  
+  if (block.length === 0) {
+    throw new Error("Could not find .see_through_block in player data");
+  }
+  
+  // Extract icon URL
+  const iconElement = block.find('img.w_112');
+  if (iconElement.length === 0) {
+    throw new Error("Could not find user icon in player data");
+  }
+  
+  const iconSrc = iconElement.attr('src');
+  if (!iconSrc) {
+    throw new Error("User icon element found but src attribute is missing");
+  }
+  
+  const iconUrl = iconSrc.startsWith('http') ? iconSrc : `https://maimaidx-eng.com${iconSrc}`;
+  console.log(`Extracted icon URL: ${iconUrl}`);
+  
+  // Extract display name
+  const nameElement = block.find('.name_block');
+  if (nameElement.length === 0) {
+    throw new Error("Could not find .name_block in player data");
+  }
+  const displayName = nameElement.text().trim();
+  console.log(`Extracted display name: ${displayName}`);
+  
+  // Extract rating
+  const ratingElement = block.find('.rating_block');
+  if (ratingElement.length === 0) {
+    throw new Error("Could not find .rating_block in player data");
+  }
+  const ratingText = ratingElement.text().trim();
+  const rating = parseInt(ratingText, 10);
+  if (isNaN(rating)) {
+    throw new Error(`Invalid rating format: ${ratingText}`);
+  }
+  console.log(`Extracted rating: ${rating}`);
+  
+  // Extract title
+  const titleElement = block.find('.trophy_block');
+  if (titleElement.length === 0) {
+    throw new Error("Could not find .trophy_block in player data");
+  }
+  const title = titleElement.text().trim();
+  console.log(`Extracted title: ${title}`);
+  
+  // Extract stars
+  const starsElement = block.find('.p_l_10.f_l.f_14');
+  if (starsElement.length === 0) {
+    throw new Error("Could not find stars element in player data");
+  }
+  const starsText = starsElement.text().trim();
+  // Format is ×999 or x999, extract just the number part
+  const starsMatch = starsText.match(/[×x](\d+)/);
+  if (!starsMatch) {
+    throw new Error(`Invalid stars format: ${starsText}`);
+  }
+  const stars = parseInt(starsMatch[1], 10);
+  console.log(`Extracted stars: ${stars} (from text: ${starsText})`);
+  
+  // Extract play counts
+  const playCountElement = block.find('.t_r.f_12');
+  if (playCountElement.length === 0) {
+    throw new Error("Could not find play count element in player data");
+  }
+  const playCountText = playCountElement.text().trim();
+  console.log(`Play count text: ${playCountText}`);
+  
+  // Parse version play count: "play count of current version：195"
+  const versionPlayCountMatch = playCountText.match(/play count of current version[：:]\s*(\d+)/);
+  if (!versionPlayCountMatch) {
+    throw new Error(`Could not parse version play count from: ${playCountText}`);
+  }
+  const versionPlayCount = parseInt(versionPlayCountMatch[1], 10);
+  
+  // Parse total play count: "maimaiDX total play count：909"
+  const totalPlayCountMatch = playCountText.match(/maimaiDX total play count[：:]\s*(\d+)/);
+  if (!totalPlayCountMatch) {
+    throw new Error(`Could not parse total play count from: ${playCountText}`);
+  }
+  const totalPlayCount = parseInt(totalPlayCountMatch[1], 10);
+  
+  console.log(`Extracted version play count: ${versionPlayCount}`);
+  console.log(`Extracted total play count: ${totalPlayCount}`);
+  
+  // Extract course rank and class rank images
+  const rankElements = block.find('.h_35.f_l');
+  if (rankElements.length < 2) {
+    throw new Error(`Expected 2 rank elements, found ${rankElements.length}`);
+  }
+  
+  // Course rank (first element) - the element itself is an img
+  const courseRankSrc = rankElements.eq(0).attr('src');
+  if (!courseRankSrc) {
+    throw new Error("Course rank image src attribute is missing");
+  }
+  const courseRankUrl = courseRankSrc.startsWith('http') ? courseRankSrc : `https://maimaidx-eng.com${courseRankSrc}`;
+  console.log(`Extracted course rank URL: ${courseRankUrl}`);
+  
+  // Class rank (second element) - the element itself is an img
+  const classRankSrc = rankElements.eq(1).attr('src');
+  if (!classRankSrc) {
+    throw new Error("Class rank image src attribute is missing");
+  }
+  const classRankUrl = classRankSrc.startsWith('http') ? classRankSrc : `https://maimaidx-eng.com${classRankSrc}`;
+  console.log(`Extracted class rank URL: ${classRankUrl}`);
+  
+  return {
+    iconUrl,
+    displayName,
+    rating,
+    title,
+    stars,
+    versionPlayCount,
+    totalPlayCount,
+    courseRankUrl,
+    classRankUrl,
+  };
+}
+
+async function fetchImageAsBase64(imageUrl: string): Promise<string> {
+  console.log(`Fetching image for base64 encoding: ${imageUrl}`);
+  
+  const response = await fetch(imageUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch icon image: HTTP ${response.status}`);
+  }
+  
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const base64 = buffer.toString('base64');
+  
+  // Get content type for data URL
+  const contentType = response.headers.get('content-type') || 'image/png';
+  const dataUrl = `data:${contentType};base64,${base64}`;
+  
+  console.log(`Image encoded as base64 (${base64.length} characters)`);
+  return dataUrl;
+}
+
+async function createUserSnapshot(
+  userId: string,
+  region: "intl" | "jp",
+  playerData: PlayerData,
+  iconBase64: string
+): Promise<void> {
+  const snapshotId = randomUUID();
+  
+  console.log(`Creating user snapshot with ID: ${snapshotId}`);
+  
+  await db.insert(userSnapshots).values({
+    id: snapshotId,
+    userId: userId,
+    region: region,
+    fetchedAt: new Date(),
+    gameVersion: 2024, // Placeholder
+    rating: playerData.rating,
+    courseRankUrl: playerData.courseRankUrl,
+    classRankUrl: playerData.classRankUrl,
+    stars: playerData.stars,
+    versionPlayCount: playerData.versionPlayCount,
+    totalPlayCount: playerData.totalPlayCount,
+    iconUrl: iconBase64,
+    displayName: playerData.displayName,
+    title: playerData.title,
+  });
+  
+  console.log(`User snapshot created successfully`);
+}
+
 export async function fetchMaimaiData(
   userId: string,
   region: "intl" | "jp",
@@ -220,8 +413,16 @@ export async function fetchMaimaiData(
     // Fetch player data HTML using login flow
     const playerDataHtml = await fetchPlayerDataWithLogin(validation.redirectUrl);
     
-    // TODO: Parse player data HTML and save to database
-    console.log("Player data fetched successfully - parsing will be implemented next");
+    // Extract player data from HTML
+    const playerData = await extractPlayerData(playerDataHtml);
+    
+    // Fetch and encode icon as base64
+    const iconBase64 = await fetchImageAsBase64(playerData.iconUrl);
+    
+    // Create user snapshot with real player data
+    await createUserSnapshot(userId, region, playerData, iconBase64);
+    
+    console.log("Player data processed and snapshot created successfully");
     console.log(`Session ID: ${sessionId}`);
     
   } catch (error) {

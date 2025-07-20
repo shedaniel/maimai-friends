@@ -76,12 +76,8 @@ export const userSnapshots = sqliteTable("user_snapshots", {
   fetchedAt: integer("fetchedAt", { mode: "timestamp" }).notNull(),
   gameVersion: integer("gameVersion").notNull(),
   rating: integer("rating").notNull(), // 0-20000
-  courseRank: text("courseRank", { 
-    enum: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R", "U"] 
-  }).notNull(),
-  classRank: text("classRank", { 
-    enum: ["B5", "B4", "B3", "B2", "B1", "A5", "A4", "A3", "A2", "A1", "S5", "S4", "S3", "S2", "S1", "SS5", "SS4", "SS3", "SS2", "SS1", "SSS5", "SSS4", "SSS3", "SSS2", "SSS1", "LEGEND"] 
-  }).notNull(),
+  courseRankUrl: text("courseRankUrl").notNull(),
+  classRankUrl: text("classRankUrl").notNull(),
   stars: integer("stars").notNull(),
   versionPlayCount: integer("versionPlayCount").notNull(),
   totalPlayCount: integer("totalPlayCount").notNull(),

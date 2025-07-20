@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Database, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import Image from "next/image";
 import { RegionSwitcher, Region } from "@/components/region-switcher";
 

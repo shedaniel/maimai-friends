@@ -58,13 +58,13 @@ export function DataBanner({
             
             {hasSnapshots ? (
               <Select value={selectedSnapshot || undefined} onValueChange={onSnapshotChange}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-80">
                   <SelectValue placeholder="Select a snapshot" />
                 </SelectTrigger>
                 <SelectContent>
                   {snapshots.map((snapshot) => (
                     <SelectItem key={snapshot.id} value={snapshot.id}>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col items-start">
                         <span>{formatDate(snapshot.fetchedAt)}</span>
                         <span className="text-xs text-muted-foreground">
                           {snapshot.displayName} • {snapshot.rating} rating

@@ -8,8 +8,8 @@ export interface Snapshot {
   rating: number;
   displayName: string;
   gameVersion: number;
-  courseRank: string;
-  classRank: string;
+  courseRankUrl: string;
+  classRankUrl: string;
   stars: number;
   versionPlayCount: number;
   totalPlayCount: number;
