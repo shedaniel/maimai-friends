@@ -30,7 +30,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout }: U
     <div className="flex items-center justify-between mb-8">
       <div className="flex items-center space-x-3">
         <div>
-          <h1 className="text-lg leading-none font-semibold">maimai charts</h1>
+          <h1 className="text-lg leading-none font-semibold">maimai friends</h1>
           <p className="text-muted-foreground text-xs">by shedaniel</p>
         </div>
       </div>
@@ -59,7 +59,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout }: U
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">{user.name}</p>
               <p className="text-xs leading-none text-muted-foreground">
-                maimai charts user
+                maimai friends member
               </p>
             </div>
           </DropdownMenuLabel>

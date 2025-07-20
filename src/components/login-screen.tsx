@@ -15,10 +15,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         <CardHeader className="text-center">
           <CardTitle className="flex items-center justify-center space-x-2">
             <Database className="h-6 w-6" />
-            <span>Maimai Charts</span>
+            <span>maimai friends</span>
           </CardTitle>
           <CardDescription>
-            Track and analyze your maimai DX scores across different regions
+            Track and analyze your maimai scores!
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

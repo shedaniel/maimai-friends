@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Maimai Charts",
-  description: "Track and analyze your maimai DX scores across different regions",
+  title: "maimai friends",
+  description: "Track and analyze your maimai scores with friends",
 };
 
 export default function RootLayout({
