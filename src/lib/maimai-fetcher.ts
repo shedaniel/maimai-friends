@@ -34,7 +34,7 @@ export async function validateMaimaiToken(
     
     return {
       isValid: false,
-      error: "Invalid token format. Please ensure you copied the JSESSIONID correctly (ASCII characters only).",
+      error: "Invalid token format. Please ensure you copied the clal cookie correctly (ASCII characters only).",
     };
   }
 
@@ -64,7 +64,7 @@ export async function validateMaimaiToken(
     const response = await fetch(loginUrl, {
       method: "GET",
       headers: {
-        "Cookie": `JSESSIONID=${sanitizedToken}`,
+        "Cookie": `clal=${sanitizedToken}`,
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
       },
       redirect: "manual", // Don't follow redirects
@@ -115,6 +115,77 @@ export async function validateMaimaiToken(
   }
 }
 
+async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<string> {
+  // Step 1: Follow the redirect URL to get login cookies
+  console.log(`Fetching redirect URL to get login cookies: ${redirectUrl}`);
+  
+  const loginResponse = await fetch(redirectUrl, {
+    method: "GET",
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    },
+    redirect: "manual", // Don't follow redirects
+  });
+
+  console.log(`Login response status: ${loginResponse.status}`);
+
+  // Extract Set-Cookie headers
+  let setCookieHeaders: string[] = [];
+  if (loginResponse.headers.getSetCookie) {
+    setCookieHeaders = loginResponse.headers.getSetCookie();
+  } else {
+    // Fallback for environments that don't support getSetCookie()
+    const cookieHeader = loginResponse.headers.get('set-cookie');
+    if (cookieHeader) {
+      setCookieHeaders = [cookieHeader];
+    }
+  }
+  
+  if (setCookieHeaders.length === 0) {
+    throw new Error("No cookies received from login redirect");
+  }
+
+  console.log(`Received ${setCookieHeaders.length} cookies from login`);
+
+  // Parse cookies into a single Cookie header value
+  const cookies = setCookieHeaders.map(header => {
+    // Extract just the name=value part (before first semicolon)
+    const cookiePart = header.split(';')[0];
+    return cookiePart;
+  }).join('; ');
+
+  console.log(`Parsed cookies for player data request`);
+
+  // Step 2: Fetch player data using the login cookies
+  const playerDataUrl = "https://maimaidx-eng.com/maimai-mobile/playerData/";
+  console.log(`Fetching player data from: ${playerDataUrl}`);
+
+  const playerDataResponse = await fetch(playerDataUrl, {
+    method: "GET",
+    headers: {
+      "Cookie": cookies,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "Referer": redirectUrl,
+    },
+  });
+
+  console.log(`Player data response status: ${playerDataResponse.status}`);
+
+  if (playerDataResponse.status !== 200) {
+    throw new Error(`Failed to fetch player data: HTTP ${playerDataResponse.status}`);
+  }
+
+  const playerDataHtml = await playerDataResponse.text();
+  console.log(`Player data HTML length: ${playerDataHtml.length} characters`);
+
+  // Check for error in response
+  if (playerDataHtml.includes("ERROR CODE：100001") || playerDataHtml.includes("Please login again")) {
+    throw new Error("Session expired or invalid. Please provide a new token.");
+  }
+
+  return playerDataHtml;
+}
+
 export async function fetchMaimaiData(
   userId: string,
   region: "intl" | "jp",
@@ -141,9 +212,20 @@ export async function fetchMaimaiData(
 
   console.log("Token validation passed, proceeding with data fetch...");
   
-  // TODO: Implement actual data fetching logic
-  // For now, just log that we're ready to fetch
-  console.log(`Ready to fetch maimai data for user ${userId} in ${region} region`);
-  console.log(`Session ID: ${sessionId}`);
-  console.log(`Redirect URL from validation: ${validation.redirectUrl}`);
+  if (!validation.redirectUrl) {
+    throw new Error("No redirect URL received from token validation");
+  }
+
+  try {
+    // Fetch player data HTML using login flow
+    const playerDataHtml = await fetchPlayerDataWithLogin(validation.redirectUrl);
+    
+    // TODO: Parse player data HTML and save to database
+    console.log("Player data fetched successfully - parsing will be implemented next");
+    console.log(`Session ID: ${sessionId}`);
+    
+  } catch (error) {
+    console.error("Error during maimai data fetch:", error);
+    throw error;
+  }
 } 
