@@ -78,6 +78,7 @@ export const userRouter = router({
           levelPrecise: songs.levelPrecise,
           type: songs.type,
           genre: songs.genre,
+          addedVersion: songs.addedVersion,
           achievement: userScores.achievement,
           dxScore: userScores.dxScore,
           fc: userScores.fc,

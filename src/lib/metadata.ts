@@ -106,7 +106,7 @@ function parseDate(dateString: string): Date {
 /**
  * Get all available versions for a region (excluding null release dates)
  */
-function getAvailableVersions(region: Region): VersionInfo[] {
+export function getAvailableVersions(region: Region): VersionInfo[] {
   return VERSIONS.filter(v => {
     const dateString = region === "intl" ? v.intlReleaseDate : v.jpReleaseDate;
     return dateString !== null;

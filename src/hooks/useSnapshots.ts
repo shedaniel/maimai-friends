@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc-client";
-import { Region, Snapshot, SnapshotWithSongs } from "@/lib/types";
+import { Region, Snapshot } from "@/lib/types";
 
 export function useSnapshots(region: Region, isAuthenticated: boolean) {
   const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);

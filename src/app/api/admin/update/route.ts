@@ -3,7 +3,7 @@ import { processMaimaiToken } from "@/lib/maimai-fetcher";
 import { load } from "cheerio";
 import { db } from "@/lib/db";
 import { songs } from "@/lib/schema";
-import { getCurrentVersion } from "@/lib/metadata";
+import { getCurrentVersion, getAvailableVersions } from "@/lib/metadata";
 import { randomUUID } from "crypto";
 import { sql } from "drizzle-orm";
 
@@ -73,10 +73,10 @@ async function getCookiesFromRedirect(redirectUrl: string): Promise<string> {
   return cookies;
 }
 
-// Helper function to fetch and parse song data for a specific difficulty
-async function fetchSongDataForDifficulty(cookies: string, difficulty: number): Promise<any[]> {
-  const songsUrl = `https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=${difficulty}`;
-  console.log(`Fetching songs data for difficulty ${difficulty} from: ${songsUrl}`);
+// Helper function to fetch and parse song data for a specific difficulty and version
+async function fetchSongDataForDifficulty(cookies: string, difficulty: number, version: number): Promise<any[]> {
+  const songsUrl = `https://maimaidx-eng.com/maimai-mobile/record/musicVersion/search/?version=${version}&diff=${difficulty}`;
+  console.log(`Fetching songs data for version ${version}, difficulty ${difficulty} from: ${songsUrl}`);
 
   const songsResponse = await fetch(songsUrl, {
     method: "GET",
@@ -87,20 +87,20 @@ async function fetchSongDataForDifficulty(cookies: string, difficulty: number): 
     },
   });
 
-  console.log(`Songs data response status for difficulty ${difficulty}: ${songsResponse.status}`);
+  console.log(`Songs data response status for version ${version}, difficulty ${difficulty}: ${songsResponse.status}`);
 
   if (songsResponse.status !== 200) {
-    throw new Error(`Failed to fetch songs data for difficulty ${difficulty}: HTTP ${songsResponse.status}`);
+    throw new Error(`Failed to fetch songs data for version ${version}, difficulty ${difficulty}: HTTP ${songsResponse.status}`);
   }
 
   const songsHtml = await songsResponse.text();
-  console.log(`Songs data for difficulty ${difficulty} fetched successfully, length: ${songsHtml.length} characters`);
+  console.log(`Songs data for version ${version}, difficulty ${difficulty} fetched successfully, length: ${songsHtml.length} characters`);
   
-  return parseSongData(songsHtml, difficulty);
+  return parseSongData(songsHtml, difficulty, version);
 }
 
 // Helper function to parse song data from HTML
-function parseSongData(html: string, difficulty: number): any[] {
+function parseSongData(html: string, difficulty: number, version: number): any[] {
   const $ = load(html);
   
   // Use correct selector based on difficulty
@@ -194,6 +194,7 @@ function parseSongData(html: string, difficulty: number): any[] {
         inputName,
         // Additional metadata
         difficultyNumber: difficulty,
+        version,
         index,
       };
 
@@ -297,6 +298,9 @@ function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | 
   for (const difficulty of difficulties) {
     const difficultyName = difficultyNames[difficulty.difficultyNumber] || `difficulty_${difficulty.difficultyNumber}`;
     
+    // Calculate addedVersion: -1 for versions 0-12, version-13 for versions 13+
+    const addedVersion = difficulty.version <= 12 ? -1 : difficulty.version - 13;
+    
     records.push({
       id: randomUUID(),
       songName,
@@ -309,6 +313,7 @@ function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | 
       genre,
       region,
       gameVersion,
+      addedVersion,
     });
   }
 
@@ -334,6 +339,9 @@ function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any,
   for (const difficulty of difficulties) {
     const difficultyName = difficultyNames[difficulty.difficultyNumber] || `difficulty_${difficulty.difficultyNumber}`;
     
+    // Calculate addedVersion: -1 for versions 0-12, version-13 for versions 13+
+    const addedVersion = difficulty.version <= 12 ? -1 : difficulty.version - 13;
+    
     records.push({
       id: randomUUID(),
       songName,
@@ -346,6 +354,7 @@ function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any,
       genre,
       region,
       gameVersion,
+      addedVersion,
     });
   }
 
@@ -431,17 +440,40 @@ export async function GET(request: NextRequest) {
     console.log("Step 2: Getting cookies from redirect URL...");
     const cookies = await getCookiesFromRedirect(validation.redirectUrl);
 
-    // Step 3: Fetch and parse song data for all difficulties (0-4)
-    console.log("Step 3: Fetching and parsing song data for all difficulties...");
+    // Step 3: Fetch and parse song data for all difficulties (0-4) and versions
+    console.log("Step 3: Fetching and parsing song data for all difficulties and versions...");
     const allSongData: any[] = [];
     
-    for (let difficulty = 0; difficulty <= 4; difficulty++) {
-      console.log(`Fetching songs for difficulty ${difficulty}...`);
-      const difficultyData = await fetchSongDataForDifficulty(cookies, difficulty);
-      allSongData.push(...difficultyData);
+    // Get available versions for the region
+    const availableVersions = getAvailableVersions(region);
+    const versionsCount = availableVersions.length;
+    
+    console.log(`Available versions for region ${region}: ${versionsCount} versions`);
+    
+    // Fetch data for legacy versions (0-12) and current versions (13 to 13 + versionsCount - 1)
+    const versionRanges = [
+      { start: 0, end: 12, description: "legacy versions" },
+      { start: 13, end: 13 + versionsCount - 1, description: "current versions" }
+    ];
+    
+    for (const range of versionRanges) {
+      console.log(`Fetching ${range.description} (versions ${range.start}-${range.end})...`);
+      
+      for (let version = range.start; version <= range.end; version++) {
+        for (let difficulty = 0; difficulty <= 4; difficulty++) {
+          console.log(`Fetching songs for version ${version}, difficulty ${difficulty}...`);
+          try {
+            const difficultyData = await fetchSongDataForDifficulty(cookies, difficulty, version);
+            allSongData.push(...difficultyData);
+          } catch (error) {
+            console.warn(`Failed to fetch data for version ${version}, difficulty ${difficulty}:`, error);
+            // Continue with other combinations even if one fails
+          }
+        }
+      }
     }
 
-    console.log(`Total songs fetched from all difficulties: ${allSongData.length}`);
+    console.log(`Total songs fetched from all difficulties and versions: ${allSongData.length}`);
 
     // Step 4: Fetch maimai songs JSON data
     console.log("Step 4: Fetching maimai songs JSON data...");
@@ -570,6 +602,7 @@ export async function GET(request: NextRequest) {
               level: sql`excluded.level`,
               levelPrecise: sql`excluded.levelPrecise`,
               genre: sql`excluded.genre`,
+              addedVersion: sql`excluded.addedVersion`,
             },
           });
           

@@ -101,6 +101,7 @@ export const songs = sqliteTable("songs", {
   genre: text("genre").notNull(), // Will define enum later based on maimai genres
   region: text("region", { enum: ["intl", "jp"] }).notNull(),
   gameVersion: integer("gameVersion").notNull(),
+  addedVersion: integer("addedVersion").notNull(), // -1 for legacy versions, or actual version number for newer versions
 }, (table) => ({
   songNameDifficultyTypeRegionVersionUnique: unique("song_name_difficulty_type_region_version_unique").on(table.songName, table.difficulty, table.type, table.region, table.gameVersion),
 }));

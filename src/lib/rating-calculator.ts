@@ -33,5 +33,6 @@ export function addRatingsAndSort(songs: SongWithScore[]): SongWithRating[] {
       ...song,
       rating: calculateSongRating(song)
     }))
+    .sort((a, b) => b.achievement - a.achievement)
     .sort((a, b) => b.rating - a.rating);
 } 

@@ -35,6 +35,7 @@ export interface SongWithScore {
   levelPrecise: number;
   type: "std" | "dx";
   genre: string;
+  addedVersion: number;
   achievement: number;
   dxScore: number;
   fc: "none" | "fc" | "fc+" | "ap" | "ap+";
