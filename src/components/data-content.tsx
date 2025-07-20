@@ -2,11 +2,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Database } from "lucide-react";
-import { Region } from "@/components/region-switcher";
+import { Region, Snapshot } from "@/lib/types";
 
 interface DataContentProps {
   region: Region;
-  selectedSnapshot: string | null;
+  selectedSnapshot: Snapshot | null;
   isLoading: boolean;
 }
 
@@ -32,15 +32,17 @@ export function DataContent({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Score Data</CardTitle>
+          <CardTitle>Snapshot Data</CardTitle>
           <CardDescription>
-            Data will be displayed here once you select a snapshot
+            Snapshot from {selectedSnapshot.fetchedAt.toLocaleString()} • {selectedSnapshot.displayName}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            Score visualization and analysis coming soon...
-          </p>
+          <div className="bg-muted/50 rounded-md p-4">
+            <pre className="text-sm overflow-auto max-h-96">
+              {JSON.stringify(selectedSnapshot, null, 2)}
+            </pre>
+          </div>
         </CardContent>
       </Card>
     );

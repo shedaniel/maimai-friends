@@ -6,16 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Download } from "lucide-react";
-import { Region } from "./region-switcher";
 import { getVersionInfo } from "@/lib/metadata";
-
-interface Snapshot {
-  id: string;
-  fetchedAt: Date;
-  rating: number;
-  displayName: string;
-  gameVersion: number;
-}
+import { Region, Snapshot } from "@/lib/types";
 
 interface DataBannerProps {
   region: Region;

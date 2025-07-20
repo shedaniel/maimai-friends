@@ -1,19 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Region } from "@/components/region-switcher";
 import { trpc } from "@/lib/trpc-client";
-
-export interface Snapshot {
-  id: string;
-  fetchedAt: Date;
-  rating: number;
-  displayName: string;
-  gameVersion: number;
-  courseRankUrl: string;
-  classRankUrl: string;
-  stars: number;
-  versionPlayCount: number;
-  totalPlayCount: number;
-}
+import { Region, Snapshot } from "@/lib/types";
 
 export function useSnapshots(region: Region, isAuthenticated: boolean) {
   const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);

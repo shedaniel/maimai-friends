@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { signOut } from "@/lib/auth-client";
-import { Region } from "@/components/region-switcher";
 import { DataBanner } from "@/components/data-banner";
 import { TokenDialog } from "@/components/token-dialog";
 import { DataContent } from "@/components/data-content";
@@ -12,13 +11,7 @@ import { useSnapshots } from "@/hooks/useSnapshots";
 import { useFetchSession } from "@/hooks/useFetchSession";
 import { trpc } from "@/lib/trpc-client";
 import { toast } from "sonner";
-
-interface User {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
+import { Region, User } from "@/lib/types";
 
 interface DashboardProps {
   user: User;
@@ -167,7 +160,7 @@ export function Dashboard({ user }: DashboardProps) {
 
         <DataContent
           region={selectedRegion}
-          selectedSnapshot={selectedSnapshot}
+          selectedSnapshot={selectedSnapshot ? snapshots.find(s => s.id === selectedSnapshot) || null : null}
           isLoading={isLoadingSnapshots}
         />
       </div>

@@ -1,15 +1,7 @@
 import { useState } from "react";
-import { Region } from "@/components/region-switcher";
 import { trpc, trpcClient } from "@/lib/trpc-client";
 import { toast } from "sonner";
-
-export interface FetchSession {
-  id: string;
-  status: "pending" | "completed" | "failed";
-  startedAt: Date;
-  completedAt?: Date;
-  errorMessage?: string;
-}
+import { Region, FetchSession } from "@/lib/types";
 
 export function useFetchSession(onFetchComplete?: () => void) {
   const [currentSession, setCurrentSession] = useState<FetchSession | null>(null);

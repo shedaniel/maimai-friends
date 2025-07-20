@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, Globe } from "lucide-react";
 
-export type Region = "intl" | "jp";
+import { Region } from "@/lib/types";
 
 interface RegionSwitcherProps {
   value: Region;

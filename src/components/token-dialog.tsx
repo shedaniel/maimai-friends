@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, EyeOff, Key, Save } from "lucide-react";
-import { Region } from "./region-switcher";
+import { Region } from "@/lib/types";
 
 interface TokenDialogProps {
   region: Region;

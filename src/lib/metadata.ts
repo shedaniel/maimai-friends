@@ -1,4 +1,4 @@
-export type Region = "intl" | "jp";
+import { Region } from "@/lib/types";
 
 export interface VersionInfo {
   id: number;

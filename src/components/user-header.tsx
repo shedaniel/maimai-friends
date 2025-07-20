@@ -9,14 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User as UserIcon } from "lucide-react";
 import Image from "next/image";
-import { RegionSwitcher, Region } from "@/components/region-switcher";
-
-interface User {
-  name?: string | null;
-  image?: string | null;
-}
+import { RegionSwitcher } from "@/components/region-switcher";
+import { Region, User } from "@/lib/types";
 
 interface UserHeaderProps {
   user: User;
@@ -51,7 +47,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
                 className="w-10 h-10 rounded-full"
               />
             ) : (
-              <User className="h-5 w-5" />
+                              <UserIcon className="h-5 w-5" />
             )}
           </Button>
         </DropdownMenuTrigger>
