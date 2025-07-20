@@ -8,7 +8,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, Globe } from "lucide-react";
+import { ChevronDown, Globe, Flag } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Region } from "@/lib/types";
 
@@ -18,6 +19,8 @@ interface RegionSwitcherProps {
 }
 
 export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
+  const t = useTranslations();
+  
   const getRegionCode = (region: Region) => {
     switch (region) {
       case "intl":
@@ -39,17 +42,21 @@ export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
       <DropdownMenuContent align="end">
         <DropdownMenuItem
           onClick={() => onChange("intl")}
-          className={value === "intl" ? "bg-accent" : ""}
+          className={`${value === "intl" ? "bg-accent" : ""} flex items-center gap-2`}
         >
-          International
+          <Globe className="h-4 w-4" />
+          {t('regions.intl')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onChange("jp")}
-          className={`${value === "jp" ? "bg-accent" : ""} justify-between`}
+          className={`${value === "jp" ? "bg-accent" : ""} flex items-center justify-between`}
         >
-          <span>Japan</span>
+          <div className="flex items-center gap-2">
+            <Flag className="h-4 w-4" />
+            <span>{t('regions.jp')}</span>
+          </div>
           <Badge variant="secondary" className="text-xs">
-            WIP
+            {t('regions.wip')}
           </Badge>
         </DropdownMenuItem>
       </DropdownMenuContent>

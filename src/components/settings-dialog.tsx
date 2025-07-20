@@ -17,13 +17,18 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Key } from "lucide-react";
+import { Key, Languages } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useLocale } from "@/components/providers/locale-provider";
+import { Locale, setLocaleCookie } from "@/i18n/locale";
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   currentTimezone?: string | null;
+  currentLanguage?: string | null;
   onTimezoneUpdate: (timezone: string | null) => Promise<void>;
+  onLanguageUpdate: (language: string | null) => Promise<void>;
   onOpenTokenDialog: () => void;
 }
 
@@ -58,17 +63,40 @@ const TIMEZONES = [
   { value: "UTC", label: "Coordinated Universal Time (UTC)", region: "UTC" },
 ];
 
-export function SettingsDialog({ isOpen, onClose, currentTimezone, onTimezoneUpdate, onOpenTokenDialog }: SettingsDialogProps) {
+// Supported languages - move inside component to access translations
+const getLanguages = (t: any) => [
+  { value: null, label: t('settings.language.auto'), code: "AUTO" },
+  { value: "en", label: t('settings.language.en'), code: "EN" },
+  { value: "ja", label: t('settings.language.ja'), code: "JP" },
+  { value: "zh-TW", label: t('settings.language.zh-TW'), code: "TW" },
+];
+
+export function SettingsDialog({ isOpen, onClose, currentTimezone, currentLanguage, onTimezoneUpdate, onLanguageUpdate, onOpenTokenDialog }: SettingsDialogProps) {
+  const t = useTranslations();
+  const { setLocale } = useLocale();
   const [selectedTimezone, setSelectedTimezone] = useState<string | null>(currentTimezone ?? null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(currentLanguage ?? null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const LANGUAGES = getLanguages(t);
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      await onTimezoneUpdate(selectedTimezone);
+      await Promise.all([
+        onTimezoneUpdate(selectedTimezone),
+        onLanguageUpdate(selectedLanguage)
+      ]);
+      
+      // Update the locale immediately if language changed
+      if (selectedLanguage && selectedLanguage !== currentLanguage) {
+        setLocaleCookie(selectedLanguage as Locale);
+        setLocale(selectedLanguage as Locale);
+      }
+      
       onClose();
     } catch (error) {
-      console.error("Failed to update timezone:", error);
+      console.error("Failed to update settings:", error);
     } finally {
       setIsLoading(false);
     }
@@ -76,6 +104,7 @@ export function SettingsDialog({ isOpen, onClose, currentTimezone, onTimezoneUpd
 
   const handleCancel = () => {
     setSelectedTimezone(currentTimezone ?? null);
+    setSelectedLanguage(currentLanguage ?? null);
     onClose();
   };
 
@@ -91,15 +120,48 @@ export function SettingsDialog({ isOpen, onClose, currentTimezone, onTimezoneUpd
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>{t('settings.title')}</DialogTitle>
           <DialogDescription>
-            Customize your maimai friends experience.
+            {t('settings.description')}
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="timezone">Timezone</Label>
+            <Label htmlFor="language">{t('settings.language.label')}</Label>
+            <Select 
+              value={selectedLanguage || "auto"}
+              onValueChange={(value) => {
+                setSelectedLanguage(value === "auto" ? null : value);
+              }}
+            >
+              <SelectTrigger id="language">
+                <SelectValue placeholder={t('settings.language.label')} />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((language) => (
+                  <SelectItem 
+                    key={language.value || "auto"} 
+                    value={language.value || "auto"}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Languages className="h-4 w-4" />
+                      <span className="text-xs font-mono bg-muted px-1 py-0.5 rounded">
+                        {language.code}
+                      </span>
+                      <span>{language.label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {t('settings.language.description')}
+            </p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="timezone">{t('settings.timezone.label')}</Label>
             <Select 
               value={getCurrentTimezoneDisplay()}
               onValueChange={(value) => {
@@ -107,7 +169,7 @@ export function SettingsDialog({ isOpen, onClose, currentTimezone, onTimezoneUpd
               }}
             >
               <SelectTrigger id="timezone">
-                <SelectValue placeholder="Select timezone" />
+                <SelectValue placeholder={t('settings.timezone.placeholder')} />
               </SelectTrigger>
               <SelectContent>
                 {TIMEZONES.map((timezone) => (
@@ -126,33 +188,32 @@ export function SettingsDialog({ isOpen, onClose, currentTimezone, onTimezoneUpd
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              This affects how dates and times are displayed throughout the app.
-              Japan timezone is the default as it matches maimai&apos;s server time.
+              {t('settings.timezone.description')}
             </p>
           </div>
 
           <div className="grid gap-2">
-            <Label>Account Authentication</Label>
+            <Label>{t('settings.account.label')}</Label>
             <Button 
               variant="outline" 
               onClick={onOpenTokenDialog}
               className="justify-start"
             >
               <Key className="h-4 w-4 mr-2" />
-              Update Token
+              {t('settings.account.updateToken')}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Update your maimai token for data fetching. This is required to sync your player data.
+              {t('settings.account.description')}
             </p>
           </div>
         </div>
 
         <div className="flex justify-end space-x-2">
           <Button variant="outline" onClick={handleCancel}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Changes"}
+            {isLoading ? t('settings.saving') : t('settings.saveChanges')}
           </Button>
         </div>
       </DialogContent>

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Download } from "lucide-react";
 import { getVersionInfo } from "@/lib/metadata";
 import { Region, Snapshot } from "@/lib/types";
+import { useTranslations } from "next-intl";
 
 interface DataBannerProps {
   region: Region;
@@ -28,7 +29,7 @@ export function DataBanner({
   isFetching,
   userTimezone,
 }: DataBannerProps) {
-
+  const t = useTranslations();
   const hasSnapshots = snapshots.length > 0;
 
   const formatDate = (date: Date) => {
@@ -53,13 +54,13 @@ export function DataBanner({
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Data Snapshot:</span>
+              <span className="text-sm font-medium">{t('dataBanner.dataSnapshot')}</span>
             </div>
             
             {hasSnapshots ? (
               <Select value={selectedSnapshot || undefined} onValueChange={onSnapshotChange}>
                 <SelectTrigger className="w-80">
-                  <SelectValue placeholder="Select a snapshot" />
+                  <SelectValue placeholder={t('dataBanner.selectSnapshot')} />
                 </SelectTrigger>
                 <SelectContent>
                   {snapshots.map((snapshot) => (
@@ -75,7 +76,7 @@ export function DataBanner({
                 </SelectContent>
               </Select>
             ) : (
-              <Badge variant="secondary">No data available</Badge>
+              <Badge variant="secondary">{t('dataBanner.noDataAvailable')}</Badge>
             )}
           </div>
 
@@ -90,12 +91,12 @@ export function DataBanner({
               {isFetching ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                  <span>Fetching data...</span>
+                  <span>{t('dataBanner.fetchingData')}</span>
                 </>
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  <span>Fetch New Data</span>
+                  <span>{t('dataBanner.fetchNewData')}</span>
                 </>
               )}
             </Button>
@@ -106,8 +107,7 @@ export function DataBanner({
         {!hasSnapshots && region === "intl" && (
           <div className="mt-4 p-3 bg-muted/50 rounded-md">
             <p className="text-sm text-muted-foreground">
-              No data found for this region. Click &quot;Fetch New Data&quot; to import your maimai scores.
-              You&apos;ll need your maimai token for this process.
+              {t('dataBanner.noDataInstructions')}
             </p>
           </div>
         )}

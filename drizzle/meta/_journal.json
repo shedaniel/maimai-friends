@@ -50,6 +50,20 @@
       "when": 1753035626131,
       "tag": "0006_melodic_aqueduct",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1753037619645,
+      "tag": "0007_known_wrecking_crew",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1753039181396,
+      "tag": "0008_stiff_grey_gargoyle",
+      "breakpoints": true
     }
   ]
 }

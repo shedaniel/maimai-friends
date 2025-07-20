@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, EyeOff, Key, Save } from "lucide-react";
 import { Region } from "@/lib/types";
+import { useTranslations } from "next-intl";
 
 interface TokenDialogProps {
   region: Region;
@@ -22,6 +23,7 @@ export function TokenDialog({
   onClose,
   onTokenUpdate,
 }: TokenDialogProps) {
+  const t = useTranslations();
   const [token, setToken] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -74,13 +76,13 @@ export function TokenDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Key className="h-5 w-5" />
-            <span>Update maimai authentication</span>
+            <span>{t('tokenDialog.title')}</span>
           </DialogTitle>
           <DialogDescription>
             {isJapanRegion 
-              ? "Enter your SEGA account credentials for the Japan region."
-              : "Choose your authentication method for the International region."
-            } Your credentials will be saved for future use.
+              ? t('tokenDialog.japanDescription')
+              : t('tokenDialog.intlDescription')
+            } {t('tokenDialog.credentialsStored')}
           </DialogDescription>
         </DialogHeader>
         
@@ -90,24 +92,24 @@ export function TokenDialog({
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username">{t('tokenDialog.username')}</Label>
                   <Input
                     id="username"
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter your SEGA account username"
+                    placeholder={t('tokenDialog.usernamePlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t('tokenDialog.password')}</Label>
                   <div className="relative">
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your SEGA account password"
+                      placeholder={t('tokenDialog.passwordPlaceholder')}
                       className="pr-10"
                     />
                     <Button
@@ -125,10 +127,10 @@ export function TokenDialog({
 
               <div className="bg-muted/50 rounded-md text-xs text-muted-foreground">
                 <p className="font-medium mb-1">
-                  Authentication:
+                  {t('tokenDialog.authenticationNote')}
                 </p>
-                <p>Use your SEGA account credentials to authenticate with maimai DX NET Japan.</p>
-                <p>Your credentials will be stored securely for future fetches.</p>
+                <p>{t('tokenDialog.segaCredentialsNote')}</p>
+                <p>{t('tokenDialog.credentialsSecureNote')}</p>
               </div>
 
               <Button
@@ -139,12 +141,12 @@ export function TokenDialog({
                 {isSubmitting ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent mr-2" />
-                    Saving Credentials...
+                    {t('tokenDialog.savingCredentials')}
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Save Credentials
+                    {t('tokenDialog.saveCredentials')}
                   </>
                 )}
               </Button>
@@ -154,26 +156,26 @@ export function TokenDialog({
             <form onSubmit={handleSubmit} className="space-y-4">
               <Tabs className="w-full" value={authMethod} onValueChange={(value) => setAuthMethod(value as "token" | "password")}>
                 <TabsList className="bg-gray-200 grid w-full grid-cols-2">
-                  <TabsTrigger value="token">Token</TabsTrigger>
-                  <TabsTrigger value="password">Password</TabsTrigger>
+                  <TabsTrigger value="token">{t('tokenDialog.tokenTab')}</TabsTrigger>
+                  <TabsTrigger value="password">{t('tokenDialog.passwordTab')}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="token" className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="token">Cookies</Label>
+                    <Label htmlFor="token">{t('tokenDialog.cookies')}</Label>
                     <div className="relative">
                       <Input
                         id="token"
                         type="text"
                         value={token}
                         onChange={(e) => setToken(e.target.value)}
-                        placeholder="clal=your_token_here"
+                        placeholder={t('tokenDialog.tokenPlaceholder')}
                         className={`${token && !isValidToken(token) ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {token && !isValidToken(token) && (
                       <p className="text-xs text-red-500">
-                        Token must start with "clal=" followed by letters and numbers only
+                        {t('tokenDialog.tokenValidationError')}
                       </p>
                     )}
                   </div>
@@ -182,24 +184,24 @@ export function TokenDialog({
                 <TabsContent value="password" className="space-y-4 mt-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
+                      <Label htmlFor="username">{t('tokenDialog.username')}</Label>
                       <Input
                         id="username"
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Enter your SEGA account username"
+                        placeholder={t('tokenDialog.usernamePlaceholder')}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
+                      <Label htmlFor="password">{t('tokenDialog.password')}</Label>
                       <div className="relative">
                         <Input
                           id="password"
                           type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Enter your SEGA account password"
+                          placeholder={t('tokenDialog.passwordPlaceholder')}
                           className="pr-10"
                         />
                         <Button
@@ -219,21 +221,21 @@ export function TokenDialog({
 
                 <div className="bg-muted/50 rounded-md text-xs text-muted-foreground">
                   <p className="font-medium mb-1">
-                    Authentication:
+                    {t('tokenDialog.authenticationNote')}
                   </p>
                   <ul className="space-y-1 list-disc list-outside pl-4">
                     <li>
-                      <strong>Token:</strong> Cookie value starting with "clal=" from maimai DX NET.
-                      <p className="mb-2">The token may get invalidated after a certain period of time, so you may need to update it in the future.</p>
+                      <strong>{t('tokenDialog.tokenTab')}:</strong> {t('tokenDialog.tokenInstructions.description')}
+                      <p className="mb-2">{t('tokenDialog.tokenInstructions.expiration')}</p>
                       <p>For easier cookie extraction, first install this <a className="underline text-blue-600" href="/maimai-cookie-extractor.user.js" target="_blank" rel="noopener noreferrer">userscript</a> (requires Tampermonkey/Greasemonkey).</p>
                       <p>Then, <a className="underline text-blue-600" href="https://lng-tgk-aime-gw.am-all.net/common_auth/login?site_id=maimaidxex&redirect_url=https://maimaidx-eng.com/maimai-mobile/&back_url=https://maimai.sega.com/" target="_blank" rel="noopener noreferrer">visit this link</a> in incognito mode and login to anime.</p>
                       <p>Finally, <a className="underline text-blue-600" href="https://lng-tgk-aime-gw.am-all.net/common_auth" target="_blank" rel="noopener noreferrer">visit this link</a>, you will see "Not Found", click the "Copy maimai cookie" button on top right and paste the cookie into the input field above.</p>
                     </li>
                     <li>
-                      <strong>Password:</strong> Use your SEGA account username and password directly
+                      <strong>{t('tokenDialog.passwordTab')}:</strong> {t('tokenDialog.passwordInstructions')}
                     </li>
                   </ul>
-                  <p className="mt-2">Your credentials will be stored securely for future fetches.</p>
+                  <p className="mt-2">{t('tokenDialog.secureStorage')}</p>
                 </div>
 
               <Button

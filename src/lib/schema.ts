@@ -10,6 +10,7 @@ export const user = sqliteTable("user", {
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
   timezone: text("timezone"), // nullable, null = Asia/Tokyo (JP default)
+  language: text("language", { enum: ["en", "ja", "zh-TW"] }), // nullable, null = auto-detect
 });
 
 export const session = sqliteTable("session", {

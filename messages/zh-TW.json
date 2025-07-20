@@ -1,0 +1,133 @@
+{
+  "common": {
+    "loading": "載入中...",
+    "save": "儲存",
+    "cancel": "取消",
+    "close": "關閉",
+    "settings": "設定",
+    "language": "語言",
+    "timezone": "時區",
+    "update": "更新",
+    "login": "登入",
+    "logout": "登出",
+    "username": "使用者名稱",
+    "password": "密碼",
+    "token": "權杖",
+    "cookies": "Cookies",
+    "authentication": "驗證",
+    "playerInfo": "玩家資訊",
+    "rating": "評分",
+    "stars": "星星數",
+    "plays": "遊玩次數",
+    "total": "總計"
+  },
+  "auth": {
+    "loginWithDiscord": "以 Discord 繼續",
+    "loginDescription": "登入開始追蹤你的 maimai 成績",
+    "welcomeBack": "歡迎回來！",
+    "features": {
+      "title": "功能：",
+      "trackScores": "追蹤國際區和日本區的成績",
+      "viewHistory": "查看你的歷史遊玩資料",
+      "importData": "從 maimai DX NET 匯入資料",
+      "analyzeProgress": "分析你的遊玩紀錄"
+    }
+  },
+  "dashboard": {
+    "title": "maimai friends",
+    "description": "與好友一起分享 maimai 遊玩成績",
+    "timezoneUpdateSuccess": "時區更新成功！",
+    "timezoneUpdateError": "時區更新失敗：{error}",
+    "languageUpdateSuccess": "語言更新成功！",
+    "languageUpdateError": "語言更新失敗：{error}",
+    "tokenUpdateSuccess": "驗證方式儲存成功！"
+  },
+  "settings": {
+    "title": "設定",
+    "description": "更改 maimai friends 的設定。",
+    "language": {
+      "label": "語言",
+      "description": "選擇你偏好的介面語言。",
+      "placeholder": "選擇語言",
+      "auto": "自動偵測",
+      "en": "English",
+      "ja": "日本語",
+      "zh-TW": "繁體中文"
+    },
+    "timezone": {
+      "label": "時區",
+      "description": "這會影響日期和時間的顯示方式。預設設定為日本時區，與 maimai 伺服器時間相符。",
+      "placeholder": "選擇時區"
+    },
+    "account": {
+      "label": "帳戶驗證",
+      "updateToken": "更新驗證方式",
+      "description": "更新你的 maimai 驗證方式以進行資料匯入及同步玩家資料。"
+    },
+    "saveChanges": "儲存變更",
+    "saving": "儲存中...",
+    "success": "設定更新成功！",
+    "error": "設定更新失敗"
+  },
+  "dataBanner": {
+    "dataSnapshot": "資料紀錄：",
+    "noDataAvailable": "無可用資料",
+    "selectSnapshot": "選擇紀錄",
+    "fetchNewData": "匯入新資料",
+    "fetchingData": "匯入資料中...",
+    "lastUpdate": "最後更新",
+    "noDataInstructions": "此區域沒有任何資料。點擊「匯入新資料」以匯入你的 maimai 成績。"
+  },
+  "dataContent": {
+    "loading": "載入資料中...",
+    "snapshotData": "資料紀錄",
+    "snapshotFrom": "紀錄自 {date} • {name} • {count} 首歌曲",
+    "playerInfo": "玩家資訊",
+    "rating": "評分：{rating}",
+    "stars": "星星：{stars}",
+    "versionPlays": "版本遊玩次數：{count}",
+    "totalPlays": "總遊玩次數：{count}",
+    "songs": "歌曲（共 {count} 首）",
+    "newSongsB15": "新曲 B15",
+    "oldSongsB35": "舊曲 B35",
+    "newSongs": "新曲",
+    "oldSongs": "舊曲",
+    "noDataAvailable": "無可用資料",
+    "japanRegionSoon": "日本區域功能即將推出。",
+    "getStartedInstructions": "點擊上方的匯入按鈕來匯入你的 maimai 資料。"
+  },
+  "tokenDialog": {
+    "title": "更新 maimai 驗證",
+    "japanDescription": "輸入你的 SEGA 帳戶憑證。",
+    "intlDescription": "選擇你的 maimai 登入驗證方式。",
+    "credentialsStored": "你的驗證方式將被儲存以供將來使用。",
+    "username": "使用者名稱",
+    "usernamePlaceholder": "輸入你的 SEGA 帳戶使用者名稱",
+    "password": "密碼",
+    "passwordPlaceholder": "輸入你的 SEGA 帳戶密碼",
+    "cookies": "Cookies",
+    "tokenPlaceholder": "clal=你的 Cookies 在此",
+    "tokenValidationError": "Cookies 必須以 \"clal=\" 開頭，後面跟著字母和數字",
+    "authenticationNote": "驗證：",
+    "segaCredentialsNote": "使用你的 SEGA 帳戶憑證來驗證 maimai DX NET。",
+    "credentialsSecureNote": "你的驗證方式將安全地儲存以供將來使用。",
+    "savingCredentials": "儲存驗證方式中...",
+    "saveCredentials": "儲存驗證方式",
+    "tokenTab": "Cookies",
+    "passwordTab": "密碼",
+    "tokenInstructions": {
+      "description": "來自 maimai DX NET 的以 \"clal=\" 開頭的 Cookie 值。",
+      "expiration": "Cookies 可能會在一段時間後失效，你可能需要重新登入。"
+    },
+    "passwordInstructions": "直接使用你的 SEGA 帳戶使用者名稱和密碼",
+    "secureStorage": "你的驗證方式將安全地儲存以供將來使用。"
+  },
+  "regions": {
+    "intl": "國際區",
+    "jp": "日本區",
+    "wip": "開發中"
+  },
+  "userHeader": {
+    "memberLabel": "maimai friends 成員"
+  }
+} 

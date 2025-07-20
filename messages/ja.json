@@ -1,0 +1,133 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "settings": "設定",
+    "language": "言語",
+    "timezone": "タイムゾーン",
+    "update": "更新",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "token": "トークン",
+    "cookies": "クッキー",
+    "authentication": "認証",
+    "playerInfo": "プレイヤー情報",
+    "rating": "レーティング",
+    "stars": "スター数",
+    "plays": "プレイ数",
+    "total": "合計"
+  },
+  "auth": {
+    "loginWithDiscord": "Discordで続行",
+    "loginDescription": "Discordでログインしてmaimaiのスコアを追跡しましょう",
+    "welcomeBack": "おかえりなさい！",
+    "features": {
+      "title": "主な機能：",
+      "trackScores": "インターナショナル・日本両地域のスコア管理",
+      "viewHistory": "過去のデータスナップショットの閲覧",
+      "importData": "maimai DX NETからデータ取り込み",
+      "analyzeProgress": "プレイ進捗の分析"
+    }
+  },
+  "dashboard": {
+    "title": "maimai friends",
+    "description": "フレンドと一緒にmaimaiのスコアを分析・共有！",
+    "timezoneUpdateSuccess": "タイムゾーンの更新に成功しました！",
+    "timezoneUpdateError": "タイムゾーンの更新に失敗しました: {error}",
+    "languageUpdateSuccess": "言語の更新に成功しました！",
+    "languageUpdateError": "言語の更新に失敗しました: {error}",
+    "tokenUpdateSuccess": "トークンを保存しました！"
+  },
+  "settings": {
+    "title": "設定",
+    "description": "maimai friendsを自分好みにカスタマイズできます。",
+    "language": {
+      "label": "言語",
+      "description": "インターフェースの表示言語を選択できます。",
+      "placeholder": "言語を選択",
+      "auto": "自動検出",
+      "en": "English",
+      "ja": "日本語",
+      "zh-TW": "繁體中文"
+    },
+    "timezone": {
+      "label": "タイムゾーン",
+      "description": "アプリ内の日付や時刻の表示方式に影響します。maimaiサーバー時刻に合わせて日本標準時がデフォルトです。",
+      "placeholder": "タイムゾーンを選択"
+    },
+    "account": {
+      "label": "アカウント認証",
+      "updateToken": "トークンを更新",
+      "description": "データ取得のためにmaimaiトークンを更新してください。プレイヤーデータの同期に必要です。"
+    },
+    "saveChanges": "変更を保存",
+    "saving": "保存中...",
+    "success": "設定が正常に更新されました！",
+    "error": "設定の更新に失敗しました"
+  },
+  "dataBanner": {
+    "dataSnapshot": "データスナップショット：",
+    "noDataAvailable": "データがありません",
+    "selectSnapshot": "スナップショットを選択",
+    "fetchNewData": "新しいデータを取得",
+    "fetchingData": "データ取得中...",
+    "lastUpdate": "最終更新",
+    "noDataInstructions": "この地域のデータが見つかりません。「新しいデータを取得」をクリックしてmaimaiスコアを取り込みましょう（トークンが必要です）。"
+  },
+  "dataContent": {
+    "loading": "データの読み込み中...",
+    "snapshotData": "スナップショットデータ",
+    "snapshotFrom": "{date} のスナップショット • {name} • {count}曲",
+    "playerInfo": "プレイヤー情報",
+    "rating": "レーティング：{rating}",
+    "stars": "スター：{stars}",
+    "versionPlays": "バージョンプレイ数：{count}",
+    "totalPlays": "総プレイ数：{count}",
+    "songs": "楽曲（合計 {count} 曲）",
+    "newSongsB15": "新規曲 B15",
+    "oldSongsB35": "過去曲 B35",
+    "newSongs": "新規曲",
+    "oldSongs": "過去曲",
+    "noDataAvailable": "データがありません",
+    "japanRegionSoon": "日本リージョンサポートは近日公開予定です。",
+    "getStartedInstructions": "上の取得ボタンからmaimaiデータを取得して使い始めましょう。"
+  },
+  "tokenDialog": {
+    "title": "maimai 認証を更新",
+    "japanDescription": "SEGAアカウント情報を入力してください。",
+    "intlDescription": "認証方法を選択してください。",
+    "credentialsStored": "認証情報は今後の利用のため保存されます。",
+    "username": "ユーザー名",
+    "usernamePlaceholder": "SEGAアカウントのユーザー名を入力",
+    "password": "パスワード",
+    "passwordPlaceholder": "SEGAアカウントのパスワードを入力",
+    "cookies": "クッキー",
+    "tokenPlaceholder": "clal=あなたのトークン",
+    "tokenValidationError": "トークンは「clal=」で始まり、英数字のみが続きます",
+    "authenticationNote": "認証：",
+    "segaCredentialsNote": "SEGAアカウントを使い、maimai DX NETの認証を行います。",
+    "credentialsSecureNote": "認証情報は安全に保存され、今後の同期時に使用されます。",
+    "savingCredentials": "認証情報保存中...",
+    "saveCredentials": "認証情報を保存",
+    "tokenTab": "トークン",
+    "passwordTab": "パスワード",
+    "tokenInstructions": {
+      "description": "maimai DX NETから取得した「clal=」で始まるクッキー値を入力してください。",
+      "expiration": "トークンは一定期間で無効になる場合がありますので、その際は再度更新してください。"
+    },
+    "passwordInstructions": "SEGAアカウントのユーザー名とパスワードで直接ログイン",
+    "secureStorage": "認証情報は安全に保管され、今後も利用できます。"
+  },
+  "regions": {
+    "intl": "インターナショナル",
+    "jp": "日本",
+    "wip": "開発中"
+  },
+  "userHeader": {
+    "memberLabel": "maimai friends メンバー"
+  }
+}

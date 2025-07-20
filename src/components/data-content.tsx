@@ -5,6 +5,7 @@ import { Database } from "lucide-react";
 import { Region, SnapshotWithSongs } from "@/lib/types";
 import { addRatingsAndSort, SongWithRating } from "@/lib/rating-calculator";
 import { getLatestAvailableVersion } from "@/lib/metadata";
+import { useTranslations } from "next-intl";
 
 interface DataContentProps {
   region: Region;
@@ -50,7 +51,7 @@ function SongSection({ title, songs, count }: { title: string; songs: SongWithRa
 }
 
 // Component for rendering the songs list with four sections
-function SongsList({ songs, region }: { songs: SongWithRating[]; region: Region }) {
+function SongsList({ songs, region, t }: { songs: SongWithRating[]; region: Region; t: any }) {
   const latestVersion = getLatestAvailableVersion(region);
   
   // Separate songs by new/old
@@ -67,25 +68,25 @@ function SongsList({ songs, region }: { songs: SongWithRating[]; region: Region 
 
   return (
     <div className="bg-muted/50 rounded-md p-4">
-      <h4 className="font-medium mb-4">Songs ({songs.length} total)</h4>
+      <h4 className="font-medium mb-4">{t('dataContent.songs', { count: songs.length })}</h4>
       <div className="space-y-6">
         <SongSection 
-          title="New Songs B15" 
+          title={t('dataContent.newSongsB15')} 
           songs={newSongsB15} 
           count={`${newSongsB15.length}/15`}
         />
         <SongSection 
-          title="Old Songs B35" 
+          title={t('dataContent.oldSongsB35')} 
           songs={oldSongsB35} 
           count={`${oldSongsB35.length}/35`}
         />
         <SongSection 
-          title="New Songs" 
+          title={t('dataContent.newSongs')} 
           songs={remainingNewSongs} 
           count={remainingNewSongs.length > 0 ? `${remainingNewSongs.length}` : undefined}
         />
         <SongSection 
-          title="Old Songs" 
+          title={t('dataContent.oldSongs')} 
           songs={remainingOldSongs} 
           count={remainingOldSongs.length > 0 ? `${remainingOldSongs.length}` : undefined}
         />
@@ -99,13 +100,15 @@ export function DataContent({
   selectedSnapshotData, 
   isLoading
 }: DataContentProps) {
+  const t = useTranslations();
+
   if (isLoading) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
           <div className="flex items-center justify-center space-x-2">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
-            <span>Loading data...</span>
+            <span>{t('dataContent.loading')}</span>
           </div>
         </CardContent>
       </Card>
@@ -121,26 +124,30 @@ export function DataContent({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Snapshot Data</CardTitle>
+          <CardTitle>{t('dataContent.snapshotData')}</CardTitle>
           <CardDescription>
-            Snapshot from {snapshot.fetchedAt.toLocaleString()} • {snapshot.displayName} • {songs.length} songs
+            {t('dataContent.snapshotFrom', { 
+              date: snapshot.fetchedAt.toLocaleString(), 
+              name: snapshot.displayName, 
+              count: songs.length 
+            })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {/* Player Info */}
             <div className="bg-muted/50 rounded-md p-4">
-              <h4 className="font-medium mb-2">Player Info</h4>
+              <h4 className="font-medium mb-2">{t('dataContent.playerInfo')}</h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>Rating: {snapshot.rating}</div>
-                <div>Stars: {snapshot.stars}</div>
-                <div>Version Plays: {snapshot.versionPlayCount}</div>
-                <div>Total Plays: {snapshot.totalPlayCount}</div>
+                <div>{t('dataContent.rating', { rating: snapshot.rating })}</div>
+                <div>{t('dataContent.stars', { stars: snapshot.stars })}</div>
+                <div>{t('dataContent.versionPlays', { count: snapshot.versionPlayCount })}</div>
+                <div>{t('dataContent.totalPlays', { count: snapshot.totalPlayCount })}</div>
               </div>
             </div>
             
             {/* Songs Preview */}
-            <SongsList songs={songsWithRating} region={region} />
+            <SongsList songs={songsWithRating} region={region} t={t} />
           </div>
         </CardContent>
       </Card>
@@ -151,11 +158,11 @@ export function DataContent({
     <Card>
       <CardContent className="p-8 text-center">
         <Database className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-        <h3 className="text-lg font-medium mb-2">No Data Available</h3>
+        <h3 className="text-lg font-medium mb-2">{t('dataContent.noDataAvailable')}</h3>
         <p className="text-muted-foreground">
           {region === "jp" 
-            ? "Japan region support is coming soon." 
-            : "Get started by fetching your maimai data using the fetch button above."
+            ? t('dataContent.japanRegionSoon')
+            : t('dataContent.getStartedInstructions')
           }
         </p>
       </CardContent>

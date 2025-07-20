@@ -1,0 +1,133 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "settings": "Settings",
+    "language": "Language",
+    "timezone": "Timezone",
+    "update": "Update",
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "token": "Token",
+    "cookies": "Cookies",
+    "authentication": "Authentication",
+    "playerInfo": "Player Info",
+    "rating": "Rating",
+    "stars": "Stars",
+    "plays": "Plays",
+    "total": "Total"
+  },
+  "auth": {
+    "loginWithDiscord": "Continue with Discord",
+    "loginDescription": "Sign in with Discord to start tracking your maimai scores",
+    "welcomeBack": "Welcome back!",
+    "features": {
+      "title": "Features:",
+      "trackScores": "Track scores across International and Japan regions",
+      "viewHistory": "View historical data snapshots",
+      "importData": "Import data directly from maimai DX NET",
+      "analyzeProgress": "Analyze your progress over time"
+    }
+  },
+  "dashboard": {
+    "title": "maimai friends",
+    "description": "Track and analyze your maimai scores with friends",
+    "timezoneUpdateSuccess": "Timezone updated successfully!",
+    "timezoneUpdateError": "Failed to update timezone: {error}",
+    "languageUpdateSuccess": "Language updated successfully!",
+    "languageUpdateError": "Failed to update language: {error}",
+    "tokenUpdateSuccess": "Token saved successfully!"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Customize your maimai friends experience.",
+    "language": {
+      "label": "Language",
+      "description": "Choose your preferred language for the interface.",
+      "placeholder": "Select language",
+      "auto": "Auto-detect",
+      "en": "English",
+      "ja": "日本語",
+      "zh-TW": "繁體中文"
+    },
+    "timezone": {
+      "label": "Timezone",
+      "description": "This affects how dates and times are displayed throughout the app. Japan timezone is the default as it matches maimai's server time.",
+      "placeholder": "Select timezone"
+    },
+    "account": {
+      "label": "Account Authentication",
+      "updateToken": "Update Token",
+      "description": "Update your maimai token for data fetching. This is required to sync your player data."
+    },
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "success": "Settings updated successfully!",
+    "error": "Failed to update settings"
+  },
+  "dataBanner": {
+    "dataSnapshot": "Data Snapshot:",
+    "noDataAvailable": "No data available",
+    "selectSnapshot": "Select a snapshot",
+    "fetchNewData": "Fetch New Data",
+    "fetchingData": "Fetching data...",
+    "lastUpdate": "Last updated",
+    "noDataInstructions": "No data found for this region. Click \"Fetch New Data\" to import your maimai scores. You'll need your maimai token for this process."
+  },
+  "dataContent": {
+    "loading": "Loading data...",
+    "snapshotData": "Snapshot Data",
+    "snapshotFrom": "Snapshot from {date} • {name} • {count} songs",
+    "playerInfo": "Player Info",
+    "rating": "Rating: {rating}",
+    "stars": "Stars: {stars}",
+    "versionPlays": "Version Plays: {count}",
+    "totalPlays": "Total Plays: {count}",
+    "songs": "Songs ({count} total)",
+    "newSongsB15": "New Songs B15",
+    "oldSongsB35": "Old Songs B35", 
+    "newSongs": "New Songs",
+    "oldSongs": "Old Songs",
+    "noDataAvailable": "No Data Available",
+    "japanRegionSoon": "Japan region support is coming soon.",
+    "getStartedInstructions": "Get started by fetching your maimai data using the fetch button above."
+  },
+  "tokenDialog": {
+    "title": "Update maimai authentication",
+    "japanDescription": "Enter your SEGA account credentials for the Japan region.",
+    "intlDescription": "Choose your authentication method for the International region.",
+    "credentialsStored": "Your credentials will be saved for future use.",
+    "username": "Username",
+    "usernamePlaceholder": "Enter your SEGA account username",
+    "password": "Password", 
+    "passwordPlaceholder": "Enter your SEGA account password",
+    "cookies": "Cookies",
+    "tokenPlaceholder": "clal=your_token_here",
+    "tokenValidationError": "Token must start with \"clal=\" followed by letters and numbers only",
+    "authenticationNote": "Authentication:",
+    "segaCredentialsNote": "Use your SEGA account credentials to authenticate with maimai DX NET.",
+    "credentialsSecureNote": "Your credentials will be stored securely for future fetches.",
+    "savingCredentials": "Saving Credentials...",
+    "saveCredentials": "Save Credentials",
+    "tokenTab": "Token",
+    "passwordTab": "Password",
+    "tokenInstructions": {
+      "description": "Cookie value starting with \"clal=\" from maimai DX NET.",
+      "expiration": "The token may get invalidated after a certain period of time, so you may need to update it in the future."
+    },
+    "passwordInstructions": "Use your SEGA account username and password directly",
+    "secureStorage": "Your credentials will be stored securely for future fetches."
+  },
+  "regions": {
+    "intl": "International",
+    "jp": "Japan",
+    "wip": "WIP"
+  },
+  "userHeader": {
+    "memberLabel": "maimai friends member"
+  }
+} 

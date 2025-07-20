@@ -51,6 +51,12 @@ export function Dashboard({ user }: DashboardProps) {
     { refetchOnWindowFocus: false }
   );
 
+  // Get user language
+  const { data: languageData, refetch: refetchLanguage } = trpc.user.getLanguage.useQuery(
+    undefined,
+    { refetchOnWindowFocus: false }
+  );
+
   // Update timezone mutation
   const updateTimezoneMutation = trpc.user.updateTimezone.useMutation({
     onSuccess: () => {
@@ -59,6 +65,17 @@ export function Dashboard({ user }: DashboardProps) {
     },
     onError: (error) => {
       toast.error(`Failed to update timezone: ${error.message}`);
+    },
+  });
+
+  // Update language mutation
+  const updateLanguageMutation = trpc.user.updateLanguage.useMutation({
+    onSuccess: () => {
+      toast.success("Language updated successfully!");
+      refetchLanguage();
+    },
+    onError: (error) => {
+      toast.error(`Failed to update language: ${error.message}`);
     },
   });
 
@@ -138,6 +155,10 @@ export function Dashboard({ user }: DashboardProps) {
     await updateTimezoneMutation.mutateAsync({ timezone });
   };
 
+  const handleLanguageUpdate = async (language: string | null) => {
+    await updateLanguageMutation.mutateAsync({ language: language as "en" | "ja" | "zh-TW" | null });
+  };
+
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <UserHeader 
@@ -177,7 +198,9 @@ export function Dashboard({ user }: DashboardProps) {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         currentTimezone={timezoneData?.timezone ?? null}
+        currentLanguage={languageData?.language ?? null}
         onTimezoneUpdate={handleTimezoneUpdate}
+        onLanguageUpdate={handleLanguageUpdate}
         onOpenTokenDialog={handleOpenTokenDialog}
       />
     </div>
