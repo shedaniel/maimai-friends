@@ -18,9 +18,17 @@ interface DashboardProps {
 }
 
 export function Dashboard({ user }: DashboardProps) {
-  const [selectedRegion, setSelectedRegion] = useState<Region>("intl");
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Get user region preference
+  const { data: regionData, refetch: refetchRegion } = trpc.user.getRegion.useQuery(
+    undefined,
+    { refetchOnWindowFocus: false }
+  );
+
+  // Use the stored region preference, fallback to "intl" if not set
+  const selectedRegion: Region = regionData?.region || "intl";
 
   const {
     snapshots,
@@ -57,6 +65,17 @@ export function Dashboard({ user }: DashboardProps) {
     { refetchOnWindowFocus: false }
   );
 
+  // Update region mutation
+  const updateRegionMutation = trpc.user.updateRegion.useMutation({
+    onSuccess: () => {
+      toast.success("Region updated successfully!");
+      refetchRegion();
+    },
+    onError: (error) => {
+      toast.error(`Failed to update region: ${error.message}`);
+    },
+  });
+
   // Update timezone mutation
   const updateTimezoneMutation = trpc.user.updateTimezone.useMutation({
     onSuccess: () => {
@@ -87,11 +106,16 @@ export function Dashboard({ user }: DashboardProps) {
     }
   };
 
-  const handleRegionChange = (region: Region) => {
-    setSelectedRegion(region);
-    setSelectedSnapshot(null);
-    resetSnapshots();
-    resetFetchSession();
+  const handleRegionChange = async (region: Region) => {
+    try {
+      await updateRegionMutation.mutateAsync({ region });
+      // Reset snapshots and fetch session when region changes
+      setSelectedSnapshot(null);
+      resetSnapshots();
+      resetFetchSession();
+    } catch (error) {
+      console.error("Failed to update region:", error);
+    }
   };
 
   const handleFetchData = async () => {

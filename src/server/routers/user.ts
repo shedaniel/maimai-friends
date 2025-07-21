@@ -363,4 +363,40 @@ export const userRouter = router({
 
       return { success: true };
     }),
+
+  // Get user region
+  getRegion: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userRecord = await db
+        .select({ region: user.region })
+        .from(user)
+        .where(eq(user.id, ctx.session.user.id))
+        .limit(1);
+
+      if (userRecord.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      return { region: userRecord[0].region };
+    }),
+
+  // Update user region
+  updateRegion: protectedProcedure
+    .input(z.object({
+      region: z.enum(["intl", "jp"]).nullable(), // null = intl (default)
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db
+        .update(user)
+        .set({
+          region: input.region,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, ctx.session.user.id));
+
+      return { success: true };
+    }),
 }); 
