@@ -84,7 +84,12 @@
     "loading": "載入資料中...",
     "snapshotData": "資料紀錄",
     "snapshotFrom": "紀錄自 {date} • {name} • {count} 首歌曲",
-    "playerInfo": "玩家資訊",
+    "tabs": {
+      "playerInfo": "玩家資料",
+      "songs": "歌曲",
+      "plates": "名牌板"
+    },
+    "playerInfo": "玩家資料",
     "rating": "R 值：{rating}",
     "stars": "星星數：{stars}",
     "versionPlays": "本版本遊玩次數：{count}",

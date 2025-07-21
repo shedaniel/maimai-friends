@@ -30,7 +30,7 @@ export interface SongWithScore {
   songName: string;
   artist: string;
   cover: string;
-  difficulty: string;
+  difficulty: Difficulty;
   level: string;
   levelPrecise: number;
   type: "std" | "dx";

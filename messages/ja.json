@@ -84,6 +84,11 @@
     "loading": "データの読み込み中...",
     "snapshotData": "スナップショットデータ",
     "snapshotFrom": "{date} のスナップショット • {name} • {count}曲",
+    "tabs": {
+      "playerInfo": "プレイヤー情報",
+      "songs": "楽曲",
+      "plates": "ネームプレート"
+    },
     "playerInfo": "プレイヤー情報",
     "rating": "レーティング：{rating}",
     "stars": "スター：{stars}",

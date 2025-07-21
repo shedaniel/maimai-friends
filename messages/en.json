@@ -84,6 +84,11 @@
     "loading": "Loading data...",
     "snapshotData": "Snapshot Data",
     "snapshotFrom": "Snapshot from {date} • {name} • {count} songs",
+    "tabs": {
+      "playerInfo": "Player Info",
+      "songs": "Songs",
+      "plates": "Plates"
+    },
     "playerInfo": "Player Info",
     "rating": "Rating: {rating}",
     "stars": "Stars: {stars}",

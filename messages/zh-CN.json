@@ -84,6 +84,11 @@
     "loading": "加载数据中...",
     "snapshotData": "数据记录",
     "snapshotFrom": "记录自 {date} • {name} • {count} 首歌曲",
+    "tabs": {
+      "playerInfo": "玩家信息",
+      "songs": "歌曲",
+      "plates": "名牌板"
+    },
     "playerInfo": "玩家信息",
     "rating": "R 值：{rating}",
     "stars": "星星数：{stars}",
