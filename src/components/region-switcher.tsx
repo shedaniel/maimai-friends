@@ -23,9 +23,9 @@ export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
   const getRegionCode = (region: Region) => {
     switch (region) {
       case "intl":
-        return "IN";
+        return t('regions.intl');
       case "jp":
-        return "JP";
+        return t('regions.jp');
     }
   };
 

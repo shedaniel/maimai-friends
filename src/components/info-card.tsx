@@ -42,13 +42,13 @@ export function InfoCard({
       <CardContent>
         <div className="flex items-center gap-2 mb-4">
           <Image src={createSafeMaimaiImageUrl(snapshot.iconUrl)} alt={snapshot.title} width={80} height={80} />
-          <div className="grid grid-rows-[auto_1fr] min-w-72 self-stretch my-1 space-y-0.5">
+          <div className="flex flex-col min-w-0 self-stretch my-1 space-y-0.5 items-stretch">
             <span className="text-sm text-muted-foreground bg-gray-100 rounded-full px-6 py-1 text-center inset-shadow-sm truncate">{snapshot.title}</span>
-            <span className="text-lg font-semibold flex items-center self-center">
-              <span className="mx-4 flex-1">{snapshot.displayName}</span>
+            <span className="text-lg font-medium flex items-center self-center max-xs:flex-col">
+              <span className="mx-4 flex-1 whitespace-nowrap max-xs:text-md max-2xs:text-sm">{snapshot.displayName}</span>
               <div className="shrink-0 grow-0 min-w-fit w-[120px] h-[35px] relative">
                 <RatingImage rating={snapshot.rating} />
-                <span className="absolute top-[3px] left-[8px] w-[106px] h-[21px] tracking-[1.65px] text-right text-[18px] text-white box-border font-medium font-mono">{snapshot.rating}</span>
+                <span className="absolute top-[3px] left-[8px] w-[106px] h-[21px] tracking-[1.65px] text-right text-[18px] text-white box-border font-normal font-mono">{snapshot.rating}</span>
               </div>
             </span>
           </div>

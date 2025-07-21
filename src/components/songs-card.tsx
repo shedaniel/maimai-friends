@@ -163,7 +163,7 @@ function SongRow({ song }: { song: SongWithRating }) {
       />
       <div className="flex-1 min-w-0">
         <div className="truncate font-medium">{song.songName}&#8203;</div>
-        <div className="text-muted-foreground text-xs truncate">{song.difficulty.slice(0, 3).toUpperCase()} {(song.levelPrecise / 10).toFixed(1)} • {song.artist}</div>
+        <div className="text-muted-foreground text-xs truncate">{song.type.toUpperCase()} • {song.difficulty.slice(0, 3).toUpperCase()} {(song.levelPrecise / 10).toFixed(1)} • {song.artist}</div>
       </div>
       <div className="text-right ml-2">
         <div className="font-mono">{(song.achievement / 10000).toFixed(4)}%</div>
@@ -306,7 +306,7 @@ function SongGridCard({ song }: { song: SongWithRating }) {
     }
 
     if (content) {
-      content.style.transform = 'translateZ(30px)';
+      content.style.transform = 'translateZ(10px)';
     }
   };
 
@@ -328,13 +328,13 @@ function SongGridCard({ song }: { song: SongWithRating }) {
 
   return (
     <div
-      className={cn("relative bg-white rounded shadow-md overflow-hidden transition-all duration-300 ease-out cursor-pointer border-2",
-        song.difficulty === "basic" && "border-green-400",
-        song.difficulty === "advanced" && "border-yellow-400",
-        song.difficulty === "expert" && "border-red-400",
-        song.difficulty === "master" && "border-purple-500",
-        song.difficulty === "remaster" && "border-purple-200",
-        song.difficulty === "utage" && "border-pink-400",
+      className={cn("relative bg-white rounded-md shadow-md transition-all duration-300 ease-out cursor-pointer ring-2",
+        song.difficulty === "basic" && "ring-green-400",
+        song.difficulty === "advanced" && "ring-yellow-400",
+        song.difficulty === "expert" && "ring-red-400",
+        song.difficulty === "master" && "ring-purple-500",
+        song.difficulty === "remaster" && "ring-purple-200",
+        song.difficulty === "utage" && "ring-pink-400",
       )}
       style={{ aspectRatio: '16/10', transformStyle: 'preserve-3d', transform: 'perspective(1000px)' }}
       onMouseMove={handleMouseMove}
@@ -345,15 +345,28 @@ function SongGridCard({ song }: { song: SongWithRating }) {
         src={createSafeMaimaiImageUrl(song.cover)}
         alt={song.songName}
         fill
-        className="object-cover"
+        className="object-cover rounded-md overflow-hidden"
         loading="lazy"
       />
 
       {/* Dark overlay for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-black/30 rounded-md overflow-hidden" />
+
+      {/* Difficulty Badge */}
+      <div className={cn(
+        "absolute top-[-0.5px] right-[-0.5px] px-1.5 py-0.5 rounded-tr-md rounded-bl-md overflow-hidden text-[10px] font-semibold text-white",
+        song.difficulty === "basic" && "bg-green-500",
+        song.difficulty === "advanced" && "bg-yellow-500",
+        song.difficulty === "expert" && "bg-red-500",
+        song.difficulty === "master" && "bg-purple-500",
+        song.difficulty === "remaster" && "bg-purple-200 text-purple-900",
+        song.difficulty === "utage" && "bg-pink-500",
+      )}>
+        {(song.levelPrecise / 10).toFixed(1)}
+      </div>
 
       {/* Glow Effect */}
-      <div className="song-card-glow absolute inset-0 opacity-0 transition-opacity duration-300 pointer-events-none" />
+      <div className="song-card-glow absolute -inset-2 opacity-0 transition-opacity duration-300 pointer-events-none" />
 
       <div className="song-card-content relative w-full h-full transition-transform duration-300"
         style={{ transform: 'translateZ(30px)' }}>
@@ -370,19 +383,6 @@ function SongGridCard({ song }: { song: SongWithRating }) {
             className="drop-shadow-md"
             loading="lazy"
           />
-        </div>
-
-        {/* Difficulty Badge */}
-        <div className={cn(
-          "absolute top-0 right-0 px-1.5 py-0.5 rounded-rt rounded-bl text-[10px] font-semibold text-white shadow-md z-30",
-          song.difficulty === "basic" && "bg-green-700",
-          song.difficulty === "advanced" && "bg-yellow-700",
-          song.difficulty === "expert" && "bg-red-700",
-          song.difficulty === "master" && "bg-purple-700",
-          song.difficulty === "remaster" && "bg-purple-200 text-purple-900",
-          song.difficulty === "utage" && "bg-pink-700",
-        )}>
-          {(song.levelPrecise / 10).toFixed(1)}
         </div>
 
         {/* Song Info */}

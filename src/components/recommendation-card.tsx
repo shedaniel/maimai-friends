@@ -132,7 +132,7 @@ function generateRecommendations(songsWithRating: SongWithRating[], region: Regi
     }
     
     return scoreB - scoreA;
-  }).slice(0, 50); // Limit to top 50 recommendations
+  });
 }
 
 function RecommendationRow({ recommendation }: { recommendation: RecommendationData }) {
@@ -170,7 +170,7 @@ function RecommendationRow({ recommendation }: { recommendation: RecommendationD
             </div>
           </div>
           <div className="text-muted-foreground text-xs truncate">
-            {song.difficulty.slice(0, 3).toUpperCase()} {(song.levelPrecise / 10).toFixed(1)} • {song.artist}
+            {song.type.toUpperCase()} • {song.difficulty.slice(0, 3).toUpperCase()} {(song.levelPrecise / 10).toFixed(1)} • {song.artist}
           </div>
         </div>
       </div>
@@ -222,7 +222,7 @@ export function RecommendationCard({ selectedSnapshotData, region }: { selectedS
       default:
         return true;
     }
-  });
+  }).slice(0, 50);
 
   if (recommendations.length === 0) {
     return (
