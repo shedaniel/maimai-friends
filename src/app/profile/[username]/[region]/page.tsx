@@ -4,6 +4,9 @@ import { Region } from "@/lib/types";
 import { ProfilePageClient } from "@/components/profile-page-client";
 import { notFound } from "next/navigation";
 
+// Mark this page as dynamic to avoid conflicts with cookie usage in layout
+export const dynamic = 'force-dynamic';
+
 interface RegionProfilePageProps {
   params: Promise<{
     username: string;
@@ -54,12 +57,4 @@ export default async function RegionProfilePage({ params }: RegionProfilePagePro
     // Re-throw other errors
     throw error;
   }
-}
-
-// Generate static params for common regions (optional optimization)
-export function generateStaticParams() {
-  return [
-    { region: 'intl' },
-    { region: 'jp' },
-  ];
 } 
