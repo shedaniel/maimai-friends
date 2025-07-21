@@ -20,6 +20,13 @@ export async function processMaimaiToken(
 
   // Handle cookie:// format
   if (sanitizedToken.startsWith('cookie://')) {
+    if (region === "jp") {
+      return {
+        isValid: false,
+        error: "Cookie format is not supported for Japan region.",
+      };
+    }
+
     let cookieValue = sanitizedToken.substring('cookie://'.length);
     
     // Strip clal= prefix if present since validateMaimaiToken expects just the cookie value
@@ -27,7 +34,7 @@ export async function processMaimaiToken(
       cookieValue = cookieValue.substring('clal='.length);
     }
     
-    return await validateMaimaiToken(userId, region, cookieValue);
+    return await validateInternationalMaimaiToken(userId, cookieValue);
   }
 
   // Handle account:// format
@@ -74,9 +81,9 @@ export async function processMaimaiToken(
     }
 
     // If we have a cookie, try to validate it first
-    if (cookieValue) {
+    if (cookieValue && region === "intl") {
       console.log(`Trying to validate existing cookie for user ${userId}`);
-      const cookieResult = await validateMaimaiToken(userId, region, cookieValue);
+      const cookieResult = await validateInternationalMaimaiToken(userId, cookieValue);
       if (cookieResult.isValid) {
         return cookieResult;
       }
@@ -115,6 +122,25 @@ async function performAccountLogin(
   username: string,
   password: string
 ): Promise<TokenValidationResult> {
+  return region === "intl" ? await performInternationalAccountLogin(userId, username, password) : await performJapanAccountLogin(userId, username, password);
+}
+
+async function performJapanAccountLogin(
+  userId: string | null,
+  username: string,
+  password: string
+): Promise<TokenValidationResult> {
+  return {
+    isValid: false,
+    error: "Japan account login is not supported yet.",
+  };
+}
+
+async function performInternationalAccountLogin(
+  userId: string | null,
+  username: string,
+  password: string
+): Promise<TokenValidationResult> {
   const loginPageUrl = "https://lng-tgk-aime-gw.am-all.net/common_auth/login?site_id=maimaidxex&redirect_url=https://maimaidx-eng.com/maimai-mobile/&back_url=https://maimai.sega.com/";
   const loginUrl = "https://lng-tgk-aime-gw.am-all.net/common_auth/login/sid/";
 
@@ -145,7 +171,7 @@ async function performAccountLogin(
       } else {
         console.log("Could not extract JSESSIONID from Set-Cookie header");
         if (userId) {
-          await deleteToken(userId, region);
+          await deleteToken(userId, "intl");
         }
         return {
           isValid: false,
@@ -155,7 +181,7 @@ async function performAccountLogin(
     } else {
       console.log("No Set-Cookie header in login page response");
       if (userId) {
-        await deleteToken(userId, region);
+        await deleteToken(userId, "intl");
       }
       return {
         isValid: false,
@@ -207,7 +233,7 @@ async function performAccountLogin(
               .where(
                 and(
                   eq(userTokens.userId, userId),
-                  eq(userTokens.region, region)
+                  eq(userTokens.region, "intl")
                 )
               );
           }
@@ -225,7 +251,7 @@ async function performAccountLogin(
         } else {
           console.log("Could not extract clal cookie from Set-Cookie header");
           if (userId) {
-            await deleteToken(userId, region);
+            await deleteToken(userId, "intl");
           }
           return {
             isValid: false,
@@ -235,7 +261,7 @@ async function performAccountLogin(
       } else {
         console.log("No Set-Cookie header in login response");
         if (userId) {
-          await deleteToken(userId, region);
+          await deleteToken(userId, "intl");
         }
         return {
           isValid: false,
@@ -246,7 +272,7 @@ async function performAccountLogin(
       // Login failed
       console.log(`Account login failed with status: ${response.status}`);
       if (userId) {
-        await deleteToken(userId, region);
+        await deleteToken(userId, "intl");
       }
       return {
         isValid: false,
@@ -256,7 +282,7 @@ async function performAccountLogin(
   } catch (error) {
     console.error("Error during account login:", error);
     if (userId) {
-      await deleteToken(userId, region);
+      await deleteToken(userId, "intl");
     }
     return {
       isValid: false,
@@ -265,9 +291,8 @@ async function performAccountLogin(
   }
 }
 
-export async function validateMaimaiToken(
+export async function validateInternationalMaimaiToken(
   userId: string | null, 
-  region: "intl" | "jp", 
   token: string
 ): Promise<TokenValidationResult> {
   const loginUrl = "https://lng-tgk-aime-gw.am-all.net/common_auth/login?site_id=maimaidxex&redirect_url=https://maimaidx-eng.com/maimai-mobile/&back_url=https://maimai.sega.com/";
@@ -281,7 +306,7 @@ export async function validateMaimaiToken(
     
     // Remove invalid token from database
     if (userId) {
-      await deleteToken(userId, region);
+      await deleteToken(userId, "intl");
     }
     
     return {
@@ -296,7 +321,7 @@ export async function validateMaimaiToken(
     
     // Remove empty token from database
     if (userId) {
-      await deleteToken(userId, region);
+      await deleteToken(userId, "intl");
     }
     
     return {
@@ -305,7 +330,7 @@ export async function validateMaimaiToken(
     };
   }
 
-  console.log(`Validating token for user ${userId} in ${region} region (token length: ${sanitizedToken.length})`);
+  console.log(`Validating token for user ${userId} in intl region (token length: ${sanitizedToken.length})`);
 
   try {
     const response = await fetch(loginUrl, {
@@ -333,7 +358,7 @@ export async function validateMaimaiToken(
       console.log("Token expired, clearing from database");
       
       if (userId) {
-        await deleteToken(userId, region);
+        await deleteToken(userId, "intl");
       }
 
       return {

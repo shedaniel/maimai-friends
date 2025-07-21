@@ -160,8 +160,8 @@ async function getCookiesFromRedirect(redirectUrl: string): Promise<string> {
 }
 
 // Helper function to fetch and parse song data for a specific difficulty and version
-async function fetchSongDataForDifficulty(cookies: string, difficulty: number, version: number): Promise<any[]> {
-  const songsUrl = `https://maimaidx-eng.com/maimai-mobile/record/musicVersion/search/?version=${version}&diff=${difficulty}`;
+async function fetchSongDataForDifficulty(region: "intl" | "jp", cookies: string, difficulty: number, version: number): Promise<any[]> {
+  const songsUrl = `https://${region === "intl" ? "maimaidx-eng.com" : "maimaidx.jp"}/maimai-mobile/record/musicVersion/search/?version=${version}&diff=${difficulty}`;
   console.log(`Fetching songs data for version ${version}, difficulty ${difficulty} from: ${songsUrl}`);
 
   const songsResponse = await fetch(songsUrl, {
@@ -169,7 +169,7 @@ async function fetchSongDataForDifficulty(cookies: string, difficulty: number, v
     headers: {
       "Cookie": cookies,
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      "Referer": "https://maimaidx-eng.com/maimai-mobile/",
+      "Referer": `https://${region === "intl" ? "maimaidx-eng.com" : "maimaidx.jp"}/maimai-mobile/`,
     },
   });
 
@@ -297,10 +297,10 @@ function parseSongData(html: string, difficulty: number, version: number): any[]
 }
 
 // Helper function to fetch detailed song information
-async function fetchSongDetail(cookies: string, inputName: string, inputValue: string): Promise<any> {
+async function fetchSongDetail(region: "intl" | "jp", cookies: string, inputName: string, inputValue: string): Promise<any> {
   const params = new URLSearchParams();
   params.append(inputName, inputValue);
-  const detailUrl = `https://maimaidx-eng.com/maimai-mobile/record/musicDetail/?${params.toString()}`;
+  const detailUrl = `https://${region === "intl" ? "maimaidx-eng.com" : "maimaidx.jp"}/maimai-mobile/record/musicDetail/?${params.toString()}`;
   console.log(`Fetching song detail from: ${detailUrl}`);
 
   const detailResponse = await fetch(detailUrl, {
@@ -308,7 +308,7 @@ async function fetchSongDetail(cookies: string, inputName: string, inputValue: s
     headers: {
       "Cookie": cookies,
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      "Referer": "https://maimaidx-eng.com/maimai-mobile/",
+      "Referer": `https://${region === "intl" ? "maimaidx-eng.com" : "maimaidx.jp"}/maimai-mobile/`,
     },
   });
 
@@ -321,11 +321,11 @@ async function fetchSongDetail(cookies: string, inputName: string, inputValue: s
   const detailHtml = await detailResponse.text();
   console.log(`Song detail fetched successfully, length: ${detailHtml.length} characters`);
   
-  return parseSongDetail(detailHtml);
+  return parseSongDetail(detailHtml, region);
 }
 
 // Helper function to parse detailed song information from HTML
-function parseSongDetail(html: string): any {
+function parseSongDetail(html: string, region: "intl" | "jp"): any {
   const $ = load(html);
   
   // Extract cover image URL
@@ -337,7 +337,7 @@ function parseSongDetail(html: string): any {
   if (!coverSrc) {
     throw new Error("Cover image element found but src attribute is missing");
   }
-  const coverUrl = coverSrc.startsWith('http') ? coverSrc : `https://maimaidx-eng.com${coverSrc}`;
+  const coverUrl = coverSrc.startsWith('http') ? coverSrc : `https://${region === "intl" ? "maimaidx-eng.com" : "maimaidx.jp"}${coverSrc}`;
 
   // Extract genre
   const genreElement = $('.basic_block .blue');
@@ -548,7 +548,7 @@ export async function GET(request: NextRequest) {
         for (let difficulty = 0; difficulty <= 4; difficulty++) {
           console.log(`Fetching songs for version ${version}, difficulty ${difficulty}...`);
           try {
-            const difficultyData = await fetchSongDataForDifficulty(cookies, difficulty, version);
+            const difficultyData = await fetchSongDataForDifficulty(region, cookies, difficulty, version);
             allSongData.push(...difficultyData);
           } catch (error) {
             console.warn(`Failed to fetch data for version ${version}, difficulty ${difficulty}:`, error);
@@ -646,7 +646,7 @@ export async function GET(request: NextRequest) {
           console.log(`Fetching details for song ${i + 1}/${songsNeedingFetch.length}: ${songKey}`);
           
           // Fetch detailed song information
-          const songDetail = await fetchSongDetail(cookies, song.inputName, song.inputValue);
+          const songDetail = await fetchSongDetail(region, cookies, song.inputName, song.inputValue);
           
           // Get all difficulties for this song from the grouped data
           const difficulties = songsGrouped.get(songKey) || [];

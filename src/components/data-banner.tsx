@@ -84,7 +84,7 @@ export function DataBanner({
           <div className="flex items-center space-x-3">
             <Button
               onClick={onFetchData}
-              disabled={isFetching || region === "jp"}
+              disabled={isFetching}
               size="sm"
               className="flex items-center space-x-2"
             >

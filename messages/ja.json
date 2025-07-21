@@ -93,7 +93,6 @@
     "newSongs": "新規曲",
     "oldSongs": "過去曲",
     "noDataAvailable": "データがありません",
-    "japanRegionSoon": "日本リージョンサポートは近日公開予定です。",
     "getStartedInstructions": "上の取得ボタンからmaimaiデータを取得して使い始めましょう。"
   },
   "tokenDialog": {
@@ -124,8 +123,7 @@
   },
   "regions": {
     "intl": "インターナショナル",
-    "jp": "日本",
-    "wip": "開発中"
+    "jp": "日本"
   },
   "userHeader": {
     "memberLabel": "maimai friends メンバー"

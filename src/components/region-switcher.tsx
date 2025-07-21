@@ -49,15 +49,10 @@ export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onChange("jp")}
-          className={`${value === "jp" ? "bg-accent" : ""} flex items-center justify-between`}
+          className={`${value === "jp" ? "bg-accent" : ""} flex items-center gap-2`}
         >
-          <div className="flex items-center gap-2">
-            <Flag className="h-4 w-4" />
-            <span>{t('regions.jp')}</span>
-          </div>
-          <Badge variant="secondary" className="text-xs">
-            {t('regions.wip')}
-          </Badge>
+          <Flag className="h-4 w-4" />
+          {t('regions.jp')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

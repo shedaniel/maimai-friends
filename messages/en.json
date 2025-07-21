@@ -93,7 +93,6 @@
     "newSongs": "New Songs",
     "oldSongs": "Old Songs",
     "noDataAvailable": "No Data Available",
-    "japanRegionSoon": "Japan region support is coming soon.",
     "getStartedInstructions": "Get started by fetching your maimai data using the fetch button above."
   },
   "tokenDialog": {
@@ -124,8 +123,7 @@
   },
   "regions": {
     "intl": "International",
-    "jp": "Japan",
-    "wip": "WIP"
+    "jp": "Japan"
   },
   "userHeader": {
     "memberLabel": "maimai friends member"

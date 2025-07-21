@@ -93,7 +93,6 @@
     "newSongs": "新曲",
     "oldSongs": "舊曲",
     "noDataAvailable": "無可用資料",
-    "japanRegionSoon": "日本區域功能即將推出。",
     "getStartedInstructions": "點擊上方的匯入按鈕來匯入你的 maimai 資料。"
   },
   "tokenDialog": {
@@ -124,8 +123,7 @@
   },
   "regions": {
     "intl": "國際區",
-    "jp": "日本區",
-    "wip": "開發中"
+    "jp": "日本區"
   },
   "userHeader": {
     "memberLabel": "maimai friends 成員"
