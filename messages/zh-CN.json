@@ -159,6 +159,10 @@
       "fs": "FS",
       "rating": "评级"
     },
+    "statistics": {
+      "sum": "总和",
+      "average": "平均"
+    },
     "noDataAvailable": "无可用数据",
     "getStartedInstructions": "点击上方的导入按钮来导入你的 maimai 数据。"
   },

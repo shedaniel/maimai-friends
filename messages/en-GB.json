@@ -159,6 +159,10 @@
       "fs": "FS",
       "rating": "Rating"
     },
+    "statistics": {
+      "sum": "Sum",
+      "average": "Avg"
+    },
     "noDataAvailable": "No Data Available",
     "getStartedInstructions": "Get started by fetching your maimai data using the fetch button above."
   },

@@ -159,6 +159,10 @@
       "fs": "FS",
       "rating": "レーティング"
     },
+    "statistics": {
+      "sum": "合計",
+      "average": "平均"
+    },
     "noDataAvailable": "データがありません",
     "getStartedInstructions": "上の取得ボタンからmaimaiデータを取得して使い始めましょう。"
   },

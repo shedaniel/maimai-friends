@@ -11,33 +11,65 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
-import { LayoutList, LayoutGrid, Menu } from "lucide-react";
+import { LayoutList, LayoutGrid, Menu, Plus, TrendingUp } from "lucide-react";
 
-// Helper function to group songs by individual rating values
+// Helper function to group songs by individual rating values and difficulty
 function groupSongsByRating(songs: SongWithRating[]) {
   if (songs.length === 0) return [];
-  
+
   const ratings = songs.map(song => song.rating);
   const minRating = Math.min(...ratings);
   const maxRating = Math.max(...ratings);
-  
+
   const grouped = [];
   for (let rating = minRating; rating <= maxRating; rating++) {
-    const count = songs.filter(song => song.rating === rating).length;
+    const songsAtRating = songs.filter(song => song.rating === rating);
+
+    // Group by difficulty within each rating
+    const difficultyCounts = {
+      basic: songsAtRating.filter(s => s.difficulty === 'basic').length,
+      advanced: songsAtRating.filter(s => s.difficulty === 'advanced').length,
+      expert: songsAtRating.filter(s => s.difficulty === 'expert').length,
+      master: songsAtRating.filter(s => s.difficulty === 'master').length,
+      remaster: songsAtRating.filter(s => s.difficulty === 'remaster').length,
+      utage: songsAtRating.filter(s => s.difficulty === 'utage').length,
+    };
+
     grouped.push({
       rating: rating.toString(),
-      count: count,
+      ...difficultyCounts,
+      total: songsAtRating.length,
     });
   }
-  
+
   return grouped;
 }
 
 // Chart configuration
 const chartConfig = {
-  count: {
-    label: "Songs",
-    color: "hsl(var(--chart-1))",
+  basic: {
+    label: "Basic",
+    color: "hsl(142, 76%, 36%)", // green
+  },
+  advanced: {
+    label: "Advanced",
+    color: "hsl(45, 93%, 47%)", // yellow
+  },
+  expert: {
+    label: "Expert",
+    color: "hsl(0, 84%, 60%)", // red
+  },
+  master: {
+    label: "Master",
+    color: "hsl(271, 81%, 56%)", // purple
+  },
+  remaster: {
+    label: "Re:Master",
+    color: "hsl(270, 95%, 85%)", // light purple
+  },
+  utage: {
+    label: "Utage",
+    color: "hsl(330, 81%, 60%)", // pink
   },
 };
 
@@ -68,8 +100,39 @@ function RatingChart({ songs, title }: { songs: SongWithRating[]; title: string 
             content={<ChartTooltipContent hideLabel />}
           />
           <Bar
-            dataKey="count"
-            fill="var(--color-count)"
+            dataKey="basic"
+            stackId="difficulty"
+            fill="var(--color-basic)"
+            radius={[0, 0, 0, 0]}
+          />
+          <Bar
+            dataKey="advanced"
+            stackId="difficulty"
+            fill="var(--color-advanced)"
+            radius={[0, 0, 0, 0]}
+          />
+          <Bar
+            dataKey="expert"
+            stackId="difficulty"
+            fill="var(--color-expert)"
+            radius={[0, 0, 0, 0]}
+          />
+          <Bar
+            dataKey="master"
+            stackId="difficulty"
+            fill="var(--color-master)"
+            radius={[0, 0, 0, 0]}
+          />
+          <Bar
+            dataKey="remaster"
+            stackId="difficulty"
+            fill="var(--color-remaster)"
+            radius={[0, 0, 0, 0]}
+          />
+          <Bar
+            dataKey="utage"
+            stackId="difficulty"
+            fill="var(--color-utage)"
             radius={[2, 2, 0, 0]}
           />
         </BarChart>
@@ -114,14 +177,39 @@ function SongRow({ song }: { song: SongWithRating }) {
 }
 
 // Component for rendering compact song section as a single grid
-function CompactSongSection({ title, songs, count, t }: { title: string; songs: SongWithRating[]; count?: string; t: any }) {
+function CompactSongSection({ title, songs, count, t, sum, average }: {
+  title: string;
+  songs: SongWithRating[];
+  count?: string;
+  t: any;
+  sum?: number;
+  average?: number;
+}) {
   if (songs.length === 0) return null;
 
   return (
     <div className="space-y-2">
-      <h5 className="font-semibold mb-2 text-sm">
-        {title} {count && `(${count})`}
-      </h5>
+      <div className="flex justify-between items-center mb-2 px-2">
+        <h5 className="font-semibold text-sm">{title} {count && `(${count})`}</h5>
+        {(sum !== undefined || average !== undefined) && (
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            {sum !== undefined && (
+              <div className="flex items-center gap-1">
+                <Plus className="h-3 w-3" />
+                <span>{t('dataContent.statistics.sum')}</span>
+                <span className="font-mono font-medium">{sum}</span>
+              </div>
+            )}
+            {average !== undefined && (
+              <div className="flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" />
+                <span>{t('dataContent.statistics.average')}</span>
+                <span className="font-mono font-medium">{average.toFixed(2)}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       <div className="grid grid-cols-[4fr_2fr_min-content_min-content_min-content_min-content_min-content] text-xs">
         {/* Headers */}
         <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-left whitespace-nowrap">
@@ -145,7 +233,7 @@ function CompactSongSection({ title, songs, count, t }: { title: string; songs: 
         <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-center whitespace-nowrap">
           {t('dataContent.tableHeaders.rating')}
         </div>
-        
+
         {/* Song Data */}
         {songs.map(song => (
           <>
@@ -156,12 +244,12 @@ function CompactSongSection({ title, songs, count, t }: { title: string; songs: 
               {song.artist}
             </div>
             <div key={`${song.songId}-${song.difficulty}-level`} className={cn("text-center border-b grid items-center font-medium border-dashed",
-                song.difficulty === "basic" && "bg-green-100 text-green-800 border-green-200",
-                song.difficulty === "advanced" && "bg-yellow-100 text-yellow-800 border-yellow-200",
-                song.difficulty === "expert" && "bg-red-100 text-red-800 border-red-200",
-                song.difficulty === "master" && "bg-purple-300 text-purple-900 border-purple-400",
-                song.difficulty === "remaster" && "bg-purple-50 text-purple-800 border-purple-200",
-                song.difficulty === "utage" && "bg-pink-100 text-pink-800 border-pink-200",
+              song.difficulty === "basic" && "bg-green-100 text-green-800 border-green-200",
+              song.difficulty === "advanced" && "bg-yellow-100 text-yellow-800 border-yellow-200",
+              song.difficulty === "expert" && "bg-red-100 text-red-800 border-red-200",
+              song.difficulty === "master" && "bg-purple-300 text-purple-900 border-purple-400",
+              song.difficulty === "remaster" && "bg-purple-50 text-purple-800 border-purple-200",
+              song.difficulty === "utage" && "bg-pink-100 text-pink-800 border-pink-200",
             )}>
               {(song.levelPrecise / 10).toFixed(1)}
             </div>
@@ -185,19 +273,45 @@ function CompactSongSection({ title, songs, count, t }: { title: string; songs: 
 }
 
 // Component for rendering song sections
-function SongSection({ title, songs, count, displayMode, t }: { title: string; songs: SongWithRating[]; count?: string; displayMode: "list" | "grid" | "compact"; t: any }) {
+function SongSection({ title, songs, count, displayMode, t, sum, average }: {
+  title: string;
+  songs: SongWithRating[];
+  count?: string;
+  displayMode: "list" | "grid" | "compact";
+  t: any;
+  sum?: number;
+  average?: number;
+}) {
   if (songs.length === 0) return null;
 
   // Use dedicated compact section for compact mode
   if (displayMode === "compact") {
-    return <CompactSongSection title={title} songs={songs} count={count} t={t} />;
+    return <CompactSongSection title={title} songs={songs} count={count} t={t} sum={sum} average={average} />;
   }
 
   return (
     <div className="space-y-2">
-      <h5 className="font-semibold mb-2 text-sm">
-        {title} {count && `(${count})`}
-      </h5>
+      <div className="flex justify-between items-center mb-2">
+        <h5 className="font-semibold text-sm">{title} {count && `(${count})`}</h5>
+        {(sum !== undefined || average !== undefined) && (
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            {sum !== undefined && (
+              <div className="flex items-center gap-1">
+                <Plus className="h-3 w-3" />
+                <span>{t('dataContent.statistics.sum')}</span>
+                <span className="font-mono font-medium">{sum}</span>
+              </div>
+            )}
+            {average !== undefined && (
+              <div className="flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" />
+                <span>{t('dataContent.statistics.average')}</span>
+                <span className="font-mono font-medium">{average.toFixed(2)}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       <div className="space-y-2">
         {songs.map(song => (
           <SongRow key={`${song.songId}-${song.difficulty}`} song={song} />
@@ -208,45 +322,53 @@ function SongSection({ title, songs, count, displayMode, t }: { title: string; s
 }
 
 // Component for rendering the songs list with four sections
-function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSongs, t, displayMode }: { 
-  newSongsB15: SongWithRating[]; 
-  oldSongsB35: SongWithRating[]; 
-  remainingNewSongs: SongWithRating[]; 
-  remainingOldSongs: SongWithRating[]; 
+function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSongs, t, displayMode, b15Sum, b15Average, b35Sum, b35Average }: {
+  newSongsB15: SongWithRating[];
+  oldSongsB35: SongWithRating[];
+  remainingNewSongs: SongWithRating[];
+  remainingOldSongs: SongWithRating[];
   t: any;
-  displayMode: "list" | "grid" | "compact"
+  displayMode: "list" | "grid" | "compact";
+  b15Sum?: number;
+  b15Average?: number;
+  b35Sum?: number;
+  b35Average?: number;
 }) {
   return (
-      <div className="space-y-6">
-        <SongSection
-          title={t('dataContent.newSongsB15')}
-          songs={newSongsB15}
-          count={`${newSongsB15.length}/15`}
-          displayMode={displayMode}
-          t={t}
-        />
-        <SongSection
-          title={t('dataContent.oldSongsB35')}
-          songs={oldSongsB35}
-          count={`${oldSongsB35.length}/35`}
-          displayMode={displayMode}
-          t={t}
-        />
-        <SongSection
-          title={t('dataContent.newSongs')}
-          songs={remainingNewSongs}
-          count={remainingNewSongs.length > 0 ? `${remainingNewSongs.length}` : undefined}
-          displayMode={displayMode}
-          t={t}
-        />
-        <SongSection
-          title={t('dataContent.oldSongs')}
-          songs={remainingOldSongs}
-          count={remainingOldSongs.length > 0 ? `${remainingOldSongs.length}` : undefined}
-          displayMode={displayMode}
-          t={t}
-        />
-      </div>
+    <div className="space-y-6">
+      <SongSection
+        title={t('dataContent.newSongsB15')}
+        songs={newSongsB15}
+        count={`${newSongsB15.length}/15`}
+        displayMode={displayMode}
+        t={t}
+        sum={b15Sum}
+        average={b15Average}
+      />
+      <SongSection
+        title={t('dataContent.oldSongsB35')}
+        songs={oldSongsB35}
+        count={`${oldSongsB35.length}/35`}
+        displayMode={displayMode}
+        t={t}
+        sum={b35Sum}
+        average={b35Average}
+      />
+      <SongSection
+        title={t('dataContent.newSongs')}
+        songs={remainingNewSongs}
+        count={remainingNewSongs.length > 0 ? `${remainingNewSongs.length}` : undefined}
+        displayMode={displayMode}
+        t={t}
+      />
+      <SongSection
+        title={t('dataContent.oldSongs')}
+        songs={remainingOldSongs}
+        count={remainingOldSongs.length > 0 ? `${remainingOldSongs.length}` : undefined}
+        displayMode={displayMode}
+        t={t}
+      />
+    </div>
   );
 }
 
@@ -258,7 +380,7 @@ export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotDa
 
   // Calculate ratings and sort by highest rating first
   const songsWithRating: SongWithRating[] = addRatingsAndSort(songs);
-  
+
   const currentVersion = getCurrentVersion(region);
 
   // Separate songs by new/old
@@ -273,26 +395,32 @@ export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotDa
   const remainingNewSongs = newSongs.slice(15);
   const remainingOldSongs = oldSongs.slice(35);
 
+  // Calculate sum and average for B15 and B35
+  const b15Sum = newSongsB15.reduce((sum, song) => sum + song.rating, 0);
+  const b15Average = newSongsB15.length > 0 ? b15Sum / newSongsB15.length : 0;
+  const b35Sum = oldSongsB35.reduce((sum, song) => sum + song.rating, 0);
+  const b35Average = oldSongsB35.length > 0 ? b35Sum / oldSongsB35.length : 0;
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>{t('dataContent.songs', { count: songs.length })}</CardTitle>
-                      <Select value={displayMode} onValueChange={(value) => setDisplayMode(value as "list" | "grid" | "compact")}>
-              <SelectTrigger className="w-40 h-8">
-                <SelectValue>
-                  <div className="flex items-center gap-2">
-                    {displayMode === "list" && <LayoutList className="h-4 w-4" />}
-                    {displayMode === "grid" && <LayoutGrid className="h-4 w-4" />}
-                    {displayMode === "compact" && <Menu className="h-4 w-4" />}
-                    <span>
-                      {displayMode === "list" && t('dataContent.displayModes.list')}
-                      {displayMode === "grid" && t('dataContent.displayModes.grid')}
-                      {displayMode === "compact" && t('dataContent.displayModes.compact')}
-                    </span>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
+          <Select value={displayMode} onValueChange={(value) => setDisplayMode(value as "list" | "grid" | "compact")}>
+            <SelectTrigger className="w-40 h-8">
+              <SelectValue>
+                <div className="flex items-center gap-2">
+                  {displayMode === "list" && <LayoutList className="h-4 w-4" />}
+                  {displayMode === "grid" && <LayoutGrid className="h-4 w-4" />}
+                  {displayMode === "compact" && <Menu className="h-4 w-4" />}
+                  <span>
+                    {displayMode === "list" && t('dataContent.displayModes.list')}
+                    {displayMode === "grid" && t('dataContent.displayModes.grid')}
+                    {displayMode === "compact" && t('dataContent.displayModes.compact')}
+                  </span>
+                </div>
+              </SelectValue>
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="list">
                 <div className="flex items-center gap-2">
@@ -322,13 +450,17 @@ export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotDa
             <RatingChart songs={newSongsB15} title={t('dataContent.newSongsB15')} />
             <RatingChart songs={oldSongsB35} title={t('dataContent.oldSongsB35')} />
           </div>
-          <SongsList 
+          <SongsList
             newSongsB15={newSongsB15}
             oldSongsB35={oldSongsB35}
             remainingNewSongs={remainingNewSongs}
             remainingOldSongs={remainingOldSongs}
             t={t}
             displayMode={displayMode}
+            b15Sum={b15Sum}
+            b15Average={b15Average}
+            b35Sum={b35Sum}
+            b35Average={b35Average}
           />
         </div>
       </CardContent>

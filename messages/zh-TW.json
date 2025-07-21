@@ -159,6 +159,10 @@
       "fs": "FS",
       "rating": "評級"
     },
+    "statistics": {
+      "sum": "總和",
+      "average": "平均"
+    },
     "noDataAvailable": "無可用資料",
     "getStartedInstructions": "點擊上方的匯入按鈕來匯入你的 maimai 資料。"
   },
