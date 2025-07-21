@@ -272,6 +272,85 @@ function CompactSongSection({ title, songs, count, t, sum, average }: {
   );
 }
 
+// Component for rendering individual song cards in grid view
+function SongGridCard({ song }: { song: SongWithRating }) {
+  return (
+    <div 
+      className="relative bg-white rounded shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
+      style={{ aspectRatio: '16/9' }}
+    >
+      {/* Song Cover Background */}
+      <div className="relative w-full h-full">
+        <Image 
+          src={createSafeMaimaiImageUrl(song.cover)}
+          alt={song.songName}
+          fill
+          className="object-cover"
+          loading="lazy"
+        />
+        
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
+        
+        {/* Song Type Badge */}
+        <div className="absolute top-2.5 left-2.5">
+          <Image
+            src={createSafeMaimaiImageUrl(song.type === "dx" 
+              ? "https://maimaidx.jp/maimai-mobile/img/music_dx.png"
+              : "https://maimaidx.jp/maimai-mobile/img/music_standard.png"
+            )}
+            alt={song.type.toUpperCase()}
+            width={37}
+            height={11}
+            className="drop-shadow-md"
+            loading="lazy"
+          />
+        </div>
+
+        {/* Difficulty Badge */}
+        <div className={cn(
+          "absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold text-white shadow-md",
+          song.difficulty === "basic" && "bg-green-500",
+          song.difficulty === "advanced" && "bg-yellow-500",
+          song.difficulty === "expert" && "bg-red-500",
+          song.difficulty === "master" && "bg-purple-600",
+          song.difficulty === "remaster" && "bg-purple-300 text-purple-900",
+          song.difficulty === "utage" && "bg-pink-500",
+        )}>
+          {(song.levelPrecise / 10).toFixed(1)}
+        </div>
+
+        {/* Song Info */}
+        <div className="absolute bottom-0 left-0 right-0 p-2.5 text-white">
+          <div className="text-sm font-bold truncate mb-1 drop-shadow-md">
+            {song.songName}
+          </div>
+          <div className="text-xs opacity-90 truncate mb-1 drop-shadow-md">
+            {song.artist}
+          </div>
+          
+          {/* Achievement and Rating */}
+          <div className="flex justify-between items-end">
+            <div className="text-xs">
+              <div className="text-[10px] opacity-75 drop-shadow-md">
+                {song.fc !== 'none' ? song.fc.toUpperCase() : ''} {song.fs !== 'none' ? song.fs.toUpperCase() : ''}
+              </div>
+              <div className="font-mono font-medium drop-shadow-md">
+                {(song.achievement / 10000).toFixed(4)}%
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold font-mono drop-shadow-md">
+                {song.rating}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Component for rendering song sections
 function SongSection({ title, songs, count, displayMode, t, sum, average }: {
   title: string;
@@ -321,6 +400,48 @@ function SongSection({ title, songs, count, displayMode, t, sum, average }: {
   );
 }
 
+function SongGridSection({ title, songs, count, t, sum, average }: {
+  title: string;
+  songs: SongWithRating[];
+  count?: string;
+  t: any;
+  sum?: number;
+  average?: number;
+}) {
+  if (songs.length === 0) return null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h5 className="font-semibold text-sm">{title} {count && `(${count})`}</h5>
+        {(sum !== undefined || average !== undefined) && (
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            {sum !== undefined && (
+              <div className="flex items-center gap-1">
+                <Plus className="h-3 w-3" />
+                <span>{t('dataContent.statistics.sum')}</span>
+                <span className="font-mono font-medium">{sum}</span>
+              </div>
+            )}
+            {average !== undefined && (
+              <div className="flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" />
+                <span>{t('dataContent.statistics.average')}</span>
+                <span className="font-mono font-medium">{average.toFixed(2)}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="grid grid-cols-3 lg:grid-cols-5 gap-4">
+        {songs.map(song => (
+          <SongGridCard key={`${song.songId}-${song.difficulty}`} song={song} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Component for rendering the songs list with four sections
 function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSongs, t, displayMode, b15Sum, b15Average, b35Sum, b35Average }: {
   newSongsB15: SongWithRating[];
@@ -328,7 +449,7 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
   remainingNewSongs: SongWithRating[];
   remainingOldSongs: SongWithRating[];
   t: any;
-  displayMode: "list" | "grid" | "compact";
+  displayMode: "list" | "compact";
   b15Sum?: number;
   b15Average?: number;
   b35Sum?: number;
@@ -367,6 +488,29 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
         count={remainingOldSongs.length > 0 ? `${remainingOldSongs.length}` : undefined}
         displayMode={displayMode}
         t={t}
+      />
+    </div>
+  );
+}
+
+function SongsGrid({ newSongsB15, oldSongsB35, t, b15Sum, b15Average, b35Sum, b35Average }: { newSongsB15: SongWithRating[]; oldSongsB35: SongWithRating[]; t: any; b15Sum?: number; b15Average?: number; b35Sum?: number; b35Average?: number }) {
+  return (
+    <div className="space-y-6">
+      <SongGridSection
+        title={t('dataContent.newSongsB15')}
+        songs={newSongsB15}
+        count={`${newSongsB15.length}/15`}
+        t={t}
+        sum={b15Sum}
+        average={b15Average}
+      />
+      <SongGridSection
+        title={t('dataContent.oldSongsB35')}
+        songs={oldSongsB35}
+        count={`${oldSongsB35.length}/35`}
+        t={t}
+        sum={b35Sum}
+        average={b35Average}
       />
     </div>
   );
@@ -450,18 +594,30 @@ export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotDa
             <RatingChart songs={newSongsB15} title={t('dataContent.newSongsB15')} />
             <RatingChart songs={oldSongsB35} title={t('dataContent.oldSongsB35')} />
           </div>
-          <SongsList
-            newSongsB15={newSongsB15}
-            oldSongsB35={oldSongsB35}
-            remainingNewSongs={remainingNewSongs}
-            remainingOldSongs={remainingOldSongs}
-            t={t}
-            displayMode={displayMode}
-            b15Sum={b15Sum}
-            b15Average={b15Average}
-            b35Sum={b35Sum}
-            b35Average={b35Average}
-          />
+          {displayMode === "grid" ? (
+            <SongsGrid
+              newSongsB15={newSongsB15}
+              oldSongsB35={oldSongsB35}
+              t={t}
+              b15Sum={b15Sum}
+              b15Average={b15Average}
+              b35Sum={b35Sum}
+              b35Average={b35Average}
+            />
+          ) : (
+            <SongsList
+              newSongsB15={newSongsB15}
+              oldSongsB35={oldSongsB35}
+              remainingNewSongs={remainingNewSongs}
+              remainingOldSongs={remainingOldSongs}
+              t={t}
+              displayMode={displayMode}
+              b15Sum={b15Sum}
+              b15Average={b15Average}
+              b35Sum={b35Sum}
+              b35Average={b35Average}
+            />
+          )}
         </div>
       </CardContent>
     </Card>

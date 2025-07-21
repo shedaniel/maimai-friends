@@ -184,7 +184,7 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8">
+    <div className="container mx-auto max-w-[1300px] px-4 py-8">
       <UserHeader 
         user={user} 
         selectedRegion={selectedRegion}
