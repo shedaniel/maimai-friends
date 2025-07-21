@@ -358,7 +358,7 @@ function SongGridCard({ song }: { song: SongWithRating }) {
       <div className="song-card-content relative w-full h-full transition-transform duration-300"
         style={{ transform: 'translateZ(30px)' }}>
         {/* Song Type Badge */}
-        <div className="absolute top-2.5 left-2.5 2xs:max-xs:left-1 2xs:max-xs:top-1 2xs:max-xs:scale-75 origin-top-left z-30">
+        <div className="absolute top-2.5 left-2.5 2xs:max-xs:left-2 2xs:max-xs:top-2 2xs:max-xs:scale-75 origin-top-left z-30">
           <Image
             src={createSafeMaimaiImageUrl(song.type === "dx"
               ? "https://maimaidx.jp/maimai-mobile/img/music_dx.png"
@@ -386,7 +386,7 @@ function SongGridCard({ song }: { song: SongWithRating }) {
         </div>
 
         {/* Song Info */}
-        <div className="absolute bottom-0 left-0 right-0 p-2.5 2xs:max-xs:p-1 text-white z-30">
+        <div className="absolute bottom-0 left-0 right-0 p-2.5 text-white z-30">
           <div className="2xs:max-xs:text-xs text-sm font-bold truncate mb-1 drop-shadow-md">
             {song.songName}
           </div>
