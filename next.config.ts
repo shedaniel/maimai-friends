@@ -12,6 +12,18 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/avatars/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'maimaidx.jp',
+        port: '',
+        pathname: '/maimai-mobile/img/Music/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'maimaidx-eng.com',
+        port: '',
+        pathname: '/maimai-mobile/img/Music/**',
+      }
     ],
   },
 };

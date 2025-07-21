@@ -3,7 +3,7 @@ import { processMaimaiToken } from "@/lib/maimai-fetcher";
 import { load } from "cheerio";
 import { db } from "@/lib/db";
 import { songs } from "@/lib/schema";
-import { getCurrentVersion, getAvailableVersions } from "@/lib/metadata";
+import { getCurrentVersion, getAvailableVersions, getVersionInfo } from "@/lib/metadata";
 import { randomUUID } from "crypto";
 import { sql } from "drizzle-orm";
 
@@ -28,6 +28,92 @@ function levelToPrecise(level: string): number {
     }
     return baseLevel * 10;
   }
+}
+
+// Helper function to fetch dxdata.json
+async function fetchDxDataJson(): Promise<any> {
+  console.log("Fetching dxdata.json...");
+  const dxDataResponse = await fetch("https://raw.githubusercontent.com/gekichumai/dxrating/refs/heads/main/packages/dxdata/dxdata.json", {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    },
+  });
+
+  if (dxDataResponse.status !== 200) {
+    throw new Error(`Failed to fetch dxdata.json: HTTP ${dxDataResponse.status}`);
+  }
+
+  const dxData = await dxDataResponse.json();
+  console.log(`Loaded ${dxData.songs.length} songs from dxdata.json`);
+  return dxData;
+}
+
+// Helper function to get internal level value from dxdata.json
+function getInternalLevelFromDxData(
+  songTitle: string, 
+  type: "dx" | "std", 
+  difficulty: string, 
+  region: "intl" | "jp",
+  dxData: any
+): number | null {
+  // Find the song by title
+  const song = dxData.songs.find((s: any) => s.title === songTitle);
+  if (!song) {
+    return null;
+  }
+
+  // Find the sheet by type and difficulty
+  const sheet = song.sheets.find((s: any) => s.type === type && s.difficulty === difficulty);
+  if (!sheet) {
+    return null;
+  }
+
+  // Get current version info for the region
+  const currentVersionId = getCurrentVersion(region);
+  const currentVersionInfo = getVersionInfo(currentVersionId);
+  if (!currentVersionInfo) {
+    return null;
+  }
+
+  let internalLevel: number;
+
+  // Check if multiverInternalLevelValue exists and contains our version
+  if (sheet.multiverInternalLevelValue && typeof sheet.multiverInternalLevelValue === 'object') {
+    const versionLevel = sheet.multiverInternalLevelValue[currentVersionInfo.shortName];
+    if (typeof versionLevel === 'number') {
+      internalLevel = versionLevel;
+    } else {
+      // Fallback to default internalLevelValue
+      internalLevel = sheet.internalLevelValue;
+    }
+  } else {
+    // Use default internalLevelValue
+    internalLevel = sheet.internalLevelValue;
+  }
+
+  // Convert to 10x format and return
+  return Math.round(internalLevel * 10);
+}
+
+// Helper function to get precise level value (tries dxdata first, falls back to levelToPrecise)
+function getPreciseLevelValue(
+  songTitle: string,
+  level: string,
+  type: "dx" | "std",
+  difficulty: string,
+  region: "intl" | "jp",
+  dxData: any
+): number {
+  // Try to get from dxdata.json first
+  const dxDataLevel = getInternalLevelFromDxData(songTitle, type, difficulty, region, dxData);
+  if (dxDataLevel !== null) {
+    console.log(`Using dxdata internal level for ${songTitle} (${type}/${difficulty}): ${dxDataLevel / 10}`);
+    return dxDataLevel;
+  }
+
+  // Fallback to original levelToPrecise logic
+  console.log(`Using fallback level calculation for ${songTitle} (${type}/${difficulty}): ${level}`);
+  return levelToPrecise(level);
 }
 
 // Helper function to get cookies from redirect URL
@@ -277,7 +363,7 @@ function parseSongDetail(html: string): any {
 }
 
 // Helper function to prepare song entries from scraped difficulty data
-function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | undefined, region: "intl" | "jp"): any[] {
+function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | undefined, region: "intl" | "jp", dxData: any): any[] {
   const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
   const records: any[] = [];
 
@@ -308,7 +394,7 @@ function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | 
       cover,
       difficulty: difficultyName as "basic" | "advanced" | "expert" | "master" | "remaster",
       level: difficulty.level,
-      levelPrecise: levelToPrecise(difficulty.level),
+      levelPrecise: getPreciseLevelValue(songName, difficulty.level, musicType, difficultyName, region, dxData),
       type: musicType as "std" | "dx",
       genre,
       region,
@@ -322,7 +408,7 @@ function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | 
 }
 
 // Helper function to prepare song entries using fetched metadata
-function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any, region: "intl" | "jp"): any[] {
+function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any, region: "intl" | "jp", dxData: any): any[] {
   const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
   const records: any[] = [];
 
@@ -349,7 +435,7 @@ function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any,
       cover: coverUrl,
       difficulty: difficultyName as "basic" | "advanced" | "expert" | "master" | "remaster",
       level: difficulty.level,
-      levelPrecise: levelToPrecise(difficulty.level),
+      levelPrecise: getPreciseLevelValue(songName, difficulty.level, musicType, difficultyName, region, dxData),
       type: musicType as "std" | "dx",
       genre,
       region,
@@ -445,15 +531,14 @@ export async function GET(request: NextRequest) {
     const allSongData: any[] = [];
     
     // Get available versions for the region
-    const availableVersions = getAvailableVersions(region);
-    const versionsCount = availableVersions.length;
+    const currentVersion = getCurrentVersion(region);
     
-    console.log(`Available versions for region ${region}: ${versionsCount} versions`);
+    console.log(`Current version for region ${region}: ${currentVersion}`);
     
     // Fetch data for legacy versions (0-12) and current versions (13 to 13 + versionsCount - 1)
     const versionRanges = [
       { start: 0, end: 12, description: "legacy versions" },
-      { start: 13, end: 13 + versionsCount - 1, description: "current versions" }
+      { start: 13, end: 13 + currentVersion, description: "current versions" }
     ];
     
     for (const range of versionRanges) {
@@ -490,6 +575,10 @@ export async function GET(request: NextRequest) {
     const songsJsonData = await songsJsonResponse.json();
     console.log(`Loaded ${songsJsonData.length} songs from JSON data`);
 
+    // Step 4.5: Fetch dxdata.json for accurate internal level values
+    console.log("Step 4.5: Fetching dxdata.json for internal level values...");
+    const dxData = await fetchDxDataJson();
+
     // Step 5: Create a map of songs by title for quick lookup
     const songsJsonMap = new Map<string, any>();
     songsJsonData.forEach((song: any) => {
@@ -525,7 +614,7 @@ export async function GET(request: NextRequest) {
         
         if (jsonSong) {
           // Prepare song entries from scraped difficulty data with JSON metadata
-          const records = prepareSongEntriesFromScrapedData(difficulties, jsonSong, region);
+          const records = prepareSongEntriesFromScrapedData(difficulties, jsonSong, region, dxData);
           allRecordsToInsert.push(...records);
           console.log(`Successfully processed ${songKey} (with JSON data) - ${difficulties.length} difficulties`);
           processedFromJson++;
@@ -563,7 +652,7 @@ export async function GET(request: NextRequest) {
           const difficulties = songsGrouped.get(songKey) || [];
           
           // Prepare song entries using fetched metadata
-          const records = prepareSongEntriesWithFetchedData(difficulties, songDetail, region);
+          const records = prepareSongEntriesWithFetchedData(difficulties, songDetail, region, dxData);
           allRecordsToInsert.push(...records);
           
           console.log(`Successfully processed ${songKey} (with fetched data) - ${difficulties.length} difficulties`);

@@ -18,7 +18,7 @@ export function getRatingFactor(accuracy: number): number {
 export function calculateSongRating(song: SongWithScore): number {
   const accuracy = song.achievement / 10000;
   const factor = getRatingFactor(accuracy);
-  return Math.floor(factor * accuracy * song.levelPrecise / 10);
+  return factor * Math.min(accuracy, 100.5) * song.levelPrecise / 10;
 }
 
 // Extended song type with calculated rating
@@ -34,5 +34,9 @@ export function addRatingsAndSort(songs: SongWithScore[]): SongWithRating[] {
       rating: calculateSongRating(song)
     }))
     .sort((a, b) => b.achievement - a.achievement)
-    .sort((a, b) => b.rating - a.rating);
+    .sort((a, b) => b.rating - a.rating)
+    .map(song => ({
+      ...song,
+      rating: Math.floor(song.rating)
+    }));
 } 

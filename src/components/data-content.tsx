@@ -1,11 +1,13 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Database } from "lucide-react";
-import { Region, SnapshotWithSongs } from "@/lib/types";
+import { getCurrentVersion } from "@/lib/metadata";
 import { addRatingsAndSort, SongWithRating } from "@/lib/rating-calculator";
-import { getLatestAvailableVersion } from "@/lib/metadata";
+import { Region, SnapshotWithSongs } from "@/lib/types";
+import { createSafeMaimaiImageUrl } from "@/lib/utils";
+import { Database } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 
 interface DataContentProps {
   region: Region;
@@ -17,9 +19,19 @@ interface DataContentProps {
 function SongRow({ song }: { song: SongWithRating }) {
   return (
     <div className="flex justify-between items-center text-sm border-b border-gray-200 pb-1.5 h-12">
+      <Image src={createSafeMaimaiImageUrl(song.cover)}
+        alt={song.songName}
+        blurDataURL={`/_next/image?url=${createSafeMaimaiImageUrl(song.cover)}&w=16&q=1`}
+        className="w-9 h-9 mr-2"
+        width={36}
+        height={36}
+        layout="fixed"
+        loading="lazy"
+        unoptimized
+      />
       <div className="flex-1 min-w-0">
         <div className="truncate font-medium">{song.songName}&#8203;</div>
-        <div className="text-muted-foreground text-xs">{song.artist} • {song.difficulty} {song.level}</div>
+        <div className="text-muted-foreground text-xs truncate">{song.artist} • {song.difficulty} {song.level} ({song.levelPrecise / 10})</div>
       </div>
       <div className="text-right ml-2">
         <div className="font-mono">{(song.achievement / 10000).toFixed(4)}%</div>
@@ -52,11 +64,11 @@ function SongSection({ title, songs, count }: { title: string; songs: SongWithRa
 
 // Component for rendering the songs list with four sections
 function SongsList({ songs, region, t }: { songs: SongWithRating[]; region: Region; t: any }) {
-  const latestVersion = getLatestAvailableVersion(region);
+  const currentVersion = getCurrentVersion(region);
   
   // Separate songs by new/old
-  const newSongs = songs.filter(song => song.addedVersion === latestVersion);
-  const oldSongs = songs.filter(song => song.addedVersion !== latestVersion);
+  const newSongs = songs.filter(song => song.addedVersion === currentVersion);
+  const oldSongs = songs.filter(song => song.addedVersion !== currentVersion);
   
   // Get top songs for B15/B35
   const newSongsB15 = newSongs.slice(0, 15);
