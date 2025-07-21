@@ -167,6 +167,17 @@
     "noDataAvailable": "データがありません",
     "getStartedInstructions": "上の取得ボタンからmaimaiデータを取得して使い始めましょう。"
   },
+  "recommendations": {
+    "noRecommendations": "おすすめがありません",
+    "allOptimal": "これ以上レーティングが上がる曲がない。",
+    "description": "現在のB15/B35スコアに基づいて、レーティング向上のためのおすすめ楽曲。",
+    "filters": {
+      "all": "すべて",
+      "best": "ベスト50内",
+      "new": "新曲",
+      "old": "旧曲"
+    }
+  },
   "tokenDialog": {
     "title": "maimai 認証を更新",
     "japanDescription": "SEGAアカウント情報を入力してください。",

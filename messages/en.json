@@ -167,6 +167,17 @@
     "noDataAvailable": "No Data Available",
     "getStartedInstructions": "Get started by fetching your maimai data using the fetch button above."
   },
+  "recommendations": {
+    "noRecommendations": "No Recommendations Available",
+    "allOptimal": "All your scores are already optimal! Keep up the great work.",
+    "description": "Songs recommended to improve your rating based on your current B15/B35 scores.",
+    "filters": {
+      "all": "All",
+      "best": "In B15/B35",
+      "new": "New Songs",
+      "old": "Old Songs"
+    }
+  },
   "tokenDialog": {
     "title": "Update maimai authentication",
     "japanDescription": "Enter your SEGA account credentials for the Japan region.",

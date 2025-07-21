@@ -167,6 +167,17 @@
     "noDataAvailable": "無可用資料",
     "getStartedInstructions": "點擊上方的匯入按鈕來匯入你的 maimai 資料。"
   },
+  "recommendations": {
+    "noRecommendations": "無推薦歌曲",
+    "allOptimal": "沒有其他能夠提升 R 值的歌曲了。做得很好！",
+    "description": "根據你當前的成績組合計算出用於提高 R 值的歌曲。",
+    "filters": {
+      "all": "全部",
+      "best": "B15/B35 內",
+      "new": "新歌",
+      "old": "舊歌"
+    }
+  },
   "tokenDialog": {
     "title": "更新 maimai 驗證",
     "japanDescription": "輸入你的 SEGA 帳戶憑證。",
