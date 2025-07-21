@@ -66,10 +66,53 @@
       "updateToken": "更新驗證方式",
       "description": "更新你的 maimai 驗證方式以進行資料匯入及同步玩家資料。"
     },
+    "profile": {
+      "publishProfile": "公開個人檔案",
+      "publishDescription": "公開你的 maimai 個人檔案，讓他人可以查看你的分數和進度。",
+      "mainRegion": {
+        "label": "主要地區",
+        "description": "選擇用於公開個人檔案的主要地區。",
+        "intl": "國際區",
+        "jp": "日本區"
+      },
+      "privacy": {
+        "label": "隱私設定",
+        "showAllScores": {
+          "label": "顯示所有分數",
+          "description": "顯示所有分數，而不僅僅是最佳 50 首歌曲。"
+        },
+        "showScoreDetails": {
+          "label": "顯示分數詳情",
+          "description": "顯示詳細的分數資訊，包括遊玩次數和詳細統計。"
+        },
+        "showPlates": {
+          "label": "顯示稱號",
+          "description": "顯示你的稱號收集和完成進度。"
+        },
+        "showPlayCounts": {
+          "label": "顯示遊玩次數",
+          "description": "顯示你的maimai遊玩次數。"
+        },
+        "showEvents": {
+          "label": "顯示活動",
+          "description": "顯示你的活動完成進度。"
+        },
+        "showInSearch": {
+          "label": "允許搜尋",
+          "description": "允許他人透過使用者名稱搜尋到你的個人檔案。"
+        }
+      },
+      "url": {
+        "label": "個人檔案網址",
+        "description": "你可以與他人分享的公開個人檔案連結。",
+        "copied": "個人檔案網址已複製到剪貼簿！",
+        "copyFailed": "複製網址到剪貼簿失敗"
+      }
+    },
     "saveChanges": "儲存變更",
     "saving": "儲存中...",
-    "success": "設定更新成功！",
-    "error": "設定更新失敗"
+    "saved": "設定儲存成功！",
+    "errorSaving": "設定儲存失敗"
   },
   "dataBanner": {
     "dataSnapshot": "資料紀錄：",

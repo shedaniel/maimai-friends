@@ -66,10 +66,53 @@
       "updateToken": "トークンを更新",
       "description": "データ取得のためにmaimaiトークンを更新してください。プレイヤーデータの同期に必要です。"
     },
+    "profile": {
+      "publishProfile": "プロフィールを公開",
+      "publishDescription": "あなたのmaimaiプロフィールを一般公開し、他の人があなたのスコアと進歩を見ることができるようにします。",
+      "mainRegion": {
+        "label": "メイン地域",
+        "description": "公開するプロフィールの主要地域を選択してください。",
+        "intl": "インターナショナル",
+        "jp": "日本"
+      },
+      "privacy": {
+        "label": "プライバシー設定",
+        "showAllScores": {
+          "label": "すべてのスコアを表示",
+          "description": "ベスト50曲のみではなく、すべてのスコアを表示します。"
+        },
+        "showScoreDetails": {
+          "label": "スコアの詳細を表示",
+          "description": "プレイ回数やタイミングを含む詳細なスコア情報を表示します。"
+        },
+        "showPlates": {
+          "label": "ネームプレートを表示",
+          "description": "ネームプレートコレクションを表示します。"
+        },
+        "showPlayCounts": {
+          "label": "プレイ回数を表示",
+          "description": "maimaiのプレイ回数を表示します。"
+        },
+        "showEvents": {
+          "label": "イベントを表示",
+          "description": "イベントの達成進捗を表示します。"
+        },
+        "showInSearch": {
+          "label": "検索で表示",
+          "description": "他の人があなたのユーザー名でプロフィールを検索できるようにします。"
+        }
+      },
+      "url": {
+        "label": "プロフィールURL",
+        "description": "他の人と共有できる公開プロフィールリンクです。",
+        "copied": "プロフィールURLをクリップボードにコピーしました！",
+        "copyFailed": "URLのクリップボードへのコピーに失敗しました"
+      }
+    },
     "saveChanges": "変更を保存",
     "saving": "保存中...",
-    "success": "設定が正常に更新されました！",
-    "error": "設定の更新に失敗しました"
+    "saved": "設定が正常に保存されました！",
+    "errorSaving": "設定の保存に失敗しました"
   },
   "dataBanner": {
     "dataSnapshot": "データスナップショット：",

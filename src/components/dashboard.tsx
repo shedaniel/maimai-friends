@@ -223,6 +223,7 @@ export function Dashboard({ user }: DashboardProps) {
         onClose={() => setIsSettingsOpen(false)}
         currentTimezone={timezoneData?.timezone ?? null}
         currentLanguage={languageData?.language ?? null}
+        username={user.name ?? undefined}
         onTimezoneUpdate={handleTimezoneUpdate}
         onLanguageUpdate={handleLanguageUpdate}
         onOpenTokenDialog={handleOpenTokenDialog}

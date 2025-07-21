@@ -66,10 +66,53 @@
       "updateToken": "更新验证方式",
       "description": "更新你的 maimai 验证方式以进行数据导入及同步玩家资料。"
     },
+    "profile": {
+      "publishProfile": "公开档案",
+      "publishDescription": "公开你的 maimai 档案，让他人可以查看你的分数和进度。",
+      "mainRegion": {
+        "label": "主要地区",
+        "description": "选择用于公开档案的主要地区。",
+        "intl": "国际服",
+        "jp": "日本服"
+      },
+      "privacy": {
+        "label": "隐私设置",
+        "showAllScores": {
+          "label": "显示所有分数",
+          "description": "显示所有分数，而不仅仅是最佳 50 首歌曲。"
+        },
+        "showScoreDetails": {
+          "label": "显示分数详情",
+          "description": "显示详细的分数信息，包括游玩次数和详细统计。"
+        },
+        "showPlates": {
+          "label": "显示称号",
+          "description": "显示你的称号收集和完成进度。"
+        },
+        "showPlayCounts": {
+          "label": "显示游玩次数",
+          "description": "显示你的maimai游玩次数。"
+        },
+        "showEvents": {
+          "label": "显示活动",
+          "description": "显示你的活动完成进度。"
+        },
+        "showInSearch": {
+          "label": "允许搜索",
+          "description": "允许他人通过用户名搜索到你的档案。"
+        }
+      },
+      "url": {
+        "label": "档案链接",
+        "description": "你可以与他人分享的公开档案链接。",
+        "copied": "档案链接已复制到剪贴板！",
+        "copyFailed": "复制链接到剪贴板失败"
+      }
+    },
     "saveChanges": "保存变更",
     "saving": "保存中...",
-    "success": "设置更新成功！",
-    "error": "设置更新失败"
+    "saved": "设置保存成功！",
+    "errorSaving": "设置保存失败"
   },
   "dataBanner": {
     "dataSnapshot": "数据记录：",

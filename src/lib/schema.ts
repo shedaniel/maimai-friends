@@ -12,6 +12,15 @@ export const user = sqliteTable("user", {
   timezone: text("timezone"), // nullable, null = Asia/Tokyo (JP default)
   language: text("language", { enum: ["en", "en-GB", "ja", "zh-TW", "zh-CN"] }), // nullable, null = auto-detect
   region: text("region", { enum: ["intl", "jp"] }), // nullable, null = intl (default)
+  // Profile publishing settings
+  publishProfile: integer("publishProfile", { mode: "boolean" }).notNull().default(false),
+  profileMainRegion: text("profileMainRegion", { enum: ["intl", "jp"] }).notNull().default("intl"),
+  profileShowAllScores: integer("profileShowAllScores", { mode: "boolean" }).notNull().default(true),
+  profileShowScoreDetails: integer("profileShowScoreDetails", { mode: "boolean" }).notNull().default(true),
+  profileShowPlates: integer("profileShowPlates", { mode: "boolean" }).notNull().default(true),
+  profileShowPlayCounts: integer("profileShowPlayCounts", { mode: "boolean" }).notNull().default(true),
+  profileShowEvents: integer("profileShowEvents", { mode: "boolean" }).notNull().default(true),
+  profileShowInSearch: integer("profileShowInSearch", { mode: "boolean" }).notNull().default(true),
 });
 
 export const session = sqliteTable("session", {

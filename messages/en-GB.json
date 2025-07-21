@@ -66,10 +66,53 @@
       "updateToken": "Update Token",
       "description": "Update your maimai token for data fetching. This is required to sync your player data."
     },
+    "profile": {
+      "publishProfile": "Publish Profile",
+      "publishDescription": "Make your maimai profile publicly accessible for others to view your scores and progress.",
+      "mainRegion": {
+        "label": "Main Region",
+        "description": "Choose your primary region for the published profile.",
+        "intl": "International",
+        "jp": "Japan"
+      },
+      "privacy": {
+        "label": "Privacy Settings",
+        "showAllScores": {
+          "label": "Show All Scores",
+          "description": "Display all your scores instead of only your best 50 songs."
+        },
+        "showScoreDetails": {
+          "label": "Show Score Details",
+          "description": "Show detailed score information including play counts and timing statistics."
+        },
+        "showPlates": {
+          "label": "Show Plates",
+          "description": "Display your plate collection and completion progress."
+        },
+        "showPlayCounts": {
+          "label": "Show Play Counts",
+          "description": "Display your maimai play counts."
+        },
+        "showEvents": {
+          "label": "Show Events",
+          "description": "Display your event completion progress."
+        },
+        "showInSearch": {
+          "label": "Show in Search",
+          "description": "Allow others to find your profile by searching for your username."
+        }
+      },
+      "url": {
+        "label": "Profile URL",
+        "description": "Your public profile link that you can share with others.",
+        "copied": "Profile URL copied to clipboard!",
+        "copyFailed": "Failed to copy URL to clipboard"
+      }
+    },
     "saveChanges": "Save Changes",
     "saving": "Saving...",
-    "success": "Settings updated successfully!",
-    "error": "Failed to update settings"
+    "saved": "Settings saved successfully!",
+    "errorSaving": "Failed to save settings"
   },
   "dataBanner": {
     "dataSnapshot": "Data Snapshot:",

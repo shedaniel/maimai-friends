@@ -399,4 +399,93 @@ export const userRouter = router({
 
       return { success: true };
     }),
+
+  // Get profile settings
+  getProfileSettings: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userRecord = await db
+        .select({
+          publishProfile: user.publishProfile,
+          profileMainRegion: user.profileMainRegion,
+          profileShowAllScores: user.profileShowAllScores,
+          profileShowScoreDetails: user.profileShowScoreDetails,
+          profileShowPlates: user.profileShowPlates,
+          profileShowPlayCounts: user.profileShowPlayCounts,
+          profileShowEvents: user.profileShowEvents,
+          profileShowInSearch: user.profileShowInSearch,
+        })
+        .from(user)
+        .where(eq(user.id, ctx.session.user.id))
+        .limit(1);
+
+      if (userRecord.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      return userRecord[0];
+    }),
+
+  // Update publish profile setting
+  updatePublishProfile: protectedProcedure
+    .input(z.object({
+      publishProfile: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db
+        .update(user)
+        .set({
+          publishProfile: input.publishProfile,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, ctx.session.user.id));
+
+      return { success: true };
+    }),
+
+  // Update profile main region
+  updateProfileMainRegion: protectedProcedure
+    .input(z.object({
+      profileMainRegion: z.enum(['intl', 'jp']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db
+        .update(user)
+        .set({
+          profileMainRegion: input.profileMainRegion,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, ctx.session.user.id));
+
+      return { success: true };
+    }),
+
+  // Update profile privacy settings
+  updateProfilePrivacySettings: protectedProcedure
+    .input(z.object({
+      profileShowAllScores: z.boolean(),
+      profileShowScoreDetails: z.boolean(),
+      profileShowPlates: z.boolean(),
+      profileShowPlayCounts: z.boolean(),
+      profileShowEvents: z.boolean(),
+      profileShowInSearch: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db
+        .update(user)
+        .set({
+          profileShowAllScores: input.profileShowAllScores,
+          profileShowScoreDetails: input.profileShowScoreDetails,
+          profileShowPlates: input.profileShowPlates,
+          profileShowPlayCounts: input.profileShowPlayCounts,
+          profileShowEvents: input.profileShowEvents,
+          profileShowInSearch: input.profileShowInSearch,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, ctx.session.user.id));
+
+      return { success: true };
+    }),
 }); 
