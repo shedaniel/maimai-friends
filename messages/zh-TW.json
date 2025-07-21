@@ -87,7 +87,10 @@
     "tabs": {
       "playerInfo": "玩家資料",
       "songs": "歌曲",
-      "plates": "名牌板"
+      "recommendations": "推薦歌曲",
+      "plates": "名牌板",
+      "map": "活動地圖",
+      "exportImage": "匯出圖片"
     },
     "playerInfo": "玩家資料",
     "rating": "R 值：{rating}",

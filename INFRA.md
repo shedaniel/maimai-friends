@@ -7,9 +7,10 @@
 - **Language**: TypeScript ✅ **IMPLEMENTED**
 - **Styling**: Tailwind CSS + shadcn/ui components ✅ **IMPLEMENTED**
 - **State Management**: React hooks + tRPC with React Query ✅ **IMPLEMENTED**
-- **UI Components**: shadcn/ui (Button, Card, Form, Input, Label, Dialog, DropdownMenu, Sonner) ✅ **IMPLEMENTED**
+- **UI Components**: shadcn/ui (Button, Card, Form, Input, Label, Dialog, DropdownMenu, Sonner, Tabs, Progress, Select, Badge) ✅ **IMPLEMENTED**
 - **API Communication**: tRPC for type-safe API calls ✅ **IMPLEMENTED**
 - **Notifications**: Sonner toast notifications ✅ **IMPLEMENTED**
+- **Internationalization**: next-intl with 5 language support (EN, EN-GB, JA, ZH-CN, ZH-TW) ✅ **IMPLEMENTED**
 
 ### Backend
 - **Runtime**: Node.js (Next.js API Routes) ✅ **IMPLEMENTED**
@@ -17,12 +18,14 @@
 - **ORM**: Drizzle ORM with schema validation ✅ **IMPLEMENTED**
 - **Authentication**: Discord OAuth via Better Auth ✅ **IMPLEMENTED**
 - **API Layer**: tRPC router with protected procedures ✅ **IMPLEMENTED**
+- **HTML Parsing**: Cheerio for maimai data extraction ✅ **IMPLEMENTED**
 
 ### Infrastructure
 - **Deployment**: Ready for Vercel deployment
 - **Database**: SQLite for development ✅ **IMPLEMENTED**
 - **Token Storage**: Encrypted tokens in database ✅ **IMPLEMENTED**
 - **Rate Limiting**: In-memory rate limiting (5 requests per 5 minutes) ✅ **IMPLEMENTED**
+- **Data Population**: Admin endpoint for song database updates ✅ **IMPLEMENTED**
 
 ## User Flow ✅ **IMPLEMENTED**
 
@@ -50,6 +53,7 @@
    - Rate limited (5 requests per 5 minutes per user per region)
    - Token validation against SEGA login endpoint
    - Complete maimai data fetch flow implemented
+   - Full HTML parsing and database storage ✅ **IMPLEMENTED**
 
 ### UI Features ✅ **IMPLEMENTED**
 - **User Menu**: Dropdown with profile picture and logout
@@ -58,6 +62,10 @@
 - **Fetch Status**: Real-time updates with button state changes
 - **Error Handling**: Toast notifications for all error states
 - **Gray Background**: Subtle background with white card contrast
+- **Tabbed Data View**: Player Info, Songs, Recommendations, Plates, Map, Export Image ✅ **IMPLEMENTED**
+- **Rating Display**: Visual rating cards with proper color coding ✅ **IMPLEMENTED**
+- **Song List**: B15/B35 organization with difficulty colors and achievement percentages ✅ **IMPLEMENTED**
+- **Multi-language Support**: Automatic language detection and manual selection ✅ **IMPLEMENTED**
 
 ## Database Schema ✅ **IMPLEMENTED**
 
@@ -113,7 +121,7 @@
 - title: string
 ```
 
-#### `songs`
+#### `songs` ✅ **IMPLEMENTED**
 ```sql
 - id: string (primary key, auto-generated)
 - songName: string
@@ -123,26 +131,25 @@
 - level: enum ('1', '1+', '2', '2+', ..., '15', '15+', '16', '16+')
 - levelPrecise: int (stored as 10x, e.g., 16.5 = 165)
 - type: enum ('std', 'dx')
-- addedDate: date
-- genre: enum (TBD - will define based on maimai genres)
-- intlLevelOverride: enum | null
-- intlLevelPreciseOverride: int | null
+- genre: string
+- region: enum ('intl', 'jp')
+- gameVersion: int
+- addedVersion: int (-1 for legacy versions, version offset for newer versions)
+- UNIQUE constraint on (songName, difficulty, type, region, gameVersion)
 ```
 
-#### `user_scores`
+#### `user_scores` ✅ **IMPLEMENTED**
 ```sql
 - id: string (primary key)
 - snapshotId: string (foreign key -> user_snapshots.id)
 - songId: string (foreign key -> songs.id)
-- playCount: int
-- lastPlayed: timestamp
 - achievement: int (stored as 10000x, e.g., 99.1234% = 991234)
 - dxScore: int
 - fc: enum ('none', 'fc', 'fc+', 'ap', 'ap+')
 - fs: enum ('none', 'sync', 'fs', 'fs+', 'fdx', 'fdx+')
 ```
 
-#### `detailed_scores` (Optional detailed recent play data)
+#### `detailed_scores` ✅ **IMPLEMENTED** (Optional detailed recent play data)
 ```sql
 - id: string (primary key)
 - snapshotId: string (foreign key -> user_snapshots.id)
@@ -200,12 +207,66 @@
 - `user.getFetchStatus` - Get latest fetch session status ✅ **IMPLEMENTED**
 - `user.hasToken` - Check if user has saved token for region ✅ **IMPLEMENTED**
 
-### Maimai Data Fetching ✅ **IMPLEMENTED**
+### Admin Endpoints ✅ **IMPLEMENTED**
+- `GET /api/admin/update` - Populate song database from maimai sources
+- **Authentication**: Requires ADMIN_UPDATE_TOKEN environment variable
+- **Parameters**: `?token=<maimai_token>&region=<intl|jp>`
+- **Token validation**: Validates against SEGA login endpoint
+- **Song data scraping**: Fetches all songs across versions and difficulties
+- **Metadata integration**: Combines scraped data with official JSON sources
+- **External APIs**: Integrates with [dxdata.json](https://github.com/gekichumai/dxrating) for accurate internal level values
+- **Batch processing**: Handles large datasets with proper batching and upserts
+
+### Maimai Data Processing ✅ **IMPLEMENTED**
+- **Complete HTML Parsing**: Full maimai-mobile data extraction ✅ **IMPLEMENTED**
+- **Player Data Extraction**: Rating, profile info, play counts ✅ **IMPLEMENTED**
+- **Song Score Processing**: Achievement, FC, FS status per song ✅ **IMPLEMENTED**
 - **Token Validation**: Validates `clal` cookie against SEGA login endpoint
 - **Login Flow**: Automatic login using redirect URL and cookie extraction
-- **Player Data Fetch**: Retrieves player data from maimai-mobile/playerData/
 - **Error Detection**: Detects session expiration and invalid tokens
 - **Token Cleanup**: Automatically removes invalid tokens from database
+- **Database Storage**: Complete data storage in structured format ✅ **IMPLEMENTED**
+
+## Rating System ✅ **IMPLEMENTED**
+
+### Rating Calculation ✅ **IMPLEMENTED**
+- **Accuracy-based Factors**: Implements official maimai rating formula
+  - 100.5%+: 0.224 factor
+  - 100.0%+: 0.216 factor
+  - 99.5%+: 0.211 factor
+  - 99.0%+: 0.208 factor
+  - 98.0%+: 0.203 factor
+  - 97.0%+: 0.200 factor
+  - 94.0%+: 0.168 factor
+  - 90.0%+: 0.152 factor
+  - 80.0%+: 0.136 factor
+- **Song Rating Formula**: `floor(factor × accuracy × levelPrecise / 10)`
+- **B15/B35 Organization**: Automatic categorization of top ratings
+  - New songs (current version): Top 15 ratings
+  - Old songs (previous versions): Top 35 ratings
+
+### Data Visualization ✅ **IMPLEMENTED**
+- **Player Info Card**: Rating display with color-coded badges, profile picture, title
+- **Songs List**: Organized by B15/B35 with difficulty colors and achievement percentages
+- **Song Cards**: Cover images, difficulty color coding, FC/FS status display
+- **Rating Display**: Visual rating badges with proper maimai color scheme
+
+## Version Management ✅ **IMPLEMENTED**
+
+### Version Tracking ✅ **IMPLEMENTED**
+- **Complete Version History**: From maimai DX (v0) to PRiSM PLUS (v11)
+- **Regional Release Dates**: Separate tracking for International and Japan regions
+- **Current Version Detection**: Automatic current version detection by region and date
+- **Version-based Organization**: Songs categorized by added version for B15/B35 logic
+
+### Version Metadata ✅ **IMPLEMENTED**
+```typescript
+- id: number (version ID)
+- name: string (full version name)
+- shortName: string (abbreviated name)
+- intlReleaseDate: string | null (YYYY/MM/DD format)
+- jpReleaseDate: string | null (YYYY/MM/DD format)
+```
 
 ## Rate Limiting & Caching ✅ **IMPLEMENTED**
 
@@ -220,6 +281,20 @@
 - **Auto-timeout**: 5-minute maximum polling duration
 - **Latest Session**: Always polls most recent fetch session
 - **Toast Notifications**: Immediate feedback on completion/failure
+
+## Internationalization ✅ **IMPLEMENTED**
+
+### Multi-language Support ✅ **IMPLEMENTED**
+- **Languages**: English (US), English (UK), Japanese, Chinese (Traditional), Chinese (Simplified)
+- **Auto-detection**: Automatic language detection from browser preferences
+- **Manual Selection**: User can override language in settings
+- **Complete Coverage**: All UI text, labels, notifications, and messages translated
+- **Dynamic Loading**: Language switching without page reload
+
+### Message Structure ✅ **IMPLEMENTED**
+- **Namespaced Keys**: Organized by component/feature (auth, dashboard, settings, etc.)
+- **Parameterized Messages**: Support for dynamic values (counts, names, dates)
+- **Consistent Terminology**: Standardized maimai-specific terms across languages
 
 ## Security Considerations
 
@@ -237,7 +312,7 @@
 
 ### Development
 - SQLite database for local development
-- Environment variables for Discord OAuth
+- Environment variables for Discord OAuth and admin functionality
 - Hot reload with Next.js dev server
 
 ### Production
@@ -245,6 +320,21 @@
 - Redis for caching and rate limiting
 - Environment-based configuration
 - Database migrations via Drizzle
+
+### Required Environment Variables
+```env
+# Authentication
+BETTER_AUTH_SECRET=your-secure-random-secret-key
+DISCORD_CLIENT_ID=your-discord-client-id
+DISCORD_CLIENT_SECRET=your-discord-client-secret
+
+# Database
+TURSO_DATABASE_URL=libsql://your-database-url.turso.io
+TURSO_AUTH_TOKEN=your-turso-auth-token
+
+# Admin functionality (optional, for song database updates)
+ADMIN_UPDATE_TOKEN=your-secure-admin-token
+```
 
 ## Future Considerations
 
@@ -255,8 +345,8 @@
 
 ### Features
 - Real-time updates via WebSocket
-- Export functionality
-- Data visualization
+- Export functionality ✅ **UI PREPARED**
+- Data visualization ✅ **PARTIALLY IMPLEMENTED**
 - Mobile app support
 
 ### Monitoring
@@ -270,26 +360,37 @@
 ### ✅ Completed Features
 - **Full Authentication Flow**: Discord OAuth with Better Auth
 - **Complete UI System**: Responsive design with shadcn/ui components
+- **Tabbed Data Interface**: Player Info, Songs, Recommendations, Plates with proper navigation
 - **tRPC API Layer**: Type-safe client/server communication
 - **Database Schema**: All core tables implemented with Drizzle ORM
+- **Song Database**: Complete song database with all difficulties, versions, and regions
 - **Token Management**: Secure storage with automatic validation
 - **Rate Limiting**: Sliding window (5 requests per 5 minutes)
-- **Maimai Data Flow**: Complete token validation and login sequence
+- **Maimai Data Flow**: Complete token validation, login, HTML parsing, and data storage
+- **Rating System**: Full rating calculation with B15/B35 organization
 - **Real-time Updates**: Polling with toast notifications
 - **Error Handling**: Comprehensive error states and user feedback
 - **Responsive UI**: Works on desktop and mobile devices
+- **Internationalization**: 5-language support with complete translations
+- **Data Visualization**: Player info cards, song lists, rating displays with proper styling
+- **Version Management**: Complete version tracking and metadata system
+- **Admin Tools**: Song database population from external sources
 
 ### 🔄 Next Implementation Priorities
-1. **HTML Parsing**: Parse maimai player data HTML into structured data
-2. **Database Storage**: Save parsed data to user_snapshots table
-3. **Data Visualization**: Charts and statistics for user scores
-4. **Score Management**: Individual song scores and detailed breakdowns
-5. **Historical Analysis**: Compare snapshots over time
+1. **Plates System**: Complete plate achievement tracking and display
+2. **Recommendations Engine**: Song recommendation logic based on player data
+3. **Map Feature**: Visual representation of player progress
+4. **Export Functionality**: Image generation for social sharing
+5. **Historical Analysis**: Compare snapshots over time with charts
+6. **Advanced Filtering**: Search and filter songs by various criteria
 
-### 🎯 Ready for Production
+### 🎯 Production Ready
 - Core infrastructure is production-ready
-- Database migrations are prepared
+- Database migrations are prepared and tested
 - Authentication is secure and functional
 - Rate limiting prevents abuse
-- Error handling provides good user experience
-- Token management is secure and automatic 
+- Error handling provides excellent user experience
+- Token management is secure and automatic
+- Data parsing and storage pipeline is complete and robust
+- UI is polished and responsive with proper internationalization
+- Rating calculations are accurate and properly implemented 
