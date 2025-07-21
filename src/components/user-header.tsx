@@ -9,11 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User as UserIcon } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, Info } from "lucide-react";
 import Image from "next/image";
 import { RegionSwitcher } from "@/components/region-switcher";
 import { Region, User } from "@/lib/types";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
+import { AboutDialog } from "@/components/about-dialog";
 
 interface UserHeaderProps {
   user: User;
@@ -25,15 +27,25 @@ interface UserHeaderProps {
 
 export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onSettings }: UserHeaderProps) {
   const t = useTranslations();
+  const [aboutOpen, setAboutOpen] = useState(false);
   
   return (
-    <div className="flex items-center justify-between mb-8">
-      <div className="flex items-center space-x-3">
-        <div>
-          <h1 className="text-lg leading-none font-semibold">maimai friends</h1>
-          <p className="text-muted-foreground text-xs">by shedaniel</p>
+    <>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-3">
+          <div>
+            <h1 className="text-lg leading-none font-semibold">maimai friends</h1>
+            <p className="text-muted-foreground text-xs">by shedaniel</p>
+          </div>
+          <Button 
+            onClick={() => setAboutOpen(true)} 
+            variant="ghost" 
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-gray-200"
+          >
+            <Info className="h-4 w-4" />
+          </Button>
         </div>
-      </div>
       
       <div className="flex items-center space-x-4">
         <RegionSwitcher value={selectedRegion} onChange={onRegionChange} />
@@ -76,5 +88,8 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
        </DropdownMenu>
       </div>
     </div>
+    
+    <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
+  </>
   );
 } 
