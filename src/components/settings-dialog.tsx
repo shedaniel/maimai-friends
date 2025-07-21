@@ -217,11 +217,7 @@ export function SettingsDialog({
   const getProfileUrl = () => {
     if (!username) return '';
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    if (selectedMainRegion === 'intl') {
-      return `${baseUrl}/profile/${username}`;
-    } else {
-      return `${baseUrl}/profile/${username}/jp`;
-    }
+    return `${baseUrl}/profile/${username}`
   };
 
   const copyToClipboard = async () => {

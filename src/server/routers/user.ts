@@ -1,11 +1,14 @@
 import { z } from 'zod';
-import { router, protectedProcedure } from '@/lib/trpc';
+import { router, protectedProcedure, publicProcedure } from '@/lib/trpc';
 import { db } from '@/lib/db';
 import { userSnapshots, fetchSessions, userTokens, user, songs, userScores } from '@/lib/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 import { randomUUID } from 'crypto';
 import { fetchMaimaiData } from '@/lib/maimai-fetcher';
+import { getCurrentVersion } from '@/lib/metadata';
+import { addRatingsAndSort, SongWithRating } from '@/lib/rating-calculator';
+import { SongWithScore } from '@/lib/types';
 
 const regionSchema = z.enum(['intl', 'jp']);
 
@@ -41,9 +44,9 @@ export const userRouter = router({
 
   // Get complete snapshot data including songs for a specific snapshot
   getSnapshotData: protectedProcedure
-    .input(z.object({ 
+    .input(z.object({
       snapshotId: z.string(),
-      region: regionSchema 
+      region: regionSchema
     }))
     .query(async ({ ctx, input }) => {
       // First verify the snapshot belongs to the user
@@ -183,7 +186,7 @@ export const userRouter = router({
         const fifthMostRecentFetch = recentFetches[4]; // 0-indexed, so 4th index is 5th item
         const timeSinceOldestInWindow = Date.now() - fifthMostRecentFetch.startedAt.getTime();
         const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
-        
+
         if (timeSinceOldestInWindow < fiveMinutes) {
           const remainingTime = Math.ceil((fiveMinutes - timeSinceOldestInWindow) / 1000);
           throw new TRPCError({
@@ -237,7 +240,7 @@ export const userRouter = router({
       (async () => {
         try {
           await fetchMaimaiData(ctx.session.user.id, input.region, fetchSessionId);
-          
+
           // Mark fetch as completed
           await db
             .update(fetchSessions)
@@ -248,7 +251,7 @@ export const userRouter = router({
             .where(eq(fetchSessions.id, fetchSessionId));
         } catch (error) {
           console.error("Error during maimai data fetch:", error);
-          
+
           // Mark fetch as failed
           await db
             .update(fetchSessions)
@@ -261,7 +264,7 @@ export const userRouter = router({
         }
       })();
 
-      return { 
+      return {
         sessionId: fetchSessionId,
         status: "pending" as const,
       };
@@ -487,5 +490,245 @@ export const userRouter = router({
         .where(eq(user.id, ctx.session.user.id));
 
       return { success: true };
+    }),
+
+  // Get public profile data
+  getPublicProfile: publicProcedure
+    .input(z.object({
+      username: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const userRecord = await db
+        .select({
+          id: user.id,
+          name: user.name,
+          timezone: user.timezone,
+          publishProfile: user.publishProfile,
+          profileMainRegion: user.profileMainRegion,
+          profileShowAllScores: user.profileShowAllScores,
+          profileShowScoreDetails: user.profileShowScoreDetails,
+          profileShowPlates: user.profileShowPlates,
+          profileShowPlayCounts: user.profileShowPlayCounts,
+          profileShowEvents: user.profileShowEvents,
+          profileShowInSearch: user.profileShowInSearch,
+        })
+        .from(user)
+        .where(eq(user.name, input.username))
+        .limit(1);
+
+      if (userRecord.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      const userData = userRecord[0];
+
+      // Check if profile is published
+      if (!userData.publishProfile) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Profile not published',
+        });
+      }
+
+      // Check if user allows being found in search (for direct access check)
+      if (!userData.profileShowInSearch) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Profile not accessible',
+        });
+      }
+
+      return userData;
+    }),
+
+  // Get public snapshots for a user
+  getPublicSnapshots: publicProcedure
+    .input(z.object({
+      username: z.string(),
+      region: regionSchema,
+    }))
+    .query(async ({ input }) => {
+      // First get the user and verify profile is published
+      const userRecord = await db
+        .select({
+          id: user.id,
+          publishProfile: user.publishProfile,
+          profileShowInSearch: user.profileShowInSearch,
+          profileShowPlayCounts: user.profileShowPlayCounts,
+        })
+        .from(user)
+        .where(eq(user.name, input.username))
+        .limit(1);
+
+      if (userRecord.length === 0 || !userRecord[0].publishProfile || !userRecord[0].profileShowInSearch) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Profile not found or not accessible',
+        });
+      }
+
+      const snapshots = await db
+        .select({
+          id: userSnapshots.id,
+          fetchedAt: userSnapshots.fetchedAt,
+          rating: userSnapshots.rating,
+          displayName: userSnapshots.displayName,
+          gameVersion: userSnapshots.gameVersion,
+          courseRankUrl: userSnapshots.courseRankUrl,
+          classRankUrl: userSnapshots.classRankUrl,
+          stars: userSnapshots.stars,
+          versionPlayCount: userSnapshots.versionPlayCount,
+          totalPlayCount: userSnapshots.totalPlayCount,
+        })
+        .from(userSnapshots)
+        .where(
+          and(
+            eq(userSnapshots.userId, userRecord[0].id),
+            eq(userSnapshots.region, input.region)
+          )
+        )
+        .orderBy(desc(userSnapshots.fetchedAt))
+        .limit(1); // Only return the latest snapshot for public profiles
+
+      // Filter play counts based on privacy settings
+      const filteredSnapshots = snapshots.map(snapshot => ({
+        ...snapshot,
+        versionPlayCount: userRecord[0].profileShowPlayCounts ? snapshot.versionPlayCount : 0,
+        totalPlayCount: userRecord[0].profileShowPlayCounts ? snapshot.totalPlayCount : 0,
+      }));
+
+      return { snapshots: filteredSnapshots };
+    }),
+
+  // Get public snapshot data
+  getPublicSnapshotData: publicProcedure
+    .input(z.object({
+      username: z.string(),
+      region: regionSchema,
+    }))
+    .query(async ({ input }) => {
+      // First get the user and verify profile is published
+      const userRecord = await db
+        .select({
+          id: user.id,
+          publishProfile: user.publishProfile,
+          profileShowInSearch: user.profileShowInSearch,
+          profileShowAllScores: user.profileShowAllScores,
+          profileShowScoreDetails: user.profileShowScoreDetails,
+          profileShowPlates: user.profileShowPlates,
+          profileShowPlayCounts: user.profileShowPlayCounts,
+          profileShowEvents: user.profileShowEvents,
+        })
+        .from(user)
+        .where(eq(user.name, input.username))
+        .limit(1);
+
+      if (userRecord.length === 0 || !userRecord[0].publishProfile || !userRecord[0].profileShowInSearch) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Profile not found or not accessible',
+        });
+      }
+
+      const userData = userRecord[0];
+
+      // Get the latest snapshot for this region
+      const snapshot = await db
+        .select()
+        .from(userSnapshots)
+        .where(
+          and(
+            eq(userSnapshots.userId, userData.id),
+            eq(userSnapshots.region, input.region)
+          )
+        )
+        .orderBy(desc(userSnapshots.fetchedAt))
+        .limit(1);
+
+      if (snapshot.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No data available for this region',
+        });
+      }
+
+      // Get songs with scores for this snapshot
+      const songsWithScores = await db
+        .select({
+          songId: songs.id,
+          songName: songs.songName,
+          artist: songs.artist,
+          cover: songs.cover,
+          difficulty: songs.difficulty,
+          level: songs.level,
+          levelPrecise: songs.levelPrecise,
+          type: songs.type,
+          genre: songs.genre,
+          addedVersion: songs.addedVersion,
+          achievement: userScores.achievement,
+          dxScore: userScores.dxScore,
+          fc: userScores.fc,
+          fs: userScores.fs,
+        })
+        .from(userScores)
+        .innerJoin(songs, eq(userScores.songId, songs.id))
+        .where(eq(userScores.snapshotId, snapshot[0].id))
+        .orderBy(songs.songName, songs.difficulty);
+
+      // Convert to SongWithScore format
+      const songsForCalculation: SongWithScore[] = songsWithScores.map(song => ({
+        songId: song.songId,
+        songName: song.songName,
+        artist: song.artist,
+        cover: song.cover,
+        difficulty: song.difficulty as any, // Cast to match enum
+        level: song.level,
+        levelPrecise: song.levelPrecise,
+        type: song.type as any, // Cast to match enum
+        genre: song.genre,
+        addedVersion: song.addedVersion,
+        achievement: song.achievement,
+        dxScore: song.dxScore,
+        fc: song.fc as any, // Cast to match enum
+        fs: song.fs as any, // Cast to match enum
+      }));
+
+      // Filter songs based on user privacy settings
+      let filteredSongs = songsWithScores;
+
+      if (!userData.profileShowAllScores) {
+        // Show only top 50 songs (top 15 new + top 35 old) based on rating
+        const currentVersion = getCurrentVersion(input.region);
+
+        // Calculate ratings and sort by rating
+        const songsWithRating = addRatingsAndSort(songsForCalculation);
+
+        // Separate new and old songs
+        const newSongs = songsWithRating.filter(song => song.addedVersion === currentVersion);
+        const oldSongs = songsWithRating.filter(song => song.addedVersion !== currentVersion);
+
+        // Take top 15 new and top 35 old
+        const top15New = newSongs.slice(0, 15);
+        const top35Old = oldSongs.slice(0, 35);
+
+        // Combine and convert back to original format
+        const bestSongs = [...top15New, ...top35Old];
+        const bestSongIds = new Set(bestSongs.map(song => song.songId));
+
+        filteredSongs = songsWithScores.filter(song => bestSongIds.has(song.songId));
+      }
+
+      return {
+        snapshot: snapshot[0],
+        songs: filteredSongs,
+        privacySettings: {
+          showPlayCounts: userData.profileShowPlayCounts,
+          showPlates: userData.profileShowPlates,
+          showEvents: userData.profileShowEvents,
+        },
+      };
     }),
 }); 

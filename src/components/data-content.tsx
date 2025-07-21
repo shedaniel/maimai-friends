@@ -7,18 +7,27 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { InfoCard } from "./info-card";
 import { SongsCard } from "./songs-card";
-import { PlatesCard } from "./plates-card";
 
 interface DataContentProps {
   region: Region;
   selectedSnapshotData: SnapshotWithSongs | null;
   isLoading: boolean;
+  privacySettings?: {
+    showPlayCounts?: boolean;
+    showPlates?: boolean;
+    showEvents?: boolean;
+  };
 }
 
 export function DataContent({
   region,
   selectedSnapshotData,
-  isLoading
+  isLoading,
+  privacySettings = {
+    showPlayCounts: true,
+    showPlates: true,
+    showEvents: true,
+  }
 }: DataContentProps) {
   const t = useTranslations();
   const [selectedTab, setSelectedTab] = useState("songs");
@@ -33,38 +42,46 @@ export function DataContent({
   }
 
   if (selectedSnapshotData) {
-    const tabs = [
+    const allTabs = [
       {
         name: t('dataContent.tabs.playerInfo'),
         value: "info",
         icon: User,
+        show: true, // Always show player info
       },
       {
         name: t('dataContent.tabs.songs'),
         value: "songs",
         icon: Music,
+        show: true, // Always show songs
       },
       {
         name: t('dataContent.tabs.recommendations'),
         value: "recommendations",
         icon: Heart,
+        show: true, // Always show recommendations
       },
       {
         name: t('dataContent.tabs.plates'),
         value: "plates",
         icon: Disc,
+        show: privacySettings.showPlates,
       },
       {
         name: t('dataContent.tabs.map'),
         value: "map",
         icon: Map,
+        show: privacySettings.showEvents,
       },
       {
         name: t('dataContent.tabs.exportImage'),
         value: "exportImage",
         icon: Image,
+        show: true, // Always show export image
       }
-    ]
+    ];
+
+    const tabs = allTabs.filter(tab => tab.show);
 
     return (
       <Tabs
@@ -82,16 +99,46 @@ export function DataContent({
         </TabsList>
 
         <TabsContent value="info" className="mt-0 flex-1 min-w-0">
-          <InfoCard selectedSnapshotData={selectedSnapshotData} region={region} />
+          <InfoCard 
+            selectedSnapshotData={selectedSnapshotData} 
+            region={region} 
+            showPlayCounts={privacySettings.showPlayCounts}
+          />
         </TabsContent>
         <TabsContent value="songs" className="mt-0 flex-1 min-w-0">
           <SongsCard selectedSnapshotData={selectedSnapshotData} region={region} />
         </TabsContent>
         <TabsContent value="recommendations" className="mt-0 flex-1 min-w-0">
-
+          <div className="p-8 text-center w-full h-[calc(100vh-20rem)] flex flex-col items-center justify-center">
+            <Heart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2">{t('dataContent.tabs.recommendations')}</h3>
+            <p className="text-muted-foreground">Coming soon...</p>
+          </div>
         </TabsContent>
-        <TabsContent value="plates" className="mt-0 flex-1 min-w-0">
-          <PlatesCard selectedSnapshotData={selectedSnapshotData} region={region} />
+        {privacySettings.showPlates && (
+          <TabsContent value="plates" className="mt-0 flex-1 min-w-0">
+            <div className="p-8 text-center w-full h-[calc(100vh-20rem)] flex flex-col items-center justify-center">
+              <Disc className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-medium mb-2">{t('dataContent.tabs.plates')}</h3>
+              <p className="text-muted-foreground">Coming soon...</p>
+            </div>
+          </TabsContent>
+        )}
+        {privacySettings.showEvents && (
+          <TabsContent value="map" className="mt-0 flex-1 min-w-0">
+            <div className="p-8 text-center w-full h-[calc(100vh-20rem)] flex flex-col items-center justify-center">
+              <Map className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-medium mb-2">{t('dataContent.tabs.map')}</h3>
+              <p className="text-muted-foreground">Coming soon...</p>
+            </div>
+          </TabsContent>
+        )}
+        <TabsContent value="exportImage" className="mt-0 flex-1 min-w-0">
+          <div className="p-8 text-center w-full h-[calc(100vh-20rem)] flex flex-col items-center justify-center">
+            <Image className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2">{t('dataContent.tabs.exportImage')}</h3>
+            <p className="text-muted-foreground">Coming soon...</p>
+          </div>
         </TabsContent>
       </Tabs>
     )

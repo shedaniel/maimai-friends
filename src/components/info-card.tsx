@@ -26,7 +26,15 @@ function RatingImage({ rating }: { rating: number }) {
   );
 }
 
-export function InfoCard({ selectedSnapshotData, region }: { selectedSnapshotData: SnapshotWithSongs; region: Region }) {
+export function InfoCard({ 
+  selectedSnapshotData, 
+  region, 
+  showPlayCounts = true 
+}: { 
+  selectedSnapshotData: SnapshotWithSongs; 
+  region: Region; 
+  showPlayCounts?: boolean;
+}) {
   const t = useTranslations();
 
   const { snapshot } = selectedSnapshotData;
@@ -49,11 +57,15 @@ export function InfoCard({ selectedSnapshotData, region }: { selectedSnapshotDat
         </div>
         <div className="bg-muted/50 rounded-md p-4">
           <h4 className="font-medium mb-2">{t('dataContent.playerInfo')}</h4>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className={`grid gap-2 text-sm ${showPlayCounts ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <div>{t('dataContent.rating', { rating: snapshot.rating })}</div>
             <div>{t('dataContent.stars', { stars: snapshot.stars })}</div>
-            <div>{t('dataContent.versionPlays', { count: snapshot.versionPlayCount })}</div>
-            <div>{t('dataContent.totalPlays', { count: snapshot.totalPlayCount })}</div>
+            {showPlayCounts && (
+              <>
+                <div>{t('dataContent.versionPlays', { count: snapshot.versionPlayCount })}</div>
+                <div>{t('dataContent.totalPlays', { count: snapshot.totalPlayCount })}</div>
+              </>
+            )}
           </div>
         </div>
       </CardContent>
