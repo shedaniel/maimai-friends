@@ -145,6 +145,20 @@
     "oldSongsB35": "舊曲 B35",
     "newSongs": "新曲",
     "oldSongs": "舊曲",
+    "displayModes": {
+      "list": "列表",
+      "grid": "網格", 
+      "compact": "表格"
+    },
+    "tableHeaders": {
+      "song": "歌曲",
+      "artist": "藝人", 
+      "level": "等級",
+      "achievement": "達成率",
+      "fc": "FC",
+      "fs": "FS",
+      "rating": "評級"
+    },
     "noDataAvailable": "無可用資料",
     "getStartedInstructions": "點擊上方的匯入按鈕來匯入你的 maimai 資料。"
   },

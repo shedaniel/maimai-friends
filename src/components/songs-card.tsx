@@ -2,13 +2,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCurrentVersion } from "@/lib/metadata";
 import { addRatingsAndSort, SongWithRating } from "@/lib/rating-calculator";
 import { Region, SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import { useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { LayoutList, LayoutGrid, Menu } from "lucide-react";
 
 // Helper function to group songs by individual rating values
 function groupSongsByRating(songs: SongWithRating[]) {
@@ -110,9 +113,85 @@ function SongRow({ song }: { song: SongWithRating }) {
   );
 }
 
-// Component for rendering song sections
-function SongSection({ title, songs, count }: { title: string; songs: SongWithRating[]; count?: string }) {
+// Component for rendering compact song section as a single grid
+function CompactSongSection({ title, songs, count, t }: { title: string; songs: SongWithRating[]; count?: string; t: any }) {
   if (songs.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h5 className="font-semibold mb-2 text-sm">
+        {title} {count && `(${count})`}
+      </h5>
+      <div className="grid grid-cols-[4fr_2fr_min-content_min-content_min-content_min-content_min-content] text-xs">
+        {/* Headers */}
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-left whitespace-nowrap">
+          {t('dataContent.tableHeaders.song')}
+        </div>
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-left whitespace-nowrap">
+          {t('dataContent.tableHeaders.artist')}
+        </div>
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-center whitespace-nowrap">
+          {t('dataContent.tableHeaders.level')}
+        </div>
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-center whitespace-nowrap">
+          {t('dataContent.tableHeaders.achievement')}
+        </div>
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 w-12.5 text-center whitespace-nowrap">
+          {t('dataContent.tableHeaders.fc')}
+        </div>
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 w-12.5 text-center whitespace-nowrap">
+          {t('dataContent.tableHeaders.fs')}
+        </div>
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-center whitespace-nowrap">
+          {t('dataContent.tableHeaders.rating')}
+        </div>
+        
+        {/* Song Data */}
+        {songs.map(song => (
+          <>
+            <div key={`${song.songId}-${song.difficulty}-name`} className="truncate font-medium py-1 px-2 border-b border-dashed border-gray-200">
+              {song.songName}
+            </div>
+            <div key={`${song.songId}-${song.difficulty}-artist`} className="truncate text-muted-foreground py-1 px-2 border-b border-dashed border-gray-200">
+              {song.artist}
+            </div>
+            <div key={`${song.songId}-${song.difficulty}-level`} className={cn("text-center border-b grid items-center font-medium border-dashed",
+                song.difficulty === "basic" && "bg-green-100 text-green-800 border-green-200",
+                song.difficulty === "advanced" && "bg-yellow-100 text-yellow-800 border-yellow-200",
+                song.difficulty === "expert" && "bg-red-100 text-red-800 border-red-200",
+                song.difficulty === "master" && "bg-purple-300 text-purple-900 border-purple-400",
+                song.difficulty === "remaster" && "bg-purple-50 text-purple-800 border-purple-200",
+                song.difficulty === "utage" && "bg-pink-100 text-pink-800 border-pink-200",
+            )}>
+              {(song.levelPrecise / 10).toFixed(1)}
+            </div>
+            <div key={`${song.songId}-${song.difficulty}-achievement`} className="text-right font-mono py-1 px-2 border-b border-dashed border-gray-200">
+              {(song.achievement / 10000).toFixed(4)}%
+            </div>
+            <div key={`${song.songId}-${song.difficulty}-fc`} className="text-center text-muted-foreground py-1 px-2 border-b border-dashed border-gray-200">
+              {song.fc !== 'none' ? song.fc.toUpperCase() : ''}
+            </div>
+            <div key={`${song.songId}-${song.difficulty}-fs`} className="text-center text-muted-foreground py-1 px-2 border-b border-dashed border-gray-200">
+              {song.fs !== 'none' ? song.fs.toUpperCase() : ''}
+            </div>
+            <div key={`${song.songId}-${song.difficulty}-rating`} className="text-right font-mono font-semibold py-1 px-2 border-b border-dashed border-gray-200">
+              {song.rating}
+            </div>
+          </>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Component for rendering song sections
+function SongSection({ title, songs, count, displayMode, t }: { title: string; songs: SongWithRating[]; count?: string; displayMode: "list" | "grid" | "compact"; t: any }) {
+  if (songs.length === 0) return null;
+
+  // Use dedicated compact section for compact mode
+  if (displayMode === "compact") {
+    return <CompactSongSection title={title} songs={songs} count={count} t={t} />;
+  }
 
   return (
     <div className="space-y-2">
@@ -129,12 +208,13 @@ function SongSection({ title, songs, count }: { title: string; songs: SongWithRa
 }
 
 // Component for rendering the songs list with four sections
-function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSongs, t }: { 
+function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSongs, t, displayMode }: { 
   newSongsB15: SongWithRating[]; 
   oldSongsB35: SongWithRating[]; 
   remainingNewSongs: SongWithRating[]; 
   remainingOldSongs: SongWithRating[]; 
-  t: any 
+  t: any;
+  displayMode: "list" | "grid" | "compact"
 }) {
   return (
       <div className="space-y-6">
@@ -142,21 +222,29 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
           title={t('dataContent.newSongsB15')}
           songs={newSongsB15}
           count={`${newSongsB15.length}/15`}
+          displayMode={displayMode}
+          t={t}
         />
         <SongSection
           title={t('dataContent.oldSongsB35')}
           songs={oldSongsB35}
           count={`${oldSongsB35.length}/35`}
+          displayMode={displayMode}
+          t={t}
         />
         <SongSection
           title={t('dataContent.newSongs')}
           songs={remainingNewSongs}
           count={remainingNewSongs.length > 0 ? `${remainingNewSongs.length}` : undefined}
+          displayMode={displayMode}
+          t={t}
         />
         <SongSection
           title={t('dataContent.oldSongs')}
           songs={remainingOldSongs}
           count={remainingOldSongs.length > 0 ? `${remainingOldSongs.length}` : undefined}
+          displayMode={displayMode}
+          t={t}
         />
       </div>
   );
@@ -164,6 +252,7 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
 
 export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotData: SnapshotWithSongs; region: Region }) {
   const t = useTranslations();
+  const [displayMode, setDisplayMode] = useState<"list" | "grid" | "compact">("list");
 
   const { songs } = selectedSnapshotData;
 
@@ -187,7 +276,45 @@ export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotDa
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('dataContent.songs', { count: songs.length })}</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>{t('dataContent.songs', { count: songs.length })}</CardTitle>
+                      <Select value={displayMode} onValueChange={(value) => setDisplayMode(value as "list" | "grid" | "compact")}>
+              <SelectTrigger className="w-40 h-8">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    {displayMode === "list" && <LayoutList className="h-4 w-4" />}
+                    {displayMode === "grid" && <LayoutGrid className="h-4 w-4" />}
+                    {displayMode === "compact" && <Menu className="h-4 w-4" />}
+                    <span>
+                      {displayMode === "list" && t('dataContent.displayModes.list')}
+                      {displayMode === "grid" && t('dataContent.displayModes.grid')}
+                      {displayMode === "compact" && t('dataContent.displayModes.compact')}
+                    </span>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="list">
+                <div className="flex items-center gap-2">
+                  <LayoutList className="h-4 w-4" />
+                  <span>{t('dataContent.displayModes.list')}</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="grid">
+                <div className="flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  <span>{t('dataContent.displayModes.grid')}</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="compact">
+                <div className="flex items-center gap-2">
+                  <Menu className="h-4 w-4" />
+                  <span>{t('dataContent.displayModes.compact')}</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -200,7 +327,8 @@ export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotDa
             oldSongsB35={oldSongsB35}
             remainingNewSongs={remainingNewSongs}
             remainingOldSongs={remainingOldSongs}
-            t={t} 
+            t={t}
+            displayMode={displayMode}
           />
         </div>
       </CardContent>

@@ -131,7 +131,9 @@
       "playerInfo": "プレイヤー情報",
       "songs": "楽曲",
       "recommendations": "おすすめ楽曲",
-      "plates": "ネームプレート"
+      "plates": "ネームプレート",
+      "map": "イベント",
+      "exportImage": "エクスポート"
     },
     "playerInfo": "プレイヤー情報",
     "rating": "レーティング：{rating}",
@@ -143,6 +145,20 @@
     "oldSongsB35": "過去曲 B35",
     "newSongs": "新規曲",
     "oldSongs": "過去曲",
+    "displayModes": {
+      "list": "リスト",
+      "grid": "グリッド", 
+      "compact": "テーブル"
+    },
+    "tableHeaders": {
+      "song": "楽曲",
+      "artist": "アーティスト", 
+      "level": "レベル",
+      "achievement": "達成率",
+      "fc": "FC",
+      "fs": "FS",
+      "rating": "レーティング"
+    },
     "noDataAvailable": "データがありません",
     "getStartedInstructions": "上の取得ボタンからmaimaiデータを取得して使い始めましょう。"
   },

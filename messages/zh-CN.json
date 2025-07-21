@@ -131,7 +131,9 @@
       "playerInfo": "玩家信息",
       "songs": "歌曲",
       "recommendations": "推荐歌曲",
-      "plates": "名牌板"
+      "plates": "名牌板",
+      "map": "活动地图",
+      "exportImage": "导出图片"
     },
     "playerInfo": "玩家信息",
     "rating": "R 值：{rating}",
@@ -143,6 +145,20 @@
     "oldSongsB35": "旧曲 B35",
     "newSongs": "新曲",
     "oldSongs": "旧曲",
+    "displayModes": {
+      "list": "列表",
+      "grid": "网格", 
+      "compact": "表格"
+    },
+    "tableHeaders": {
+      "song": "歌曲",
+      "artist": "艺人", 
+      "level": "等级",
+      "achievement": "达成率",
+      "fc": "FC",
+      "fs": "FS",
+      "rating": "评级"
+    },
     "noDataAvailable": "无可用数据",
     "getStartedInstructions": "点击上方的导入按钮来导入你的 maimai 数据。"
   },

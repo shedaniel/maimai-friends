@@ -131,7 +131,9 @@
       "playerInfo": "Player Info",
       "songs": "Songs",
       "recommendations": "Recommended",
-      "plates": "Plates"
+      "plates": "Plates",
+      "map": "Events",
+      "exportImage": "Export Image"
     },
     "playerInfo": "Player Info",
     "rating": "Rating: {rating}",
@@ -143,6 +145,20 @@
     "oldSongsB35": "Old Songs B35", 
     "newSongs": "New Songs",
     "oldSongs": "Old Songs",
+    "displayModes": {
+      "list": "List",
+      "grid": "Grid", 
+      "compact": "Table"
+    },
+    "tableHeaders": {
+      "song": "Song",
+      "artist": "Artist", 
+      "level": "Level",
+      "achievement": "Achievement",
+      "fc": "FC",
+      "fs": "FS",
+      "rating": "Rating"
+    },
     "noDataAvailable": "No Data Available",
     "getStartedInstructions": "Get started by fetching your maimai data using the fetch button above."
   },
