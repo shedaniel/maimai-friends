@@ -1,14 +1,14 @@
-import { z } from 'zod';
-import { router, protectedProcedure, publicProcedure } from '@/lib/trpc';
 import { db } from '@/lib/db';
-import { userSnapshots, fetchSessions, userTokens, user, songs, userScores } from '@/lib/schema';
-import { eq, and, desc } from 'drizzle-orm';
-import { TRPCError } from '@trpc/server';
-import { randomUUID } from 'crypto';
 import { fetchMaimaiData } from '@/lib/maimai-fetcher';
 import { getCurrentVersion } from '@/lib/metadata';
-import { addRatingsAndSort, SongWithRating } from '@/lib/rating-calculator';
+import { addRatingsAndSort } from '@/lib/rating-calculator';
+import { fetchSessions, songs, user, userScores, userSnapshots, userTokens } from '@/lib/schema';
+import { protectedProcedure, publicProcedure, router } from '@/lib/trpc';
 import { SongWithScore } from '@/lib/types';
+import { TRPCError } from '@trpc/server';
+import { randomUUID } from 'crypto';
+import { and, desc, eq } from 'drizzle-orm';
+import { z } from 'zod';
 
 const regionSchema = z.enum(['intl', 'jp']);
 

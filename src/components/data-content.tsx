@@ -2,7 +2,7 @@
 
 import { Region, SnapshotWithSongs } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, Disc, Heart, Image, Loader2, Map, Music, User } from "lucide-react";
+import { Database, Disc, Heart, Image as ImageIcon, Loader2, Map, Music, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { InfoCard } from "./info-card";
@@ -76,7 +76,7 @@ export function DataContent({
       {
         name: t('dataContent.tabs.exportImage'),
         value: "exportImage",
-        icon: Image,
+        icon: ImageIcon,
         show: true, // Always show export image
       }
     ];
@@ -101,7 +101,6 @@ export function DataContent({
         <TabsContent value="info" className="mt-0 flex-1 min-w-0">
           <InfoCard 
             selectedSnapshotData={selectedSnapshotData} 
-            region={region} 
             showPlayCounts={privacySettings.showPlayCounts}
           />
         </TabsContent>
@@ -135,7 +134,7 @@ export function DataContent({
         )}
         <TabsContent value="exportImage" className="mt-0 flex-1 min-w-0">
           <div className="p-8 text-center w-full h-[calc(100vh-20rem)] flex flex-col items-center justify-center">
-            <Image className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-medium mb-2">{t('dataContent.tabs.exportImage')}</h3>
             <p className="text-muted-foreground">Coming soon...</p>
           </div>

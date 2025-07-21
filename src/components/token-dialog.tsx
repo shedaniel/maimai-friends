@@ -231,7 +231,7 @@ export function TokenDialog({
                       <p className="mb-2">{t('tokenDialog.tokenInstructions.expiration')}</p>
                       <p>For easier cookie extraction, first install this <a className="underline text-blue-600" href="/maimai-cookie-extractor.user.js" target="_blank" rel="noopener noreferrer">userscript</a> (requires Tampermonkey/Greasemonkey).</p>
                       <p>Then, <a className="underline text-blue-600" href="https://lng-tgk-aime-gw.am-all.net/common_auth/login?site_id=maimaidxex&redirect_url=https://maimaidx-eng.com/maimai-mobile/&back_url=https://maimai.sega.com/" target="_blank" rel="noopener noreferrer">visit this link</a> in incognito mode and login to anime.</p>
-                      <p>Finally, <a className="underline text-blue-600" href="https://lng-tgk-aime-gw.am-all.net/common_auth" target="_blank" rel="noopener noreferrer">visit this link</a>, you will see "Not Found", click the "Copy maimai cookie" button on top right and paste the cookie into the input field above.</p>
+                      <p>Finally, <a className="underline text-blue-600" href="https://lng-tgk-aime-gw.am-all.net/common_auth" target="_blank" rel="noopener noreferrer">visit this link</a>, you will see &quot;Not Found&quot;, click the &quot;Copy maimai cookie&quot; button on top right and paste the cookie into the input field above.</p>
                     </li>
                     <li>
                       <strong>{t('tokenDialog.passwordTab')}:</strong> {t('tokenDialog.passwordInstructions')}

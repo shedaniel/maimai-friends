@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Region, SnapshotWithSongs } from "@/lib/types";
+import { SnapshotWithSongs } from "@/lib/types";
 import { createSafeMaimaiImageUrl } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
@@ -28,11 +28,9 @@ function RatingImage({ rating }: { rating: number }) {
 
 export function InfoCard({ 
   selectedSnapshotData, 
-  region, 
   showPlayCounts = true 
 }: { 
   selectedSnapshotData: SnapshotWithSongs; 
-  region: Region; 
   showPlayCounts?: boolean;
 }) {
   const t = useTranslations();

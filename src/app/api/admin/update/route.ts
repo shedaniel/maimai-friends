@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { JP_AGENT, processMaimaiToken } from "@/lib/maimai-fetcher";
-import { load } from "cheerio";
 import { db } from "@/lib/db";
+import { JP_AGENT, processMaimaiToken } from "@/lib/maimai-fetcher";
+import { getCurrentVersion, getVersionInfo } from "@/lib/metadata";
 import { songs } from "@/lib/schema";
-import { getCurrentVersion, getAvailableVersions, getVersionInfo } from "@/lib/metadata";
+import { load } from "cheerio";
 import { randomUUID } from "crypto";
 import { sql } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 // Helper function to convert level string to precise value (stored as 10x)
 function levelToPrecise(level: string): number {

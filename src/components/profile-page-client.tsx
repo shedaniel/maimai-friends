@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { PublicHeader } from "@/components/public-header";
-import { PublicDataBanner } from "@/components/public-data-banner";
 import { DataContent } from "@/components/data-content";
-import { Region, SnapshotWithSongs, SongWithScore, Difficulty } from "@/lib/types";
+import { PublicDataBanner } from "@/components/public-data-banner";
+import { PublicHeader } from "@/components/public-header";
+import { Difficulty, Region, SnapshotWithSongs, SongWithScore } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 interface ProfileData {
   id: string;
@@ -73,10 +72,9 @@ export function ProfilePageClient({
   username,
 }: ProfilePageClientProps) {
   const router = useRouter();
-  const [selectedRegion, setSelectedRegion] = useState<Region>(region);
 
   const handleRegionChange = (newRegion: Region) => {
-    if (newRegion !== selectedRegion) {
+    if (newRegion !== region) {
       // Navigate to the new region
       router.push(`/profile/${username}/${newRegion}`);
     }
@@ -102,7 +100,7 @@ export function ProfilePageClient({
 
       <div className="space-y-6">
         <PublicDataBanner
-          region={selectedRegion}
+          region={region}
           snapshotData={{
             fetchedAt: snapshotData.snapshot.fetchedAt,
             displayName: snapshotData.snapshot.displayName,
@@ -115,7 +113,7 @@ export function ProfilePageClient({
         />
 
         <DataContent
-          region={selectedRegion}
+          region={region}
           selectedSnapshotData={snapshotWithSongs}
           isLoading={false}
           privacySettings={snapshotData.privacySettings}
