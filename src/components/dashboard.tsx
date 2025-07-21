@@ -180,7 +180,7 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   const handleLanguageUpdate = async (language: string | null) => {
-    await updateLanguageMutation.mutateAsync({ language: language as "en" | "ja" | "zh-TW" | null });
+    await updateLanguageMutation.mutateAsync({ language: language as "en" | "en-GB" | "ja" | "zh-TW" | "zh-CN" | null });
   };
 
   return (

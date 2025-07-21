@@ -47,12 +47,14 @@
     "description": "maimai friendsを自分好みにカスタマイズできます。",
     "language": {
       "label": "言語",
-      "description": "インターフェースの表示言語を選択できます。",
+      "description": "希望するインターフェース言語を選択してください。",
       "placeholder": "言語を選択",
       "auto": "自動検出",
-      "en": "English",
+      "en": "English (US)",
+      "en-GB": "English (UK)",
       "ja": "日本語",
-      "zh-TW": "繁體中文"
+      "zh-TW": "繁體中文",
+      "zh-CN": "简体中文"
     },
     "timezone": {
       "label": "タイムゾーン",

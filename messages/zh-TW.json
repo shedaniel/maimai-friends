@@ -50,9 +50,11 @@
       "description": "選擇你偏好的介面語言。",
       "placeholder": "選擇語言",
       "auto": "自動偵測",
-      "en": "English",
+      "en": "English (US)",
+      "en-GB": "English (UK)",
       "ja": "日本語",
-      "zh-TW": "繁體中文"
+      "zh-TW": "繁體中文",
+      "zh-CN": "简体中文"
     },
     "timezone": {
       "label": "時區",
@@ -115,8 +117,8 @@
     "tokenTab": "Cookies",
     "passwordTab": "密碼",
     "tokenInstructions": {
-      "description": "來自 maimai DX NET 的以 \"clal=\" 開頭的 Cookie 值。",
-      "expiration": "Cookies 可能會在一段時間後失效，你可能需要重新登入。"
+      "description": "來自 maimai DX NET 的以 \"clal=\" 為首的 Cookies 值。",
+      "expiration": "Cookies 會在一段時間後失效，你或需要重新登入。"
     },
     "passwordInstructions": "直接使用你的 SEGA 帳戶使用者名稱和密碼",
     "secureStorage": "你的驗證方式將安全地儲存以供將來使用。"

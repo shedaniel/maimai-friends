@@ -10,7 +10,7 @@ export const user = sqliteTable("user", {
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
   timezone: text("timezone"), // nullable, null = Asia/Tokyo (JP default)
-  language: text("language", { enum: ["en", "ja", "zh-TW"] }), // nullable, null = auto-detect
+  language: text("language", { enum: ["en", "en-GB", "ja", "zh-TW", "zh-CN"] }), // nullable, null = auto-detect
   region: text("region", { enum: ["intl", "jp"] }), // nullable, null = intl (default)
 });
 

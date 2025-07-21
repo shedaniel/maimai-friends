@@ -63,13 +63,7 @@ const TIMEZONES = [
   { value: "UTC", label: "Coordinated Universal Time (UTC)", region: "UTC" },
 ];
 
-// Supported languages - move inside component to access translations
-const getLanguages = (t: any) => [
-  { value: null, label: t('settings.language.auto'), code: "AUTO" },
-  { value: "en", label: t('settings.language.en'), code: "EN" },
-  { value: "ja", label: t('settings.language.ja'), code: "JP" },
-  { value: "zh-TW", label: t('settings.language.zh-TW'), code: "TW" },
-];
+
 
 export function SettingsDialog({ isOpen, onClose, currentTimezone, currentLanguage, onTimezoneUpdate, onLanguageUpdate, onOpenTokenDialog }: SettingsDialogProps) {
   const t = useTranslations();
@@ -78,7 +72,14 @@ export function SettingsDialog({ isOpen, onClose, currentTimezone, currentLangua
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(currentLanguage ?? null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const LANGUAGES = getLanguages(t);
+  const LANGUAGES = [
+    { value: null, label: t('settings.language.auto'), code: "AUTO" },
+    { value: "en", label: t('settings.language.en'), code: "US" },
+    { value: "en-GB", label: t('settings.language.en-GB'), code: "UK" },
+    { value: "ja", label: t('settings.language.ja'), code: "JA" },
+    { value: "zh-TW", label: t('settings.language.zh-TW'), code: "TW" },
+    { value: "zh-CN", label: t('settings.language.zh-CN'), code: "CN" },
+  ];
 
   const handleSave = async () => {
     setIsLoading(true);
