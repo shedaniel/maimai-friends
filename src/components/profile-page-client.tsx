@@ -63,6 +63,7 @@ interface ProfilePageClientProps {
   snapshotData: SnapshotData;
   region: Region;
   username: string;
+  initialTab?: string;
 }
 
 export function ProfilePageClient({
@@ -70,6 +71,7 @@ export function ProfilePageClient({
   snapshotData,
   region,
   username,
+  initialTab,
 }: ProfilePageClientProps) {
   const router = useRouter();
 
@@ -117,6 +119,7 @@ export function ProfilePageClient({
           selectedSnapshotData={snapshotWithSongs}
           isLoading={false}
           privacySettings={snapshotData.privacySettings}
+          initialTab={initialTab}
         />
       </div>
     </div>

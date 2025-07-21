@@ -4,7 +4,8 @@ import { Region, SnapshotWithSongs } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Database, Disc, Heart, Image as ImageIcon, Loader2, Map, Music, User } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { InfoCard } from "./info-card";
 import { SongsCard } from "./songs-card";
 import { RecommendationCard } from "./recommendation-card";
@@ -18,6 +19,7 @@ interface DataContentProps {
     showPlates?: boolean;
     showEvents?: boolean;
   };
+  initialTab?: string;
 }
 
 export function DataContent({
@@ -28,10 +30,113 @@ export function DataContent({
     showPlayCounts: true,
     showPlates: true,
     showEvents: true,
-  }
+  },
+  initialTab,
 }: DataContentProps) {
   const t = useTranslations();
-  const [selectedTab, setSelectedTab] = useState("songs");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  // Valid tab values
+  const allPossibleTabs = ["info", "songs", "recommendations", "plates", "map", "exportImage"];
+  
+  // Get initial tab from props (SSR) or search params (client)
+  const getInitialTab = () => {
+    // First priority: initialTab from SSR
+    if (initialTab && allPossibleTabs.includes(initialTab)) {
+      return initialTab;
+    }
+    
+    // Second priority: search params (client-side)
+    const tabParam = searchParams.get('tab');
+    if (tabParam && allPossibleTabs.includes(tabParam)) {
+      return tabParam;
+    }
+    
+    // Default fallback
+    return "songs";
+  };
+
+  const [selectedTab, setSelectedTab] = useState(getInitialTab);
+
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setSelectedTab(value);
+    
+    // Create new search params
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    
+    if (value === "songs") {
+      // Remove tab parameter for default tab
+      newSearchParams.delete('tab');
+    } else {
+      // Set tab parameter for non-default tabs
+      newSearchParams.set('tab', value);
+    }
+    
+    // Build the URL with or without search params
+    const searchString = newSearchParams.toString();
+    const newUrl = searchString ? `${pathname}?${searchString}` : pathname;
+    
+    // Update URL without triggering a full page reload
+    router.replace(newUrl, { scroll: false });
+  };
+
+  // Define visible tabs based on privacy settings
+  const allTabs = [
+    {
+      name: t('dataContent.tabs.playerInfo'),
+      value: "info",
+      icon: User,
+      show: true, // Always show player info
+    },
+    {
+      name: t('dataContent.tabs.songs'),
+      value: "songs",
+      icon: Music,
+      show: true, // Always show songs
+    },
+    {
+      name: t('dataContent.tabs.recommendations'),
+      value: "recommendations",
+      icon: Heart,
+      show: true, // Always show recommendations
+    },
+    {
+      name: t('dataContent.tabs.plates'),
+      value: "plates",
+      icon: Disc,
+      show: privacySettings.showPlates,
+    },
+    {
+      name: t('dataContent.tabs.map'),
+      value: "map",
+      icon: Map,
+      show: privacySettings.showEvents,
+    },
+    {
+      name: t('dataContent.tabs.exportImage'),
+      value: "exportImage",
+      icon: ImageIcon,
+      show: true, // Always show export image
+    }
+  ];
+
+  const visibleTabs = allTabs.filter(tab => tab.show);
+  const validTabs = visibleTabs.map(tab => tab.value);
+
+  // Ensure selected tab is valid/visible, fallback to songs if not
+  useEffect(() => {
+    if (selectedSnapshotData && !validTabs.includes(selectedTab)) {
+      setSelectedTab("songs");
+      const newSearchParams = new URLSearchParams(searchParams.toString());
+      newSearchParams.delete('tab'); // Remove tab param when falling back to songs
+      const searchString = newSearchParams.toString();
+      const newUrl = searchString ? `${pathname}?${searchString}` : pathname;
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [selectedTab, validTabs, pathname, router, searchParams, selectedSnapshotData]);
 
   if (isLoading) {
     return (
@@ -43,56 +148,15 @@ export function DataContent({
   }
 
   if (selectedSnapshotData) {
-    const allTabs = [
-      {
-        name: t('dataContent.tabs.playerInfo'),
-        value: "info",
-        icon: User,
-        show: true, // Always show player info
-      },
-      {
-        name: t('dataContent.tabs.songs'),
-        value: "songs",
-        icon: Music,
-        show: true, // Always show songs
-      },
-      {
-        name: t('dataContent.tabs.recommendations'),
-        value: "recommendations",
-        icon: Heart,
-        show: true, // Always show recommendations
-      },
-      {
-        name: t('dataContent.tabs.plates'),
-        value: "plates",
-        icon: Disc,
-        show: privacySettings.showPlates,
-      },
-      {
-        name: t('dataContent.tabs.map'),
-        value: "map",
-        icon: Map,
-        show: privacySettings.showEvents,
-      },
-      {
-        name: t('dataContent.tabs.exportImage'),
-        value: "exportImage",
-        icon: ImageIcon,
-        show: true, // Always show export image
-      }
-    ];
-
-    const tabs = allTabs.filter(tab => tab.show);
-
     return (
       <Tabs
         orientation="vertical"
-        defaultValue={selectedTab}
-        onValueChange={setSelectedTab}
+        value={selectedTab}
+        onValueChange={handleTabChange}
         className="flex flex-col md:flex-row md:items-start"
       >
         <TabsList className="shrink-0 grid grid-cols-1 min-w-30 p-0 bg-background md:mt-4 font-semibold max-md:h-fit max-md:mb-4">
-          {tabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value} className="border-l-2 border-transparent justify-start rounded-none data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:bg-primary/5 py-1.5 pr-4">
               <tab.icon className="h-5 w-5 me-3" /> {tab.name}
             </TabsTrigger>

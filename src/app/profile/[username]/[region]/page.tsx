@@ -13,6 +13,9 @@ interface RegionProfilePageProps {
     username: string;
     region: string;
   }>;
+  searchParams: Promise<{
+    tab?: string;
+  }>;
 }
 
 export async function generateMetadata({ params }: RegionProfilePageProps): Promise<Metadata> {
@@ -92,8 +95,9 @@ function isValidRegion(region: string): region is Region {
   return region === 'intl' || region === 'jp';
 }
 
-export default async function RegionProfilePage({ params }: RegionProfilePageProps) {
+export default async function RegionProfilePage({ params, searchParams }: RegionProfilePageProps) {
   const { username, region } = await params;
+  const { tab } = await searchParams;
 
   // Validate region
   if (!isValidRegion(region)) {
@@ -120,6 +124,7 @@ export default async function RegionProfilePage({ params }: RegionProfilePagePro
         snapshotData={snapshotData}
         region={region}
         username={decodeURIComponent(username)}
+        initialTab={tab}
       />
     );
   } catch (error) {
