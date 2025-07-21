@@ -358,7 +358,7 @@ function SongGridCard({ song }: { song: SongWithRating }) {
       <div className="song-card-content relative w-full h-full transition-transform duration-300"
         style={{ transform: 'translateZ(30px)' }}>
         {/* Song Type Badge */}
-        <div className="absolute top-2.5 left-2.5 z-30">
+        <div className="absolute top-2.5 left-2.5 2xs:max-xs:left-1 2xs:max-xs:top-1 2xs:max-xs:scale-75 origin-top-left z-30">
           <Image
             src={createSafeMaimaiImageUrl(song.type === "dx"
               ? "https://maimaidx.jp/maimai-mobile/img/music_dx.png"
@@ -386,29 +386,27 @@ function SongGridCard({ song }: { song: SongWithRating }) {
         </div>
 
         {/* Song Info */}
-        <div className="absolute bottom-0 left-0 right-0 p-2.5 text-white z-30">
-          <div className="text-sm font-bold truncate mb-1 drop-shadow-md">
+        <div className="absolute bottom-0 left-0 right-0 p-2.5 2xs:max-xs:p-1 text-white z-30">
+          <div className="2xs:max-xs:text-xs text-sm font-bold truncate mb-1 drop-shadow-md">
             {song.songName}
           </div>
-          <div className="text-xs opacity-90 truncate drop-shadow-md">
+          <div className="2xs:max-xs:text-2xs text-xs opacity-90 truncate drop-shadow-md">
             {song.artist}
           </div>
 
           {/* Achievement and Rating */}
           <div className="flex justify-between items-end">
-            <div className="text-xs space-x-1">
-              <span className="font-mono font-medium drop-shadow-md">
+            <div className="2xs:max-xs:text-2xs text-xs space-x-1 2xs:max-xs:space-x-0.5">
+              <span className="2xs:max-xs:text-[9px] font-mono font-medium drop-shadow-md">
                 {(song.achievement / 10000).toFixed(4)}%
               </span>
-              <span className="text-[10px] opacity-75 drop-shadow-md">
+              <span className="2xs:max-xs:text-[7px] text-[10px] opacity-75 drop-shadow-md whitespace-nowrap">
                 {song.fc !== 'none' ? song.fc.toUpperCase() : ''}{song.fc !== 'none' && song.fs !== 'none' ? ' ' : ''}{song.fs !== 'none' ? song.fs.toUpperCase() : ''}
               </span>
             </div>
-            <div className="text-right">
-              <span className="text-lg font-bold font-mono drop-shadow-md leading-none align-bottom">
-                {song.rating}
-              </span>
-            </div>
+            <span className="2xs:max-xs:text-sm text-right text-lg font-bold font-mono drop-shadow-md leading-none align-bottom">
+              {song.rating}
+            </span>
           </div>
         </div>
       </div>
@@ -498,7 +496,7 @@ function SongGridSection({ title, songs, count, t, sum, average }: {
           </div>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 2xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {songs.map(song => (
           <SongGridCard key={`${song.songId}-${song.difficulty}`} song={song} />
         ))}
@@ -660,7 +658,7 @@ export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotDa
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <RatingChart songs={newSongsB15} title={t('dataContent.newSongsB15')} />
             <RatingChart songs={oldSongsB35} title={t('dataContent.oldSongsB35')} />
           </div>

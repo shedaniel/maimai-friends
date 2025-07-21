@@ -88,9 +88,9 @@ export function DataContent({
         orientation="vertical"
         defaultValue={selectedTab}
         onValueChange={setSelectedTab}
-        className="flex flex-row items-start"
+        className="flex flex-col md:flex-row md:items-start"
       >
-        <TabsList className="shrink-0 grid grid-cols-1 min-w-30 p-0 bg-background mt-4 font-semibold">
+        <TabsList className="shrink-0 grid grid-cols-1 min-w-30 p-0 bg-background md:mt-4 font-semibold max-md:h-fit max-md:mb-4">
           {tabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value} className="border-l-2 border-transparent justify-start rounded-none data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:bg-primary/5 py-1.5 pr-4">
               <tab.icon className="h-5 w-5 me-3" /> {tab.name}

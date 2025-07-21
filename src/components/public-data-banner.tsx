@@ -50,16 +50,9 @@ export function PublicDataBanner({
         <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           {/* Left side - Latest snapshot info */}
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{t('dataBanner.dataSnapshot')}</span>
-            </div>
-            
             {snapshotData ? (
               <div className="flex flex-col items-start">
-                <span className="text-sm font-medium">
-                  {formatDate(snapshotData.fetchedAt)}
-                </span>
+                <span className="text-sm font-medium">{t('dataBanner.dataSnapshot')} {snapshotData ? formatDate(snapshotData.fetchedAt) : ''}</span>
                 <span className="text-xs text-muted-foreground">
                   {snapshotData.displayName} • {snapshotData.rating} rating • {getVersionInfo(snapshotData.gameVersion)?.shortName || "Unknown"}
                 </span>
