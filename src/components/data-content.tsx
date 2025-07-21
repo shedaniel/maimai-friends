@@ -5,9 +5,12 @@ import { getCurrentVersion } from "@/lib/metadata";
 import { addRatingsAndSort, SongWithRating } from "@/lib/rating-calculator";
 import { Region, SnapshotWithSongs } from "@/lib/types";
 import { createSafeMaimaiImageUrl } from "@/lib/utils";
-import { Database } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Database, Disc, Music } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import { Button } from "./ui/button";
+import { useState } from "react";
 
 interface DataContentProps {
   region: Region;
@@ -107,25 +110,8 @@ function SongsList({ songs, region, t }: { songs: SongWithRating[]; region: Regi
   );
 }
 
-export function DataContent({ 
-  region, 
-  selectedSnapshotData, 
-  isLoading
-}: DataContentProps) {
+function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotData: SnapshotWithSongs | null; region: Region }) {
   const t = useTranslations();
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <div className="flex items-center justify-center space-x-2">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
-            <span>{t('dataContent.loading')}</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (selectedSnapshotData) {
     const { snapshot, songs } = selectedSnapshotData;
@@ -166,15 +152,66 @@ export function DataContent({
     );
   }
 
+  return null;
+}
+
+export function DataContent({ 
+  region, 
+  selectedSnapshotData, 
+  isLoading
+}: DataContentProps) {
+  const t = useTranslations();
+  const [selectedTab, setSelectedTab] = useState("songs");
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="flex items-center justify-center space-x-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+            <span>{t('dataContent.loading')}</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (true) {
+    return (
+      <Tabs
+        orientation="vertical"
+        defaultValue={selectedTab}
+        onValueChange={setSelectedTab}
+        className="gap-4 flex flex-row items-start"
+      >
+        <TabsList className="shrink-0 grid grid-cols-1 h-auto w-16 gap-1 bg-gray-200">
+          <TabsTrigger value="songs" className="py-1.5">
+            Songs
+          </TabsTrigger>
+          <TabsTrigger value="plates" className="py-1.5">
+            Plates
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="songs" className="mt-0 flex-1 min-w-0">
+          <SongsCard selectedSnapshotData={selectedSnapshotData} region={region} />
+        </TabsContent>
+        <TabsContent value="plates" className="mt-0 flex-1 min-w-0">
+          Plates Content
+        </TabsContent>
+      </Tabs>
+    )
+  }
+
+ 
+
   return (
-    <Card>
-      <CardContent className="p-8 text-center">
-        <Database className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-        <h3 className="text-lg font-medium mb-2">{t('dataContent.noDataAvailable')}</h3>
-        <p className="text-muted-foreground">
-          {t('dataContent.getStartedInstructions')}
-        </p>
-      </CardContent>
-    </Card>
+    <div className="p-8 text-center w-full h-[calc(100vh-20rem)] flex flex-col items-center justify-center">
+      <Database className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+      <h3 className="text-lg font-medium mb-2">{t('dataContent.noDataAvailable')}</h3>
+      <p className="text-muted-foreground">
+        {t('dataContent.getStartedInstructions')}
+      </p>
+    </div>
   );
-} 
+}
