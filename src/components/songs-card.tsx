@@ -9,7 +9,7 @@ import { Region, SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import { LayoutList, LayoutGrid, Menu, Plus, TrendingUp } from "lucide-react";
 
@@ -163,7 +163,7 @@ function SongRow({ song }: { song: SongWithRating }) {
       />
       <div className="flex-1 min-w-0">
         <div className="truncate font-medium">{song.songName}&#8203;</div>
-        <div className="text-muted-foreground text-xs truncate">{song.artist} • {song.difficulty} {song.level} ({song.levelPrecise / 10})</div>
+        <div className="text-muted-foreground text-xs truncate">{song.difficulty.slice(0, 3).toUpperCase()} {(song.levelPrecise / 10).toFixed(1)} • {song.artist}</div>
       </div>
       <div className="text-right ml-2">
         <div className="font-mono">{(song.achievement / 10000).toFixed(4)}%</div>
@@ -210,12 +210,12 @@ function CompactSongSection({ title, songs, count, t, sum, average }: {
           </div>
         )}
       </div>
-      <div className="grid grid-cols-[4fr_2fr_min-content_min-content_min-content_min-content_min-content] text-xs">
+      <div className="grid grid-cols-[4fr_2fr_min-content_min-content_min-content_min-content_min-content] text-xs overflow-x-auto">
         {/* Headers */}
-        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-left whitespace-nowrap">
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-left whitespace-nowrap min-w-48">
           {t('dataContent.tableHeaders.song')}
         </div>
-        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-left whitespace-nowrap">
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-left whitespace-nowrap min-w-24">
           {t('dataContent.tableHeaders.artist')}
         </div>
         <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-center whitespace-nowrap">
@@ -224,10 +224,10 @@ function CompactSongSection({ title, songs, count, t, sum, average }: {
         <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-center whitespace-nowrap">
           {t('dataContent.tableHeaders.achievement')}
         </div>
-        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 w-12.5 text-center whitespace-nowrap">
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 min-w-10 text-center whitespace-nowrap">
           {t('dataContent.tableHeaders.fc')}
         </div>
-        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 w-12.5 text-center whitespace-nowrap">
+        <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 min-w-10 text-center whitespace-nowrap">
           {t('dataContent.tableHeaders.fs')}
         </div>
         <div className="font-semibold text-muted-foreground border-b border-gray-300 pb-1 px-2 text-center whitespace-nowrap">
@@ -236,7 +236,7 @@ function CompactSongSection({ title, songs, count, t, sum, average }: {
 
         {/* Song Data */}
         {songs.map(song => (
-          <>
+          <Fragment key={`${song.songId}-${song.difficulty}`}>
             <div key={`${song.songId}-${song.difficulty}-name`} className="truncate font-medium py-1 px-2 border-b border-dashed border-gray-200">
               {song.songName}
             </div>
@@ -265,7 +265,7 @@ function CompactSongSection({ title, songs, count, t, sum, average }: {
             <div key={`${song.songId}-${song.difficulty}-rating`} className="text-right font-mono font-semibold py-1 px-2 border-b border-dashed border-gray-200">
               {song.rating}
             </div>
-          </>
+          </Fragment>
         ))}
       </div>
     </div>
