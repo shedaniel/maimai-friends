@@ -4,11 +4,19 @@ import { eq, and } from "drizzle-orm";
 import { load } from "cheerio";
 import { randomUUID } from "crypto";
 import { getCurrentVersion } from "./metadata";
+import { Agent } from "undici";
+
+export const JP_AGENT = new Agent({
+  connect: {
+    rejectUnauthorized: false
+  }
+});
 
 export interface TokenValidationResult {
   isValid: boolean;
   redirectUrl?: string;
   error?: string;
+  cookies?: string;
 }
 
 export async function processMaimaiToken(
@@ -130,10 +138,161 @@ async function performJapanAccountLogin(
   username: string,
   password: string
 ): Promise<TokenValidationResult> {
-  return {
-    isValid: false,
-    error: "Japan account login is not supported yet.",
-  };
+  const maimaiMobileUrl = "https://maimaidx.jp/maimai-mobile/";
+  const submitUrl = "https://maimaidx.jp/maimai-mobile/submit/";
+
+  console.log(`Attempting Japan account login for user ${userId} with username ${username}`);
+
+  try {
+    // Step 1: Get the maimai mobile page to obtain _t token and cookies
+    console.log("Step 1: Fetching maimai mobile page to get _t token and cookies");
+    const maimaiPageResponse = await fetch(maimaiMobileUrl, {
+      method: "GET",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      },
+      redirect: "manual", // Don't follow redirects
+      ...{ dispatcher: JP_AGENT },
+    });
+
+    console.log(`Maimai mobile page response status: ${maimaiPageResponse.status}`);
+
+    // Extract cookies from Set-Cookie headers
+    let setCookieHeaders: string[] = [];
+    if (maimaiPageResponse.headers.getSetCookie) {
+      setCookieHeaders = maimaiPageResponse.headers.getSetCookie();
+    } else {
+      // Fallback for environments that don't support getSetCookie()
+      const cookieHeader = maimaiPageResponse.headers.get('set-cookie');
+      if (cookieHeader) {
+        setCookieHeaders = [cookieHeader];
+      }
+    }
+    
+    if (setCookieHeaders.length === 0) {
+      console.log("No Set-Cookie headers in maimai mobile page response");
+      if (userId) {
+        await deleteToken(userId, "jp");
+      }
+      return {
+        isValid: false,
+        error: "Failed to obtain session cookies. Please try again later.",
+      };
+    }
+
+    // Extract _t token from Set-Cookie headers
+    let tToken = "";
+    const cookies = setCookieHeaders.map(header => {
+      // Extract just the name=value part (before first semicolon)
+      const cookiePart = header.split(';')[0];
+      
+      // Check if this is the _t token
+      if (cookiePart.startsWith('_t=')) {
+        tToken = cookiePart.substring(3); // Remove '_t=' prefix
+        console.log(`Extracted _t token: ${tToken.substring(0, 10)}...`);
+      }
+      
+      return cookiePart;
+    }).join('; ');
+
+    if (!tToken) {
+      console.log("Could not extract _t token from Set-Cookie headers");
+      if (userId) {
+        await deleteToken(userId, "jp");
+      }
+      return {
+        isValid: false,
+        error: "Failed to obtain authentication token. Please try again later.",
+      };
+    }
+
+    console.log(`Parsed cookies for login request: ${cookies.substring(0, 50)}...`);
+
+    // Step 2: POST credentials with all cookies and _t token
+    console.log("Step 2: Posting credentials with cookies and _t token");
+    const formData = new URLSearchParams({
+      segaId: username,
+      password: password,
+      token: tToken
+    });
+
+    const response = await fetch(submitUrl, {
+      method: "POST",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Cookie": cookies,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Referer": maimaiMobileUrl,
+      },
+      body: formData.toString(),
+      redirect: "manual", // Don't follow redirects
+      ...{ dispatcher: JP_AGENT },
+    });
+
+    console.log(`Japan account login response status: ${response.status}`);
+
+    if (response.status === 302) {
+      // Check redirect URL
+      const redirectUrl = response.headers.get("Location");
+      console.log(`Login redirect URL: ${redirectUrl}`);
+
+      if (!redirectUrl) {
+        // 302 without redirect URL means login failed
+        console.log("Login failed: 302 response without redirect URL");
+        if (userId) {
+          await deleteToken(userId, "jp");
+        }
+        return {
+          isValid: false,
+          error: "Login failed. Please check your username and password.",
+        };
+      }
+
+      if (redirectUrl.includes("https://maimaidx.jp/maimai-mobile/aimeList/")) {
+        // Login successful
+        console.log("Login successful, redirecting to aimeList");
+
+        // Return success with the aimeList submit URL and cookies
+        const aimeListSubmitUrl = "https://maimaidx.jp/maimai-mobile/aimeList/submit/?idx=0";
+        console.log(`Login successful. Using aimeList submit URL: ${aimeListSubmitUrl}`);
+
+        return {
+          isValid: true,
+          redirectUrl: aimeListSubmitUrl,
+          cookies: cookies,
+        };
+      } else {
+        // Unexpected redirect URL
+        console.log(`Unexpected redirect URL: ${redirectUrl}`);
+        if (userId) {
+          await deleteToken(userId, "jp");
+        }
+        return {
+          isValid: false,
+          error: "Login failed. Please check your username and password.",
+        };
+      }
+    } else {
+      // Login failed with non-302 status
+      console.log(`Japan account login failed with status: ${response.status}`);
+      if (userId) {
+        await deleteToken(userId, "jp");
+      }
+      return {
+        isValid: false,
+        error: "Login failed. Please check your username and password.",
+      };
+    }
+  } catch (error) {
+    console.error("Error during Japan account login:", error);
+    if (userId) {
+      await deleteToken(userId, "jp");
+    }
+    return {
+      isValid: false,
+      error: "Failed to login. Please try again later.",
+    };
+  }
 }
 
 async function performInternationalAccountLogin(
@@ -382,7 +541,7 @@ export async function validateInternationalMaimaiToken(
   }
 }
 
-async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<{ html: string; cookies: string }> {
+async function fetchPlayerDataWithLogin(region: "intl" | "jp", redirectUrl: string, redirectCookies: string | null): Promise<{ html: string; cookies: string }> {
   // Step 1: Follow the redirect URL to get login cookies
   console.log(`Fetching redirect URL to get login cookies: ${redirectUrl}`);
   
@@ -390,8 +549,10 @@ async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<{ html: st
     method: "GET",
     headers: {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      ...(redirectCookies ? { "Cookie": redirectCookies } : {}),
     },
     redirect: "manual", // Don't follow redirects
+    ...(region === "jp" ? { dispatcher: JP_AGENT } : {}),
   });
 
   console.log(`Login response status: ${loginResponse.status}`);
@@ -424,7 +585,9 @@ async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<{ html: st
   console.log(`Parsed cookies for player data request`);
 
   // Step 2: Fetch player data using the login cookies
-  const playerDataUrl = "https://maimaidx-eng.com/maimai-mobile/playerData/";
+  const playerDataUrl = region === "jp"
+    ? "https://maimaidx.jp/maimai-mobile/playerData/"
+    : "https://maimaidx-eng.com/maimai-mobile/playerData/";
   console.log(`Fetching player data from: ${playerDataUrl}`);
 
   const playerDataResponse = await fetch(playerDataUrl, {
@@ -434,6 +597,7 @@ async function fetchPlayerDataWithLogin(redirectUrl: string): Promise<{ html: st
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
       "Referer": redirectUrl,
     },
+    ...(region === "jp" ? { dispatcher: JP_AGENT } : {}),
   });
 
   console.log(`Player data response status: ${playerDataResponse.status}`);
@@ -623,8 +787,9 @@ function parseScoreData(html: string, difficulty: number): ScoreData[] {
 }
 
 // Fetch songs data for a specific difficulty using existing cookies
-async function fetchSongsData(cookies: string, difficulty: number): Promise<ScoreData[]> {
-  const songsUrl = `https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=${difficulty}`;
+async function fetchSongsData(cookies: string, difficulty: number, region: "intl" | "jp"): Promise<ScoreData[]> {
+  const baseUrl = region === "jp" ? "https://maimaidx.jp" : "https://maimaidx-eng.com";
+  const songsUrl = `${baseUrl}/maimai-mobile/record/musicGenre/search/?genre=99&diff=${difficulty}`;
   console.log(`Fetching songs data for difficulty ${difficulty} from: ${songsUrl}`);
 
   const songsResponse = await fetch(songsUrl, {
@@ -632,8 +797,9 @@ async function fetchSongsData(cookies: string, difficulty: number): Promise<Scor
     headers: {
       "Cookie": cookies,
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      "Referer": "https://maimaidx-eng.com/maimai-mobile/",
+      "Referer": `${baseUrl}/maimai-mobile/`,
     },
+    ...(region === "jp" ? { dispatcher: JP_AGENT } : {}),
   });
 
   console.log(`Songs data response status for difficulty ${difficulty}: ${songsResponse.status}`);
@@ -652,14 +818,14 @@ async function fetchSongsData(cookies: string, difficulty: number): Promise<Scor
 }
 
 // Fetch all songs data for all difficulties (0-4)
-async function fetchAllSongsData(cookies: string): Promise<{ [difficulty: number]: ScoreData[] }> {
+async function fetchAllSongsData(cookies: string, region: "intl" | "jp"): Promise<{ [difficulty: number]: ScoreData[] }> {
   const songsData: { [difficulty: number]: ScoreData[] } = {};
   
   console.log(`Fetching songs data for all difficulties (0-4)`);
   
   for (let difficulty = 0; difficulty <= 4; difficulty++) {
     try {
-      const scoreData = await fetchSongsData(cookies, difficulty);
+      const scoreData = await fetchSongsData(cookies, difficulty, region);
       songsData[difficulty] = scoreData;
       console.log(`Successfully fetched ${scoreData.length} scores for difficulty ${difficulty}`);
     } catch (error) {
@@ -696,7 +862,7 @@ interface ScoreData {
   fs: "none" | "sync" | "fs" | "fs+" | "fdx" | "fdx+";
 }
 
-async function extractPlayerData(html: string): Promise<PlayerData> {
+async function extractPlayerData(region: "intl" | "jp", html: string): Promise<PlayerData> {
   const $ = load(html);
   const block = $('.see_through_block');
   
@@ -767,16 +933,19 @@ async function extractPlayerData(html: string): Promise<PlayerData> {
   }
   const playCountText = playCountElement.text().trim();
   console.log(`Play count text: ${playCountText}`);
+
+  const playCountRegex = region === "jp" ? /現バージョンプレイ回数[：:]\s*(\d+)/ : /play count of current version[：:]\s*(\d+)/;
+  const totalPlayCountRegex = region === "jp" ? /累計プレイ回数[：:]\s*(\d+)/ : /maimaiDX total play count[：:]\s*(\d+)/;
   
   // Parse version play count: "play count of current version：195"
-  const versionPlayCountMatch = playCountText.match(/play count of current version[：:]\s*(\d+)/);
+  const versionPlayCountMatch = playCountText.match(playCountRegex);
   if (!versionPlayCountMatch) {
     throw new Error(`Could not parse version play count from: ${playCountText}`);
   }
   const versionPlayCount = parseInt(versionPlayCountMatch[1], 10);
   
   // Parse total play count: "maimaiDX total play count：909"
-  const totalPlayCountMatch = playCountText.match(/maimaiDX total play count[：:]\s*(\d+)/);
+  const totalPlayCountMatch = playCountText.match(totalPlayCountRegex);
   if (!totalPlayCountMatch) {
     throw new Error(`Could not parse total play count from: ${playCountText}`);
   }
@@ -820,13 +989,14 @@ async function extractPlayerData(html: string): Promise<PlayerData> {
   };
 }
 
-async function fetchImageAsBase64(imageUrl: string): Promise<string> {
+async function fetchImageAsBase64(region: "intl" | "jp", imageUrl: string): Promise<string> {
   console.log(`Fetching image for base64 encoding: ${imageUrl}`);
   
   const response = await fetch(imageUrl, {
     headers: {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     },
+    ...(region === "jp" ? { dispatcher: JP_AGENT } : {}),
   });
   
   if (!response.ok) {
@@ -1002,17 +1172,17 @@ export async function fetchMaimaiData(
 
   try {
     // Fetch player data HTML using login flow
-    const { html: playerDataHtml, cookies } = await fetchPlayerDataWithLogin(validation.redirectUrl);
+    const { html: playerDataHtml, cookies } = await fetchPlayerDataWithLogin(region, validation.redirectUrl, validation.cookies || null);
     
     // Extract player data from HTML
-    const playerData = await extractPlayerData(playerDataHtml);
+    const playerData = await extractPlayerData(region, playerDataHtml);
     
     // Fetch and encode icon as base64
-    const iconBase64 = await fetchImageAsBase64(playerData.iconUrl);
+    const iconBase64 = await fetchImageAsBase64(region, playerData.iconUrl);
     
     // Fetch all songs data using the same cookies
     console.log("Starting songs data fetch...");
-    const allSongsData = await fetchAllSongsData(cookies);
+    const allSongsData = await fetchAllSongsData(cookies, region);
     console.log("Songs data fetch completed");
     
     // Create user snapshot with real player data

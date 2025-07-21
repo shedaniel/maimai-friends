@@ -31,6 +31,8 @@ export function TokenDialog({
   const [authMethod, setAuthMethod] = useState<"token" | "password">(region === "jp" ? "password" : "token");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const finalAuthMethod = region === "jp" ? "password" : authMethod;
+
   // Validate token format: clal= followed by alphanumeric characters
   const isValidToken = (tokenValue: string) => {
     const tokenRegex = /^clal=[a-zA-Z0-9]+$/;
@@ -41,7 +43,7 @@ export function TokenDialog({
     e.preventDefault();
     
     let finalToken = "";
-    if (authMethod === "token") {
+    if (finalAuthMethod === "token") {
       if (!token.trim() || !isValidToken(token.trim())) return;
       finalToken = `cookie://${token.trim()}`;
     } else {
@@ -64,7 +66,7 @@ export function TokenDialog({
     }
   };
 
-  const canSubmit = authMethod === "token" 
+  const canSubmit = finalAuthMethod === "token" 
     ? token.trim().length > 0 && isValidToken(token.trim()) && !isSubmitting
     : username.trim().length > 0 && password.trim().length > 0 && !isSubmitting;
 
@@ -157,7 +159,6 @@ export function TokenDialog({
               <Tabs className="w-full" value={authMethod} onValueChange={(value) => setAuthMethod(value as "token" | "password")}>
                 <TabsList className="bg-gray-200 grid w-full grid-cols-2">
                   <TabsTrigger value="token">{t('tokenDialog.tokenTab')}</TabsTrigger>
-                  <TabsTrigger value="password">{t('tokenDialog.passwordTab')}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="token" className="space-y-4 mt-4">
@@ -246,12 +247,12 @@ export function TokenDialog({
                 {isSubmitting ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent mr-2" />
-                    Saving Credentials...
+                    {t('tokenDialog.savingCredentials')}
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Save Credentials
+                    {t('tokenDialog.saveCredentials')}
                   </>
                 )}
               </Button>

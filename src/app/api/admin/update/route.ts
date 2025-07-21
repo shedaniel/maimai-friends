@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processMaimaiToken } from "@/lib/maimai-fetcher";
+import { JP_AGENT, processMaimaiToken } from "@/lib/maimai-fetcher";
 import { load } from "cheerio";
 import { db } from "@/lib/db";
 import { songs } from "@/lib/schema";
@@ -117,15 +117,17 @@ function getPreciseLevelValue(
 }
 
 // Helper function to get cookies from redirect URL
-async function getCookiesFromRedirect(redirectUrl: string): Promise<string> {
+async function getCookiesFromRedirect(region: "intl" | "jp", redirectUrl: string, redirectCookies: string | null): Promise<string> {
   console.log(`Fetching redirect URL to get login cookies: ${redirectUrl}`);
   
   const loginResponse = await fetch(redirectUrl, {
     method: "GET",
     headers: {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      ...(redirectCookies ? { "Cookie": redirectCookies } : {}),
     },
-    redirect: "manual", // Don't follow redirects
+    redirect: "manual", // Don't follow redirects,
+    ...(region === "jp" ? { dispatcher: JP_AGENT } : {}),
   });
 
   console.log(`Login response status: ${loginResponse.status}`);
@@ -171,6 +173,7 @@ async function fetchSongDataForDifficulty(region: "intl" | "jp", cookies: string
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
       "Referer": `https://${region === "intl" ? "maimaidx-eng.com" : "maimaidx.jp"}/maimai-mobile/`,
     },
+    ...(region === "jp" ? { dispatcher: JP_AGENT } : {}),
   });
 
   console.log(`Songs data response status for version ${version}, difficulty ${difficulty}: ${songsResponse.status}`);
@@ -310,6 +313,7 @@ async function fetchSongDetail(region: "intl" | "jp", cookies: string, inputName
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
       "Referer": `https://${region === "intl" ? "maimaidx-eng.com" : "maimaidx.jp"}/maimai-mobile/`,
     },
+    ...(region === "jp" ? { dispatcher: JP_AGENT } : {}),
   });
 
   console.log(`Song detail response status: ${detailResponse.status}`);
@@ -524,7 +528,7 @@ export async function GET(request: NextRequest) {
 
     // Step 2: Get cookies from redirect URL
     console.log("Step 2: Getting cookies from redirect URL...");
-    const cookies = await getCookiesFromRedirect(validation.redirectUrl);
+    const cookies = await getCookiesFromRedirect(region, validation.redirectUrl, validation.cookies || null);
 
     // Step 3: Fetch and parse song data for all difficulties (0-4) and versions
     console.log("Step 3: Fetching and parsing song data for all difficulties and versions...");
