@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "maimai friends",
-  description: "Track and analyze your maimai scores with friends",
+  description: "Track and analyze maimai scores with friends.",
 };
 
 export default async function RootLayout({

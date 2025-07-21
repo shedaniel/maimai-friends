@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Database } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-const LOGIN_ENABLED = false;
+const LOGIN_ENABLED = true;
 
 interface LoginScreenProps {
   onLogin: () => void;

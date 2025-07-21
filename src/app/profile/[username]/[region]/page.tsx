@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { Region } from "@/lib/types";
 import { ProfilePageClient } from "@/components/profile-page-client";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 
 // Mark this page as dynamic to avoid conflicts with cookie usage in layout
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,78 @@ interface RegionProfilePageProps {
     username: string;
     region: string;
   }>;
+}
+
+export async function generateMetadata({ params }: RegionProfilePageProps): Promise<Metadata> {
+  const { username, region } = await params;
+
+  // Validate region
+  if (!isValidRegion(region)) {
+    return {
+      title: "Profile Not Found | maimai friends",
+      description: "The profile you're looking for doesn't exist.",
+    };
+  }
+
+  try {
+    const trpc = await createServerSideTRPC();
+    
+    const snapshotData = await trpc.user.getPublicSnapshotData({
+      username: decodeURIComponent(username),
+      region,
+    });
+
+    const regionName = region === 'intl' ? 'International' : 'Japan';
+    
+    const title = `${username} | maimai friends`;
+    const description = `View ${username}'s maimai profile for ${regionName}. Track and analyze maimai scores with friends.`;
+
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+    const profileUrl = `${baseUrl}/profile/${encodeURIComponent(username)}/${region}`;
+
+    const userIcon = snapshotData.snapshot.iconUrl || `${baseUrl}/favicon.ico`;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        url: profileUrl,
+        siteName: 'maimai friends',
+        type: 'profile',
+        images: [
+          {
+            url: userIcon,
+            width: 512,
+            height: 512,
+            alt: `${username}'s maimai icon`,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary',
+        title,
+        description,
+        images: [userIcon],
+      },
+      alternates: {
+        canonical: profileUrl,
+      },
+    };
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
+      return {
+        title: "Profile Not Found | maimai friends",
+        description: "The profile you're looking for doesn't exist or is not publicly accessible.",
+      };
+    }
+
+    return {
+      title: "Error | maimai friends",
+      description: "An error occurred while loading this profile.",
+    };
+  }
 }
 
 // Validate region parameter
