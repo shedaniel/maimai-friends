@@ -163,6 +163,7 @@
       "sum": "合計",
       "average": "平均"
     },
+    "switchToListForAllSongs": "すべての楽曲を表示するには、リストまたはテーブル表示に切り替えてください",
     "noDataAvailable": "データがありません",
     "getStartedInstructions": "上の取得ボタンからmaimaiデータを取得して使い始めましょう。"
   },

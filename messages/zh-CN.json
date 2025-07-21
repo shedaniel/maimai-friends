@@ -163,6 +163,7 @@
       "sum": "总和",
       "average": "平均"
     },
+    "switchToListForAllSongs": "切换到列表或表格视图查看所有歌曲",
     "noDataAvailable": "无可用数据",
     "getStartedInstructions": "点击上方的导入按钮来导入你的 maimai 数据。"
   },

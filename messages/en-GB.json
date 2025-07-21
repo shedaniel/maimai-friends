@@ -163,6 +163,7 @@
       "sum": "Sum",
       "average": "Avg"
     },
+    "switchToListForAllSongs": "Switch to List or Table view for all songs",
     "noDataAvailable": "No Data Available",
     "getStartedInstructions": "Get started by fetching your maimai data using the fetch button above."
   },

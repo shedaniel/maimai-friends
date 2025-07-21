@@ -274,28 +274,93 @@ function CompactSongSection({ title, songs, count, t, sum, average }: {
 
 // Component for rendering individual song cards in grid view
 function SongGridCard({ song }: { song: SongWithRating }) {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const percentX = (x - centerX) / centerX;
+    const percentY = -((y - centerY) / centerY);
+
+    card.style.transform = `perspective(1000px) rotateY(${percentX * 8}deg) rotateX(${percentY * 8}deg) scale3d(1.02, 1.02, 1.02)`;
+
+    const glow = card.querySelector('.song-card-glow') as HTMLElement;
+    const content = card.querySelector('.song-card-content') as HTMLElement;
+
+    if (glow) {
+      glow.style.opacity = '1';
+      glow.style.background = `
+        radial-gradient(
+          circle at 
+          ${x}px ${y}px, 
+          rgba(255, 255, 255, 0.2),
+          rgba(255, 255, 255, 0.15),
+          rgba(255, 255, 255, 0.05),
+          transparent
+        )
+      `;
+    }
+
+    if (content) {
+      content.style.transform = 'translateZ(30px)';
+    }
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    card.style.transform = 'perspective(1000px) rotateY(0deg) rotateX(0deg) scale3d(1, 1, 1)';
+
+    const glow = card.querySelector('.song-card-glow') as HTMLElement;
+    const content = card.querySelector('.song-card-content') as HTMLElement;
+
+    if (glow) {
+      glow.style.opacity = '0';
+    }
+
+    if (content) {
+      content.style.transform = 'translateZ(0px)';
+    }
+  };
+
   return (
-    <div 
-      className="relative bg-white rounded shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
-      style={{ aspectRatio: '16/9' }}
+    <div
+      className={cn("relative bg-white rounded shadow-md overflow-hidden transition-all duration-300 ease-out cursor-pointer border-2",
+        song.difficulty === "basic" && "border-green-400",
+        song.difficulty === "advanced" && "border-yellow-400",
+        song.difficulty === "expert" && "border-red-400",
+        song.difficulty === "master" && "border-purple-500",
+        song.difficulty === "remaster" && "border-purple-200",
+        song.difficulty === "utage" && "border-pink-400",
+      )}
+      style={{ aspectRatio: '16/10', transformStyle: 'preserve-3d', transform: 'perspective(1000px)' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Song Cover Background */}
-      <div className="relative w-full h-full">
-        <Image 
-          src={createSafeMaimaiImageUrl(song.cover)}
-          alt={song.songName}
-          fill
-          className="object-cover"
-          loading="lazy"
-        />
-        
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
-        
+      <Image
+        src={createSafeMaimaiImageUrl(song.cover)}
+        alt={song.songName}
+        fill
+        className="object-cover"
+        loading="lazy"
+      />
+
+      {/* Dark overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-black/30" />
+
+      {/* Glow Effect */}
+      <div className="song-card-glow absolute inset-0 opacity-0 transition-opacity duration-300 pointer-events-none" />
+
+      <div className="song-card-content relative w-full h-full transition-transform duration-300"
+        style={{ transform: 'translateZ(30px)' }}>
         {/* Song Type Badge */}
-        <div className="absolute top-2.5 left-2.5">
+        <div className="absolute top-2.5 left-2.5 z-30">
           <Image
-            src={createSafeMaimaiImageUrl(song.type === "dx" 
+            src={createSafeMaimaiImageUrl(song.type === "dx"
               ? "https://maimaidx.jp/maimai-mobile/img/music_dx.png"
               : "https://maimaidx.jp/maimai-mobile/img/music_standard.png"
             )}
@@ -309,40 +374,40 @@ function SongGridCard({ song }: { song: SongWithRating }) {
 
         {/* Difficulty Badge */}
         <div className={cn(
-          "absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold text-white shadow-md",
-          song.difficulty === "basic" && "bg-green-500",
-          song.difficulty === "advanced" && "bg-yellow-500",
-          song.difficulty === "expert" && "bg-red-500",
-          song.difficulty === "master" && "bg-purple-600",
-          song.difficulty === "remaster" && "bg-purple-300 text-purple-900",
-          song.difficulty === "utage" && "bg-pink-500",
+          "absolute top-0 right-0 px-1.5 py-0.5 rounded-rt rounded-bl text-[10px] font-semibold text-white shadow-md z-30",
+          song.difficulty === "basic" && "bg-green-700",
+          song.difficulty === "advanced" && "bg-yellow-700",
+          song.difficulty === "expert" && "bg-red-700",
+          song.difficulty === "master" && "bg-purple-700",
+          song.difficulty === "remaster" && "bg-purple-200 text-purple-900",
+          song.difficulty === "utage" && "bg-pink-700",
         )}>
           {(song.levelPrecise / 10).toFixed(1)}
         </div>
 
         {/* Song Info */}
-        <div className="absolute bottom-0 left-0 right-0 p-2.5 text-white">
+        <div className="absolute bottom-0 left-0 right-0 p-2.5 text-white z-30">
           <div className="text-sm font-bold truncate mb-1 drop-shadow-md">
             {song.songName}
           </div>
-          <div className="text-xs opacity-90 truncate mb-1 drop-shadow-md">
+          <div className="text-xs opacity-90 truncate drop-shadow-md">
             {song.artist}
           </div>
-          
+
           {/* Achievement and Rating */}
           <div className="flex justify-between items-end">
-            <div className="text-xs">
-              <div className="text-[10px] opacity-75 drop-shadow-md">
-                {song.fc !== 'none' ? song.fc.toUpperCase() : ''} {song.fs !== 'none' ? song.fs.toUpperCase() : ''}
-              </div>
-              <div className="font-mono font-medium drop-shadow-md">
+            <div className="text-xs space-x-1">
+              <span className="font-mono font-medium drop-shadow-md">
                 {(song.achievement / 10000).toFixed(4)}%
-              </div>
+              </span>
+              <span className="text-[10px] opacity-75 drop-shadow-md">
+                {song.fc !== 'none' ? song.fc.toUpperCase() : ''}{song.fc !== 'none' && song.fs !== 'none' ? ' ' : ''}{song.fs !== 'none' ? song.fs.toUpperCase() : ''}
+              </span>
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold font-mono drop-shadow-md">
+              <span className="text-lg font-bold font-mono drop-shadow-md leading-none align-bottom">
                 {song.rating}
-              </div>
+              </span>
             </div>
           </div>
         </div>
@@ -433,7 +498,7 @@ function SongGridSection({ title, songs, count, t, sum, average }: {
           </div>
         )}
       </div>
-      <div className="grid grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {songs.map(song => (
           <SongGridCard key={`${song.songId}-${song.difficulty}`} song={song} />
         ))}
@@ -493,7 +558,7 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
   );
 }
 
-function SongsGrid({ newSongsB15, oldSongsB35, t, b15Sum, b15Average, b35Sum, b35Average }: { newSongsB15: SongWithRating[]; oldSongsB35: SongWithRating[]; t: any; b15Sum?: number; b15Average?: number; b35Sum?: number; b35Average?: number }) {
+function SongsGrid({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSongs, t, b15Sum, b15Average, b35Sum, b35Average }: { newSongsB15: SongWithRating[]; oldSongsB35: SongWithRating[]; remainingNewSongs: SongWithRating[]; remainingOldSongs: SongWithRating[]; t: any; b15Sum?: number; b15Average?: number; b35Sum?: number; b35Average?: number }) {
   return (
     <div className="space-y-6">
       <SongGridSection
@@ -512,13 +577,18 @@ function SongsGrid({ newSongsB15, oldSongsB35, t, b15Sum, b15Average, b35Sum, b3
         sum={b35Sum}
         average={b35Average}
       />
+      {(remainingNewSongs.length > 0 || remainingOldSongs.length > 0) && (
+        <div className="text-center text-sm text-muted-foreground mt-10 mb-4">
+          {t('dataContent.switchToListForAllSongs')}
+        </div>
+      )}
     </div>
   );
 }
 
 export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotData: SnapshotWithSongs; region: Region }) {
   const t = useTranslations();
-  const [displayMode, setDisplayMode] = useState<"list" | "grid" | "compact">("list");
+  const [displayMode, setDisplayMode] = useState<"list" | "grid" | "compact">("grid");
 
   const { songs } = selectedSnapshotData;
 
@@ -566,16 +636,16 @@ export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotDa
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="list">
-                <div className="flex items-center gap-2">
-                  <LayoutList className="h-4 w-4" />
-                  <span>{t('dataContent.displayModes.list')}</span>
-                </div>
-              </SelectItem>
               <SelectItem value="grid">
                 <div className="flex items-center gap-2">
                   <LayoutGrid className="h-4 w-4" />
                   <span>{t('dataContent.displayModes.grid')}</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="list">
+                <div className="flex items-center gap-2">
+                  <LayoutList className="h-4 w-4" />
+                  <span>{t('dataContent.displayModes.list')}</span>
                 </div>
               </SelectItem>
               <SelectItem value="compact">
@@ -598,6 +668,8 @@ export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotDa
             <SongsGrid
               newSongsB15={newSongsB15}
               oldSongsB35={oldSongsB35}
+              remainingNewSongs={remainingNewSongs}
+              remainingOldSongs={remainingOldSongs}
               t={t}
               b15Sum={b15Sum}
               b15Average={b15Average}
