@@ -24,7 +24,10 @@
   "auth": {
     "loginWithDiscord": "Discordで続行",
     "loginDescription": "Discordでログインしてmaimaiのスコアを追跡しましょう",
-    "welcomeBack": "おかえりなさい！",
+    "noAccount": "アカウントをお持ちでないですか？",
+    "signupWithDiscord": "Discordでサインアップ",
+    "signupDisabled": "サインアップは現在無効です",
+    "signupDisabledMessage": "現在、新規登録を受け付けておりません。後でもう一度お試しください。",
     "features": {
       "title": "主な機能：",
       "trackScores": "インターナショナル・日本両地域のスコア管理",

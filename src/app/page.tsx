@@ -3,18 +3,41 @@
 import { useSession, signIn } from "@/lib/auth-client";
 import { LoginScreen } from "@/components/login-screen";
 import { Dashboard } from "@/components/dashboard";
+import { toast } from "sonner";
+import { useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function Home() {
+function HomeContent() {
   const { data: session, isPending } = useSession();
+  const searchParams = useSearchParams();
 
-  const handleDiscordLogin = async () => {
+  // Handle Better Auth error redirects
+  useEffect(() => {
+    const error = searchParams.get('error');
+    const isSignupError = error === 'unable_to_create_user';
+    const isAuthError = error === 'auth_error';
+    
+    if (isSignupError) {
+      toast.error("Sign up is currently disabled. Only existing users can log in.");
+      // Clean up the URL
+      window.history.replaceState({}, '', '/');
+    } else if (isAuthError) {
+      toast.error("An error occurred during authentication. Please try again.");
+      // Clean up the URL
+      window.history.replaceState({}, '', '/');
+    }
+  }, [searchParams]);
+
+  const handleDiscordAuth = async () => {
     try {
       await signIn.social({
         provider: "discord",
         callbackURL: "/",
+        errorCallbackURL: "/",
       });
     } catch (error) {
-      console.error("Discord login error:", error);
+      console.error("Discord auth error:", error);
+      toast.error("An error occurred during authentication. Please try again.");
     }
   };
 
@@ -30,8 +53,23 @@ export default function Home() {
   }
 
   if (!session) {
-    return <LoginScreen onLogin={handleDiscordLogin} />;
+    return <LoginScreen onAuth={handleDiscordAuth} />;
   }
 
   return <Dashboard user={session.user} />;
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[100dvh]">
+        <div className="flex items-center space-x-2">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
+  );
 }

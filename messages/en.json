@@ -24,7 +24,10 @@
   "auth": {
     "loginWithDiscord": "Continue with Discord",
     "loginDescription": "Sign in with Discord to start tracking your maimai scores",
-    "welcomeBack": "Welcome back!",
+    "noAccount": "Don't have an account?",
+    "signupWithDiscord": "Sign up with Discord",
+    "signupDisabled": "Sign up Currently Disabled",
+    "signupDisabledMessage": "We are not accepting new registrations at this time. Please check back later.",
     "features": {
       "title": "Features:",
       "trackScores": "Track scores across International and Japan regions",
