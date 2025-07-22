@@ -3,37 +3,23 @@
 import { useSession, signIn } from "@/lib/auth-client";
 import { LoginScreen } from "@/components/login-screen";
 import { Dashboard } from "@/components/dashboard";
-import { useState } from "react";
+import { toast } from "sonner";
 
 export default function Home() {
   const { data: session, isPending } = useSession();
-  const [signupError, setSignupError] = useState<string | null>(null);
 
-  const handleDiscordLogin = async () => {
+  const handleDiscordAuth = async () => {
     try {
-      setSignupError(null);
       await signIn.social({
         provider: "discord",
         callbackURL: "/",
       });
     } catch (error) {
-      console.error("Discord login error:", error);
-    }
-  };
-
-  const handleDiscordSignup = async () => {
-    try {
-      setSignupError(null);
-      await signIn.social({
-        provider: "discord",
-        callbackURL: "/",
-      });
-    } catch (error) {
-      console.error("Discord signup error:", error);
+      console.error("Discord auth error:", error);
       if (error instanceof Error && error.message.includes("Signups are currently disabled")) {
-        setSignupError("Signups are currently disabled. Only existing users can log in.");
+        toast.error("Signups are currently disabled. Only existing users can log in.");
       } else {
-        setSignupError("An error occurred during signup. Please try again.");
+        toast.error("An error occurred during authentication. Please try again.");
       }
     }
   };
@@ -50,7 +36,7 @@ export default function Home() {
   }
 
   if (!session) {
-    return <LoginScreen onLogin={handleDiscordLogin} onSignup={handleDiscordSignup} signupError={signupError} />;
+    return <LoginScreen onAuth={handleDiscordAuth} />;
   }
 
   return <Dashboard user={session.user} />;
