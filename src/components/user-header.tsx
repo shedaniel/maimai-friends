@@ -9,13 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User as UserIcon, Info } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, Info, Users } from "lucide-react";
 import Image from "next/image";
 import { RegionSwitcher } from "@/components/region-switcher";
 import { Region, User } from "@/lib/types";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { AboutDialog } from "@/components/about-dialog";
+import { InvitesDialog } from "@/components/invites-dialog";
+
+const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled';
 
 interface UserHeaderProps {
   user: User;
@@ -28,6 +31,7 @@ interface UserHeaderProps {
 export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onSettings }: UserHeaderProps) {
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [invitesOpen, setInvitesOpen] = useState(false);
   
   return (
     <>
@@ -76,6 +80,15 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {SIGNUP_TYPE === 'invite-only' && (
+            <>
+              <DropdownMenuItem onClick={() => setInvitesOpen(true)}>
+                <Users className="mr-2 h-4 w-4" />
+                <span>Invitations</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuItem onClick={onSettings}>
             <Settings className="mr-2 h-4 w-4" />
             <span>{t('common.settings')}</span>
@@ -90,6 +103,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
     </div>
     
     <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
+    <InvitesDialog isOpen={invitesOpen} onClose={() => setInvitesOpen(false)} />
   </>
   );
 } 

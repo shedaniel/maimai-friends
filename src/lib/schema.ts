@@ -59,6 +59,17 @@ export const verification = sqliteTable("verification", {
   updatedAt: integer("updatedAt", { mode: "timestamp" }),
 });
 
+export const invites = sqliteTable("invites", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  createdBy: text("createdBy").notNull().references(() => user.id, { onDelete: "cascade" }),
+  claimedBy: text("claimedBy").references(() => user.id, { onDelete: "cascade" }),
+  createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
+  claimedAt: integer("claimedAt", { mode: "timestamp" }),
+  expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
+  revoked: integer("revoked", { mode: "boolean" }).notNull().default(false),
+});
+
 // Maimai-specific tables
 export const userTokens = sqliteTable("user_tokens", {
   id: text("id").primaryKey(),

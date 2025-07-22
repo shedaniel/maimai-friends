@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Database } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-const SIGNUP_ENABLED = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_ENABLED === 'true';
+const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled'; // disabled, invite-only, enabled
 
 interface LoginScreenProps {
   onAuth: () => void;
@@ -43,23 +43,31 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
                 </svg>
                 {t('auth.loginWithDiscord')}
               </Button>
+
               <p className="text-sm text-muted-foreground">
                 {t('auth.noAccount')}{" "}
                 <Button
                   variant="link"
                   size="sm"
                   onClick={onAuth}
-                  disabled={!SIGNUP_ENABLED}
+                  disabled={SIGNUP_TYPE !== 'enabled'}
                 >
                   {t('auth.signupWithDiscord')}
                 </Button>
               </p>
             </div>
 
-            {!SIGNUP_ENABLED && (
+            {SIGNUP_TYPE === 'disabled' && (
               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded-md text-sm">
                 <p className="font-medium">{t('auth.signupDisabled')}</p>
                 <p className="text-xs mt-1">{t('auth.signupDisabledMessage')}</p>
+              </div>
+            )}
+
+            {SIGNUP_TYPE === 'invite-only' && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-800 px-3 py-2 rounded-md text-sm">
+                <p className="font-medium">Invitation Required</p>
+                <p className="text-xs mt-1">New signups require an invitation from an existing user.</p>
               </div>
             )}
           </div>

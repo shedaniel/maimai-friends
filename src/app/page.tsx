@@ -11,7 +11,7 @@ function HomeContent() {
   const { data: session, isPending } = useSession();
   const searchParams = useSearchParams();
 
-  // Handle Better Auth error redirects
+  // Handle Better Auth error redirects and invitation success
   useEffect(() => {
     const error = searchParams.get('error');
     const isSignupError = error === 'unable_to_create_user';
@@ -25,8 +25,21 @@ function HomeContent() {
       toast.error("An error occurred during authentication. Please try again.");
       // Clean up the URL
       window.history.replaceState({}, '', '/');
+    } else if (session) {
+      // Check if there's a pending invitation that was just used
+      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      if (cookies.pendingInviteCode) {
+        // Clear the pending invitation cookie
+        document.cookie = 'pendingInviteCode=; path=/; max-age=0';
+        toast.success("Welcome! Your invitation has been claimed successfully.");
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, session]);
 
   const handleDiscordAuth = async () => {
     try {
