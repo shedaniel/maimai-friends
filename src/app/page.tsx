@@ -18,6 +18,19 @@ export default function Home() {
     }
   };
 
+  const handleDiscordSignup = async () => {
+    try {
+      // For signup, we use the same social login flow
+      // The actual user creation prevention will be handled at the auth layer
+      await signIn.social({
+        provider: "discord",
+        callbackURL: "/",
+      });
+    } catch (error) {
+      console.error("Discord signup error:", error);
+    }
+  };
+
   if (isPending) {
     return (
       <div className="flex items-center justify-center min-h-[100dvh]">
@@ -30,7 +43,7 @@ export default function Home() {
   }
 
   if (!session) {
-    return <LoginScreen onLogin={handleDiscordLogin} />;
+    return <LoginScreen onLogin={handleDiscordLogin} onSignup={handleDiscordSignup} />;
   }
 
   return <Dashboard user={session.user} />;
