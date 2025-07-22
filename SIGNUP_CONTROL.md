@@ -34,12 +34,13 @@ The authentication system now supports:
 - Removed local error state management
 
 ### 4. Environment Configuration (`.env.example`)
-- Added `SIGNUP_ENABLED` and `NEXT_PUBLIC_SIGNUP_ENABLED` variables
+- Added `NEXT_PUBLIC_SIGNUP_ENABLED` variable (single variable for both server and client)
+- Removed duplicate environment variables
 - Documented Discord OAuth configuration
 - Added database and auth secret configuration
 
-### 5. Translations (`messages/en.json`, `messages/en-GB.json`)
-- Added new translation keys for signup-related text:
+### 5. Translations (`messages/en.json`, `messages/en-GB.json`, `messages/ja.json`, `messages/zh-CN.json`, `messages/zh-TW.json`)
+- Added new translation keys for signup-related text in all supported languages:
   - `auth.signupDescription`
   - `auth.signupWithDiscord`
   - `auth.noAccount`
@@ -48,34 +49,45 @@ The authentication system now supports:
   - `auth.signupDisabled`
   - `auth.signupDisabledMessage`
 - Removed unused keys (`auth.signupError`)
+- Full internationalization support for Japanese, Simplified Chinese, and Traditional Chinese
 
 ## Configuration
 
 ### Environment Variables
 
-Set these environment variables to control signup behavior:
+Set this environment variable to control signup behavior:
 
 ```env
-# Server-side signup control
-SIGNUP_ENABLED=false
-
-# Client-side signup control (must match server-side)
+# Signup control (works for both server and client side)
 NEXT_PUBLIC_SIGNUP_ENABLED=false
 ```
 
+**Note**: Using `NEXT_PUBLIC_` prefix makes the variable available to both server and client code, eliminating the need for duplicate variables.
+
 ### Behavior
 
-- When `SIGNUP_ENABLED=false`:
+- When `NEXT_PUBLIC_SIGNUP_ENABLED=false`:
   - Existing users can login normally
   - New users cannot create accounts
   - Signup button is disabled with warning message
   - Database hooks prevent user creation
   - Error toasts appear for failed signup attempts
 
-- When `SIGNUP_ENABLED=true`:
+- When `NEXT_PUBLIC_SIGNUP_ENABLED=true`:
   - Both login and signup work normally
   - New users can register via Discord OAuth
   - All authentication flows are enabled
+
+### Internationalization
+
+Full translation support is available for all supported languages:
+- **English (US)**: `en.json`
+- **English (UK)**: `en-GB.json` 
+- **Japanese**: `ja.json` - 日本語
+- **Simplified Chinese**: `zh-CN.json` - 简体中文
+- **Traditional Chinese**: `zh-TW.json` - 繁體中文
+
+All new authentication-related text is properly localized.
 
 ## User Experience
 

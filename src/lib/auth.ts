@@ -4,7 +4,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db";
 import * as schema from "./schema";
 
-const SIGNUP_ENABLED = process.env.SIGNUP_ENABLED === 'true';
+const SIGNUP_ENABLED = process.env.NEXT_PUBLIC_SIGNUP_ENABLED === 'true';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

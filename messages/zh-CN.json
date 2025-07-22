@@ -24,7 +24,14 @@
   "auth": {
     "loginWithDiscord": "以 Discord 继续",
     "loginDescription": "登录开始追踪你的 maimai 成绩",
+    "signupDescription": "创建新账户开始追踪你的 maimai 成绩",
+    "signupWithDiscord": "用 Discord 注册",
     "welcomeBack": "欢迎回来！",
+    "noAccount": "没有账户？",
+    "haveAccount": "已有账户？",
+    "loginToAccount": "登录你的账户",
+    "signupDisabled": "注册功能已关闭",
+    "signupDisabledMessage": "我们目前不接受新用户注册，请稍后再试。",
     "features": {
       "title": "功能：",
       "trackScores": "追踪国际服和日本服的成绩",

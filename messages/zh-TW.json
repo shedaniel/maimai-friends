@@ -24,7 +24,14 @@
   "auth": {
     "loginWithDiscord": "以 Discord 繼續",
     "loginDescription": "登入開始追蹤你的 maimai 成績",
+    "signupDescription": "創建新帳戶開始追蹤你的 maimai 成績",
+    "signupWithDiscord": "用 Discord 註冊",
     "welcomeBack": "歡迎回來！",
+    "noAccount": "沒有帳戶？",
+    "haveAccount": "已有帳戶？",
+    "loginToAccount": "登入你的帳戶",
+    "signupDisabled": "註冊功能已關閉",
+    "signupDisabledMessage": "我們目前不接受新用戶註冊，請稍後再試。",
     "features": {
       "title": "功能：",
       "trackScores": "追蹤國際區和日本區的成績",
