@@ -84,7 +84,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
             <>
               <DropdownMenuItem onClick={() => setInvitesOpen(true)}>
                 <Users className="mr-2 h-4 w-4" />
-                <span>Invitations</span>
+                <span>{t('common.invitations')}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>

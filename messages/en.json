@@ -19,7 +19,8 @@
     "rating": "Rating",
     "stars": "Stars",
     "plays": "Plays",
-    "total": "Total"
+    "total": "Total",
+    "invitations": "Invitations"
   },
   "auth": {
     "loginWithDiscord": "Continue with Discord",
@@ -145,17 +146,17 @@
     "totalPlays": "Total Plays: {count}",
     "songs": "Songs ({count} total)",
     "newSongsB15": "New Songs B15",
-    "oldSongsB35": "Old Songs B35", 
+    "oldSongsB35": "Old Songs B35",
     "newSongs": "New Songs",
     "oldSongs": "Old Songs",
     "displayModes": {
       "list": "List",
-      "grid": "Grid", 
+      "grid": "Grid",
       "compact": "Table"
     },
     "tableHeaders": {
       "song": "Song",
-      "artist": "Artist", 
+      "artist": "Artist",
       "level": "Level",
       "achievement": "Achievement",
       "fc": "FC",
@@ -188,7 +189,7 @@
     "credentialsStored": "Your credentials will be saved for future use.",
     "username": "Username",
     "usernamePlaceholder": "Enter your SEGA account username",
-    "password": "Password", 
+    "password": "Password",
     "passwordPlaceholder": "Enter your SEGA account password",
     "cookies": "Cookies",
     "tokenPlaceholder": "clal=your_token_here",
@@ -213,5 +214,91 @@
   },
   "userHeader": {
     "memberLabel": "maimai friends member"
+  },
+  "usernameSetup": {
+    "title": "Choose Your Username",
+    "description": "You need to set a username to use this app. This will be used for your public profile URL and must be unique.",
+    "usernameLabel": "Username",
+    "placeholder": "Enter your username",
+    "checking": "Checking availability...",
+    "available": "Username is available!",
+    "rules": {
+      "length": "1-32 characters long",
+      "characters": "Letters, numbers, dashes (-), and underscores (_) only",
+      "profileUrl": "Will be used in your profile URL: /profile/{username}"
+    },
+    "setUsername": "Set Username",
+    "settingUsername": "Setting Username...",
+    "success": "Username set successfully!",
+    "enterUsername": "Please enter a username",
+    "chooseAvailable": "Please choose an available username",
+    "validation": {
+      "format": "Username must be 1-32 characters long and contain only letters, numbers, dashes, and underscores",
+      "taken": "This username is already taken"
+    }
+  },
+  "invites": {
+    "title": "Manage Invitations",
+    "description": "Create and manage invitation links for new users.\nYou can invite 3 users per 3 days. Invitation links expire after 7 days.\nOnly invite people you trust or personally know, you may be responsible for their actions.",
+    "quota": "Quota:",
+    "quotaExplanation": {
+      "available": "Dashed circle = Available slot",
+      "active": "Normal border = Active invitation",
+      "claimed": "Filled circle = Recently claimed"
+    },
+    "yourInvitations": "Your Invitations",
+    "createInvite": "Create Invite",
+    "creating": "Creating...",
+    "loading": "Loading invitations...",
+    "noInvitations": "No invitations created yet.",
+    "status": {
+      "activeCode": "Active Code",
+      "claimedCode": "Claimed Code",
+      "expiredCode": "Expired Code",
+      "revokedCode": "Revoked Code"
+    },
+    "statusDetails": {
+      "activeUntil": "Active until {date}",
+      "claimedBy": "Claimed by {name} on {date}",
+      "expiredOn": "Expired on {date}",
+      "revoked": "Revoked",
+      "unknownStatus": "Unknown status"
+    },
+    "actions": {
+      "copyLink": "Copy Link",
+      "revoke": "Revoke",
+      "revoking": "Revoking..."
+    },
+    "messages": {
+      "created": "Invitation created successfully!",
+      "linkCopied": "Invitation link copied to clipboard!",
+      "createFailed": "Failed to create invitation",
+      "revoked": "Invitation revoked successfully!",
+      "revokeFailed": "Failed to revoke invitation",
+      "copyFailed": "Failed to copy to clipboard",
+      "clipboardNotSupported": "Clipboard not supported",
+      "quotaExceeded": "You can only have 3 active invites per 3 days"
+    }
+  },
+  "acceptInvitation": {
+    "title": "maimai friends",
+    "subtitle": "You've been invited to join the maimai friends community",
+    "validating": "Validating invitation...",
+    "redirecting": "Redirecting to home page...",
+    "invited": "You've been invited!",
+    "invitedBy": "{name} has invited you to join maimai friends",
+    "expiresOn": "Invitation expires on {date}",
+    "acceptAndSignUp": "Accept Invitation & Sign Up",
+    "backToHome": "Back to Home",
+    "alreadyLoggedIn": "Welcome! You are already logged in.",
+    "authError": "An error occurred during authentication. Please try again.",
+    "errors": {
+      "invalidCode": "Invalid invitation code",
+      "revoked": "This invitation has been revoked",
+      "alreadyUsed": "This invitation has already been used",
+      "expired": "This invitation has expired",
+      "ownCode": "You cannot use your own invitation code",
+      "validationFailed": "Failed to validate invitation"
+    }
   }
-} 
+}

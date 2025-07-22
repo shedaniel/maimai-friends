@@ -19,7 +19,8 @@
     "rating": "評分",
     "stars": "星星數",
     "plays": "遊玩次數",
-    "total": "總計"
+    "total": "總計",
+    "invitations": "邀請"
   },
   "auth": {
     "loginWithDiscord": "以 Discord 繼續",
@@ -150,12 +151,12 @@
     "oldSongs": "舊曲",
     "displayModes": {
       "list": "列表",
-      "grid": "網格", 
+      "grid": "網格",
       "compact": "表格"
     },
     "tableHeaders": {
       "song": "歌曲",
-      "artist": "藝人", 
+      "artist": "藝人",
       "level": "等級",
       "achievement": "達成率",
       "fc": "FC",
@@ -213,5 +214,91 @@
   },
   "userHeader": {
     "memberLabel": "maimai friends 成員"
+  },
+  "usernameSetup": {
+    "title": "選擇你的使用者名稱",
+    "description": "你需要設定使用者名稱才能使用此應用程式。這將用於你的公開個人檔案網址，且必須是唯一的。",
+    "usernameLabel": "使用者名稱",
+    "placeholder": "輸入你的使用者名稱",
+    "checking": "檢查可用性中...",
+    "available": "使用者名稱可用！",
+    "rules": {
+      "length": "1-32 個字元",
+      "characters": "僅限英數字、破折號 (-) 和底線 (_)",
+      "profileUrl": "將用於你的個人檔案網址：/profile/{username}"
+    },
+    "setUsername": "設定使用者名稱",
+    "settingUsername": "設定使用者名稱中...",
+    "success": "使用者名稱設定成功！",
+    "enterUsername": "請輸入使用者名稱",
+    "chooseAvailable": "請選擇可用的使用者名稱",
+    "validation": {
+      "format": "使用者名稱必須是 1-32 個字元，僅包含英數字、破折號和底線",
+      "taken": "此使用者名稱已被使用"
+    }
+  },
+  "invites": {
+    "title": "管理邀請",
+    "description": "為新使用者建立和管理邀請連結。\n你可以在 3 天內邀請 3 位使用者。邀請連結在 7 天後過期。\n只邀請你信任或親自認識的人，你可能需要為他們的行為負責。",
+    "quota": "配額：",
+    "quotaExplanation": {
+      "available": "虛線圓圈 = 可用名額",
+      "active": "實線邊框 = 有效邀請",
+      "claimed": "實心圓圈 = 最近使用的邀請"
+    },
+    "yourInvitations": "你的邀請",
+    "createInvite": "建立邀請",
+    "creating": "建立中...",
+    "loading": "載入邀請中...",
+    "noInvitations": "尚未建立任何邀請。",
+    "status": {
+      "activeCode": "有效代碼",
+      "claimedCode": "已使用代碼",
+      "expiredCode": "過期代碼",
+      "revokedCode": "已撤銷代碼"
+    },
+    "statusDetails": {
+      "activeUntil": "有效至 {date}",
+      "claimedBy": "由 {name} 於 {date} 使用",
+      "expiredOn": "於 {date} 過期",
+      "revoked": "已撤銷",
+      "unknownStatus": "未知狀態"
+    },
+    "actions": {
+      "copyLink": "複製連結",
+      "revoke": "撤銷",
+      "revoking": "撤銷中..."
+    },
+    "messages": {
+      "created": "邀請建立成功！",
+      "linkCopied": "邀請連結已複製到剪貼簿！",
+      "createFailed": "建立邀請失敗",
+      "revoked": "邀請撤銷成功！",
+      "revokeFailed": "撤銷邀請失敗",
+      "copyFailed": "複製到剪貼簿失敗",
+      "clipboardNotSupported": "不支援剪貼簿",
+      "quotaExceeded": "你在 3 天內只能建立 3 個有效邀請"
+    }
+  },
+  "acceptInvitation": {
+    "title": "maimai friends",
+    "subtitle": "你已被邀請加入 maimai friends 社群",
+    "validating": "驗證邀請中...",
+    "redirecting": "重新導向至首頁...",
+    "invited": "你已被邀請！",
+    "invitedBy": "{name} 邀請你加入 maimai friends",
+    "expiresOn": "邀請於 {date} 過期",
+    "acceptAndSignUp": "接受邀請並註冊",
+    "backToHome": "返回首頁",
+    "alreadyLoggedIn": "歡迎！你已經登入了。",
+    "authError": "驗證過程中發生錯誤。請再試一次。",
+    "errors": {
+      "invalidCode": "無效的邀請代碼",
+      "revoked": "此邀請已被撤銷",
+      "alreadyUsed": "此邀請已被使用",
+      "expired": "此邀請已過期",
+      "ownCode": "你不能使用自己的邀請代碼",
+      "validationFailed": "邀請驗證失敗"
+    }
   }
-} 
+}

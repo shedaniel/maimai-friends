@@ -15,6 +15,7 @@ import { Plus, Copy, X, Users, AlertTriangle, Clock, UserCheck } from "lucide-re
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { trpc } from "@/lib/trpc-client";
+import { useTranslations } from "next-intl";
 
 const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled';
 
@@ -48,6 +49,8 @@ interface InvitesDialogProps {
 }
 
 export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
+  const t = useTranslations();
+  
   // Only show dialog if invite system is enabled
   if (SIGNUP_TYPE !== 'invite-only') {
     return null;
@@ -65,29 +68,29 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
 
   const createInviteMutation = trpc.user.createInvite.useMutation({
     onSuccess: async (data) => {
-      toast.success('Invitation created successfully!');
+      toast.success(t('invites.messages.created'));
       
       // Copy invite URL to clipboard
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(data.inviteUrl);
-        toast.success('Invitation link copied to clipboard!');
+        toast.success(t('invites.messages.linkCopied'));
       }
       
       // Refresh invites list
       refetchInvites();
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to create invitation');
+      toast.error(error.message || t('invites.messages.createFailed'));
     },
   });
 
   const revokeInviteMutation = trpc.user.revokeInvite.useMutation({
     onSuccess: () => {
-      toast.success('Invitation revoked successfully!');
+      toast.success(t('invites.messages.revoked'));
       refetchInvites();
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to revoke invitation');
+      toast.error(error.message || t('invites.messages.revokeFailed'));
     },
   });
 
@@ -104,12 +107,12 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
     if (navigator.clipboard) {
       try {
         await navigator.clipboard.writeText(inviteUrl);
-        toast.success('Invitation link copied to clipboard!');
+        toast.success(t('invites.messages.linkCopied'));
       } catch (error) {
-        toast.error('Failed to copy to clipboard');
+        toast.error(t('invites.messages.copyFailed'));
       }
     } else {
-      toast.error('Clipboard not supported');
+      toast.error(t('invites.messages.clipboardNotSupported'));
     }
   };
 
@@ -138,15 +141,18 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
   const getStatusText = (status: string, invite: Invite) => {
     switch (status) {
       case 'active':
-        return `Active until ${format(new Date(invite.expiresAt), 'MMM dd, yyyy')}`;
+        return t('invites.statusDetails.activeUntil', { date: format(new Date(invite.expiresAt), 'MMM dd, yyyy') });
       case 'claimed':
-        return `Claimed by ${invite.claimedByName || 'Unknown'} on ${invite.claimedAt ? format(new Date(invite.claimedAt), 'MMM dd, yyyy') : 'Unknown'}`;
+        return t('invites.statusDetails.claimedBy', { 
+          name: invite.claimedByName || 'Unknown',
+          date: invite.claimedAt ? format(new Date(invite.claimedAt), 'MMM dd, yyyy') : 'Unknown'
+        });
       case 'expired':
-        return `Expired on ${format(new Date(invite.expiresAt), 'MMM dd, yyyy')}`;
+        return t('invites.statusDetails.expiredOn', { date: format(new Date(invite.expiresAt), 'MMM dd, yyyy') });
       case 'revoked':
-        return 'Revoked';
+        return t('invites.statusDetails.revoked');
       default:
-        return 'Unknown status';
+        return t('invites.statusDetails.unknownStatus');
     }
   };
 
@@ -158,23 +164,23 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
       if (i < inviteData.quota.activeCount) {
         // Active invite
         circles.push(
-          <div key={i} className="w-4 h-4 rounded-full border-2 border-blue-500" title="Active invitation" />
+          <div key={i} className="w-4 h-4 rounded-full border-2 border-blue-500" title={t('invites.quotaExplanation.active')} />
         );
       } else if (i < inviteData.quota.used) {
         // Recently claimed
         circles.push(
-          <div key={i} className="w-4 h-4 rounded-full bg-green-500" title="Recently claimed invitation" />
+          <div key={i} className="w-4 h-4 rounded-full bg-green-500" title={t('invites.quotaExplanation.claimed')} />
         );
       } else {
         // Available slot
         circles.push(
-          <div key={i} className="w-4 h-4 rounded-full border-2 border-dashed border-gray-400" title="Available slot" />
+          <div key={i} className="w-4 h-4 rounded-full border-2 border-dashed border-gray-400" title={t('invites.quotaExplanation.available')} />
         );
       }
     }
     return (
       <div className="flex items-center space-x-2">
-        <span className="text-sm text-muted-foreground">Quota:</span>
+        <span className="text-sm text-muted-foreground">{t('invites.quota')}</span>
         <div className="flex space-x-1">{circles}</div>
         <span className="text-sm text-muted-foreground">
           {inviteData.quota.used}/{inviteData.quota.total}
@@ -189,38 +195,36 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Manage Invitations
+            {t('invites.title')}
           </DialogTitle>
           <DialogDescription>
-            Create and manage invitation links for new users.<br />
-            You can create invite 3 users per 3 days. Invitations link expire after 7 days. <br />
-            Only invite people you trust or personally know, you may be responsible for their actions.
+            {t('invites.description')}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Quota Display */}
           {inviteData && (
             <div className="space-y-3">
               {renderQuotaCircles()}
               <div className="text-xs text-muted-foreground">
-                • Dashed circle = Available slot<br />
-                • Normal border = Active invitation<br />
-                • Filled circle = Recently claimed
+                • {t('invites.quotaExplanation.available')}<br />
+                • {t('invites.quotaExplanation.active')}<br />
+                • {t('invites.quotaExplanation.claimed')}
               </div>
             </div>
           )}
 
           {/* Create New Invite */}
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Your Invitations</h3>
+            <h3 className="text-lg font-medium">{t('invites.yourInvitations')}</h3>
             <Button
               onClick={createInvite}
               disabled={createInviteMutation.isPending || !inviteData?.quota.canCreateNew}
               size="sm"
             >
               <Plus className="h-4 w-4 mr-2" />
-              {createInviteMutation.isPending ? 'Creating...' : 'Create Invite'}
+              {createInviteMutation.isPending ? t('invites.creating') : t('invites.createInvite')}
             </Button>
           </div>
 
@@ -228,11 +232,11 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
-              <span className="ml-2">Loading invitations...</span>
+              <span className="ml-2">{t('invites.loading')}</span>
             </div>
           ) : inviteData?.invites.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No invitations created yet.
+              {t('invites.noInvitations')}
             </div>
           ) : (
             <div className="space-y-3">
@@ -245,9 +249,9 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
                         {getStatusIcon(status)}
                         <div>
                           <div className="text-sm font-medium">
-                            {status === 'active' ? 'Active Code' : 
-                             status === 'claimed' ? 'Claimed Code' : 
-                             status === 'expired' ? 'Expired Code' : 'Revoked Code'}
+                            {status === 'active' ? t('invites.status.activeCode') : 
+                             status === 'claimed' ? t('invites.status.claimedCode') : 
+                             status === 'expired' ? t('invites.status.expiredCode') : t('invites.status.revokedCode')}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {getStatusText(status, invite)}
@@ -264,7 +268,7 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
                               onClick={() => copyInviteLink(invite.code)}
                             >
                               <Copy className="h-4 w-4 mr-1" />
-                              Copy Link
+                              {t('invites.actions.copyLink')}
                             </Button>
                             <Button
                               variant="destructive"
@@ -273,7 +277,7 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
                               disabled={revokeInviteMutation.isPending}
                             >
                               <X className="h-4 w-4 mr-1" />
-                              {revokeInviteMutation.isPending ? 'Revoking...' : 'Revoke'}
+                              {revokeInviteMutation.isPending ? t('invites.actions.revoking') : t('invites.actions.revoke')}
                             </Button>
                           </>
                         )}

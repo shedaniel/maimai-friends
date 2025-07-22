@@ -19,7 +19,8 @@
     "rating": "レーティング",
     "stars": "スター数",
     "plays": "プレイ数",
-    "total": "合計"
+    "total": "合計",
+    "invitations": "招待"
   },
   "auth": {
     "loginWithDiscord": "Discordで続行",
@@ -150,12 +151,12 @@
     "oldSongs": "過去曲",
     "displayModes": {
       "list": "リスト",
-      "grid": "グリッド", 
+      "grid": "グリッド",
       "compact": "テーブル"
     },
     "tableHeaders": {
       "song": "楽曲",
-      "artist": "アーティスト", 
+      "artist": "アーティスト",
       "level": "レベル",
       "achievement": "達成率",
       "fc": "FC",
@@ -213,5 +214,91 @@
   },
   "userHeader": {
     "memberLabel": "maimai friends メンバー"
+  },
+  "usernameSetup": {
+    "title": "ユーザー名を選択",
+    "description": "このアプリを使用するにはユーザー名を設定する必要があります。これは公開プロフィールのURLに使用され、一意である必要があります。",
+    "usernameLabel": "ユーザー名",
+    "placeholder": "ユーザー名を入力",
+    "checking": "利用可能性を確認中...",
+    "available": "ユーザー名は利用可能です！",
+    "rules": {
+      "length": "1-32文字",
+      "characters": "英数字、ダッシュ（-）、アンダースコア（_）のみ",
+      "profileUrl": "プロフィールURLに使用されます：/profile/{username}"
+    },
+    "setUsername": "ユーザー名を設定",
+    "settingUsername": "ユーザー名を設定中...",
+    "success": "ユーザー名が正常に設定されました！",
+    "enterUsername": "ユーザー名を入力してください",
+    "chooseAvailable": "利用可能なユーザー名を選択してください",
+    "validation": {
+      "format": "ユーザー名は1-32文字で、英数字、ダッシュ、アンダースコアのみ使用できます",
+      "taken": "このユーザー名は既に使用されています"
+    }
+  },
+  "invites": {
+    "title": "招待管理",
+    "description": "新規ユーザー向けの招待リンクを作成・管理します。\n3日間で3人まで招待できます。招待リンクは7日後に有効期限が切れます。\n信頼できる人や個人的に知っている人のみを招待してください。彼らの行動に責任を負う場合があります。",
+    "quota": "枠:",
+    "quotaExplanation": {
+      "available": "点線の丸 = 利用可能な枠",
+      "active": "通常の枠線 = 有効な招待",
+      "claimed": "塗りつぶし = 最近使用された招待"
+    },
+    "yourInvitations": "あなたの招待",
+    "createInvite": "招待を作成",
+    "creating": "作成中...",
+    "loading": "招待を読み込み中...",
+    "noInvitations": "まだ招待が作成されていません。",
+    "status": {
+      "activeCode": "有効なコード",
+      "claimedCode": "使用済みコード",
+      "expiredCode": "期限切れコード",
+      "revokedCode": "取り消されたコード"
+    },
+    "statusDetails": {
+      "activeUntil": "{date}まで有効",
+      "claimedBy": "{date}に{name}によって使用されました",
+      "expiredOn": "{date}に期限切れ",
+      "revoked": "取り消し済み",
+      "unknownStatus": "不明なステータス"
+    },
+    "actions": {
+      "copyLink": "リンクをコピー",
+      "revoke": "取り消し",
+      "revoking": "取り消し中..."
+    },
+    "messages": {
+      "created": "招待が正常に作成されました！",
+      "linkCopied": "招待リンクがクリップボードにコピーされました！",
+      "createFailed": "招待の作成に失敗しました",
+      "revoked": "招待が正常に取り消されました！",
+      "revokeFailed": "招待の取り消しに失敗しました",
+      "copyFailed": "クリップボードへのコピーに失敗しました",
+      "clipboardNotSupported": "クリップボードはサポートされていません",
+      "quotaExceeded": "3日間で3つの有効な招待しか作成できません"
+    }
+  },
+  "acceptInvitation": {
+    "title": "maimai friends",
+    "subtitle": "maimai friendsコミュニティへの招待を受けました",
+    "validating": "招待を検証中...",
+    "redirecting": "ホームページにリダイレクト中...",
+    "invited": "招待されました！",
+    "invitedBy": "{name}があなたをmaimai friendsに招待しました",
+    "expiresOn": "招待は{date}に期限切れになります",
+    "acceptAndSignUp": "招待を受けてサインアップ",
+    "backToHome": "ホームに戻る",
+    "alreadyLoggedIn": "ようこそ！既にログインしています。",
+    "authError": "認証中にエラーが発生しました。もう一度お試しください。",
+    "errors": {
+      "invalidCode": "無効な招待コード",
+      "revoked": "この招待は取り消されています",
+      "alreadyUsed": "この招待は既に使用されています",
+      "expired": "この招待は期限切れです",
+      "ownCode": "自分の招待コードは使用できません",
+      "validationFailed": "招待の検証に失敗しました"
+    }
   }
 }

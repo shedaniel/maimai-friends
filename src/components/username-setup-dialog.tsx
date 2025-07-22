@@ -14,6 +14,7 @@ import {
 import { trpc } from '@/lib/trpc-client';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface UsernameSetupDialogProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface UsernameSetupDialogProps {
 }
 
 export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogProps) {
+  const t = useTranslations();
   const [username, setUsername] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [availability, setAvailability] = useState<{
@@ -37,7 +39,7 @@ export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogP
   // Set/update username mutation
   const setUsernameMutation = trpc.user.setUsername.useMutation({
     onSuccess: () => {
-      toast.success('Username set successfully!');
+      toast.success(t('usernameSetup.success'));
       onComplete();
     },
     onError: (error) => {
@@ -81,12 +83,12 @@ export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogP
     e.preventDefault();
     
     if (!username.trim()) {
-      toast.error('Please enter a username');
+      toast.error(t('usernameSetup.enterUsername'));
       return;
     }
 
     if (!availability.available) {
-      toast.error('Please choose an available username');
+      toast.error(t('usernameSetup.chooseAvailable'));
       return;
     }
 
@@ -109,8 +111,8 @@ export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogP
 
   const getAvailabilityMessage = () => {
     if (username.length === 0) return null;
-    if (isChecking) return <span className="text-sm text-gray-500">Checking availability...</span>;
-    if (availability.available === true) return <span className="text-sm text-green-600">Username is available!</span>;
+    if (isChecking) return <span className="text-sm text-gray-500">{t('usernameSetup.checking')}</span>;
+    if (availability.available === true) return <span className="text-sm text-green-600">{t('usernameSetup.available')}</span>;
     if (availability.error) return <span className="text-sm text-red-600">{availability.error}</span>;
     return null;
   };
@@ -124,22 +126,22 @@ export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogP
         showCloseButton={false}
       >
         <DialogHeader>
-          <DialogTitle>Choose Your Username</DialogTitle>
+          <DialogTitle>{t('usernameSetup.title')}</DialogTitle>
           <DialogDescription>
-            You need to set a username to use this app. This will be used for your public profile URL and must be unique.
+            {t('usernameSetup.description')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">{t('usernameSetup.usernameLabel')}</Label>
             <div className="relative">
               <Input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => handleUsernameChange(e.target.value)}
-                placeholder="Enter your username"
+                placeholder={t('usernameSetup.placeholder')}
                 className="pr-10"
                 maxLength={32}
                 autoComplete="off"
@@ -148,11 +150,11 @@ export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogP
                 {getAvailabilityIcon()}
               </div>
             </div>
-            {getAvailabilityMessage()}
+            <div className="mb-2">{getAvailabilityMessage()}</div>
             <div className="text-xs text-gray-500 space-y-1">
-              <p>• 1-32 characters long</p>
-              <p>• Letters, numbers, dashes (-), and underscores (_) only</p>
-              <p>• Will be used in your profile URL: /profile/{username}</p>
+              <p>• {t('usernameSetup.rules.length')}</p>
+              <p>• {t('usernameSetup.rules.characters')}</p>
+              <p>• {t('usernameSetup.rules.profileUrl', { username })}</p>
             </div>
           </div>
 
@@ -169,10 +171,10 @@ export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogP
               {setUsernameMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Setting Username...
+                  {t('usernameSetup.settingUsername')}
                 </>
               ) : (
-                'Set Username'
+                t('usernameSetup.setUsername')
               )}
             </Button>
           </div>

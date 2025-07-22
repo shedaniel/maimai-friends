@@ -19,7 +19,8 @@
     "rating": "评分",
     "stars": "星星数",
     "plays": "游玩次数",
-    "total": "总计"
+    "total": "总计",
+    "invitations": "邀请"
   },
   "auth": {
     "loginWithDiscord": "以 Discord 继续",
@@ -150,12 +151,12 @@
     "oldSongs": "旧曲",
     "displayModes": {
       "list": "列表",
-      "grid": "网格", 
+      "grid": "网格",
       "compact": "表格"
     },
     "tableHeaders": {
       "song": "歌曲",
-      "artist": "艺人", 
+      "artist": "艺人",
       "level": "等级",
       "achievement": "达成率",
       "fc": "FC",
@@ -213,5 +214,91 @@
   },
   "userHeader": {
     "memberLabel": "maimai friends 成员"
+  },
+  "usernameSetup": {
+    "title": "选择你的用户名",
+    "description": "你需要设置用户名才能使用此应用程序。这将用于你的公开个人资料网址，且必须是唯一的。",
+    "usernameLabel": "用户名",
+    "placeholder": "输入你的用户名",
+    "checking": "检查可用性中...",
+    "available": "用户名可用！",
+    "rules": {
+      "length": "1-32 个字符",
+      "characters": "仅限英数字、破折号 (-) 和下划线 (_)",
+      "profileUrl": "将用于你的个人资料网址：/profile/{username}"
+    },
+    "setUsername": "设置用户名",
+    "settingUsername": "设置用户名中...",
+    "success": "用户名设置成功！",
+    "enterUsername": "请输入用户名",
+    "chooseAvailable": "请选择可用的用户名",
+    "validation": {
+      "format": "用户名必须是 1-32 个字符，仅包含英数字、破折号和下划线",
+      "taken": "此用户名已被使用"
+    }
+  },
+  "invites": {
+    "title": "管理邀请",
+    "description": "为新用户创建和管理邀请链接。\n你可以在 3 天内邀请 3 位用户。邀请链接在 7 天后过期。\n只邀请你信任或亲自认识的人，你可能需要为他们的行为负责。",
+    "quota": "配额：",
+    "quotaExplanation": {
+      "available": "虚线圆圈 = 可用名额",
+      "active": "实线边框 = 有效邀请",
+      "claimed": "实心圆圈 = 最近使用的邀请"
+    },
+    "yourInvitations": "你的邀请",
+    "createInvite": "创建邀请",
+    "creating": "创建中...",
+    "loading": "加载邀请中...",
+    "noInvitations": "尚未创建任何邀请。",
+    "status": {
+      "activeCode": "有效代码",
+      "claimedCode": "已使用代码",
+      "expiredCode": "过期代码",
+      "revokedCode": "已撤销代码"
+    },
+    "statusDetails": {
+      "activeUntil": "有效至 {date}",
+      "claimedBy": "由 {name} 于 {date} 使用",
+      "expiredOn": "于 {date} 过期",
+      "revoked": "已撤销",
+      "unknownStatus": "未知状态"
+    },
+    "actions": {
+      "copyLink": "复制链接",
+      "revoke": "撤销",
+      "revoking": "撤销中..."
+    },
+    "messages": {
+      "created": "邀请创建成功！",
+      "linkCopied": "邀请链接已复制到剪贴板！",
+      "createFailed": "创建邀请失败",
+      "revoked": "邀请撤销成功！",
+      "revokeFailed": "撤销邀请失败",
+      "copyFailed": "复制到剪贴板失败",
+      "clipboardNotSupported": "不支持剪贴板",
+      "quotaExceeded": "你在 3 天内只能创建 3 个有效邀请"
+    }
+  },
+  "acceptInvitation": {
+    "title": "maimai friends",
+    "subtitle": "你已被邀请加入 maimai friends 社区",
+    "validating": "验证邀请中...",
+    "redirecting": "重新导向至首页...",
+    "invited": "你已被邀请！",
+    "invitedBy": "{name} 邀请你加入 maimai friends",
+    "expiresOn": "邀请于 {date} 过期",
+    "acceptAndSignUp": "接受邀请并注册",
+    "backToHome": "返回首页",
+    "alreadyLoggedIn": "欢迎！你已经登录了。",
+    "authError": "验证过程中发生错误。请再试一次。",
+    "errors": {
+      "invalidCode": "无效的邀请代码",
+      "revoked": "此邀请已被撤销",
+      "alreadyUsed": "此邀请已被使用",
+      "expired": "此邀请已过期",
+      "ownCode": "你不能使用自己的邀请代码",
+      "validationFailed": "邀请验证失败"
+    }
   }
-} 
+}
