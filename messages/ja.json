@@ -277,7 +277,9 @@
       "revokeFailed": "招待の取り消しに失敗しました",
       "copyFailed": "クリップボードへのコピーに失敗しました",
       "clipboardNotSupported": "クリップボードはサポートされていません",
-      "quotaExceeded": "3日間で3つの有効な招待しか作成できません"
+      "quotaExceeded": "3日間で3つの有効な招待しか作成できません",
+      "newUserRestriction": "新規ユーザーは招待を作成する前に3日間待つ必要があります",
+      "newUserRestrictionDetails": "{date}以降に招待を作成できます"
     }
   },
   "acceptInvitation": {

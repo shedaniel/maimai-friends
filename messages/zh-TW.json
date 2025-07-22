@@ -277,7 +277,9 @@
       "revokeFailed": "撤銷邀請失敗",
       "copyFailed": "複製到剪貼簿失敗",
       "clipboardNotSupported": "不支援剪貼簿",
-      "quotaExceeded": "你在 3 天內只能建立 3 個有效邀請"
+      "quotaExceeded": "你在 3 天內只能建立 3 個有效邀請",
+      "newUserRestriction": "新用戶必須等待 3 天才能建立邀請",
+      "newUserRestrictionDetails": "你可以在 {date} 之後建立邀請"
     }
   },
   "acceptInvitation": {

@@ -277,7 +277,9 @@
       "revokeFailed": "Failed to revoke invitation",
       "copyFailed": "Failed to copy to clipboard",
       "clipboardNotSupported": "Clipboard not supported",
-      "quotaExceeded": "You can only have 3 active invites per 3 days"
+      "quotaExceeded": "You can only have 3 active invites per 3 days",
+      "newUserRestriction": "New users must wait 3 days before creating invites",
+      "newUserRestrictionDetails": "You can create invites after {date}"
     }
   },
   "acceptInvitation": {

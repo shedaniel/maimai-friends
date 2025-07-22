@@ -144,7 +144,7 @@ export const userRouter = router({
         });
       }
 
-      let suggestedUsername = generateDefaultUsername(userRecord[0].name);
+      const suggestedUsername = generateDefaultUsername(userRecord[0].name);
       
       // If the suggested username is taken, try variations
       let counter = 1;
@@ -908,8 +908,24 @@ export const userRouter = router({
         });
       }
 
+      // Get user's account creation date
+      const userRecord = await db
+        .select({ createdAt: user.createdAt })
+        .from(user)
+        .where(eq(user.id, ctx.session.user.id))
+        .limit(1);
+
+      if (userRecord.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
       // Auto-cleanup old/revoked invites before fetching user's invites
       const now = new Date();
+      const threeDaysAfterCreation = new Date(userRecord[0].createdAt.getTime() + 3 * 24 * 60 * 60 * 1000);
+      const isNewUser = now < threeDaysAfterCreation;
       
       try {
         await db
@@ -961,7 +977,10 @@ export const userRouter = router({
       );
 
       const usedQuota = activeInvites.length + recentlyClaimed.length;
-      const canCreateNew = usedQuota < 3;
+      const quotaCanCreateNew = usedQuota < 3;
+      
+      // New users cannot create invites for 3 days
+      const canCreateNew = !isNewUser && quotaCanCreateNew;
 
       return {
         invites: userInvites,
@@ -971,6 +990,11 @@ export const userRouter = router({
           canCreateNew,
           activeCount: activeInvites.length,
           recentlyClaimedCount: recentlyClaimed.length,
+        },
+        userAge: {
+          isNewUser,
+          accountCreatedAt: userRecord[0].createdAt,
+          canCreateAfter: threeDaysAfterCreation,
         },
       };
     }),
@@ -986,9 +1010,33 @@ export const userRouter = router({
         });
       }
 
-      // Auto-cleanup before creating new invite
+      // Get user's account creation date to check age restriction
+      const userRecord = await db
+        .select({ createdAt: user.createdAt })
+        .from(user)
+        .where(eq(user.id, ctx.session.user.id))
+        .limit(1);
+
+      if (userRecord.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
       const now = new Date();
-      
+      const threeDaysAfterCreation = new Date(userRecord[0].createdAt.getTime() + 3 * 24 * 60 * 60 * 1000);
+      const isNewUser = now < threeDaysAfterCreation;
+
+      // Prevent new users from creating invites
+      if (isNewUser) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'New users must wait 3 days before creating invites',
+        });
+      }
+
+      // Auto-cleanup before creating new invite
       try {
         await db
           .delete(invites)

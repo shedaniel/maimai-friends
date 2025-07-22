@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,9 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Copy, X, Users, AlertTriangle, Clock, UserCheck } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Plus, Copy, X, Users, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { trpc } from "@/lib/trpc-client";
@@ -38,9 +36,16 @@ interface InviteQuota {
   recentlyClaimedCount: number;
 }
 
+interface UserAge {
+  isNewUser: boolean;
+  accountCreatedAt: Date;
+  canCreateAfter: Date;
+}
+
 interface InviteData {
   invites: Invite[];
   quota: InviteQuota;
+  userAge: UserAge;
 }
 
 interface InvitesDialogProps {
@@ -216,16 +221,33 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
           )}
 
           {/* Create New Invite */}
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">{t('invites.yourInvitations')}</h3>
-            <Button
-              onClick={createInvite}
-              disabled={createInviteMutation.isPending || !inviteData?.quota.canCreateNew}
-              size="sm"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {createInviteMutation.isPending ? t('invites.creating') : t('invites.createInvite')}
-            </Button>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">{t('invites.yourInvitations')}</h3>
+              <Button
+                onClick={createInvite}
+                disabled={createInviteMutation.isPending || !inviteData?.quota.canCreateNew}
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {createInviteMutation.isPending ? t('invites.creating') : t('invites.createInvite')}
+              </Button>
+            </div>
+            
+            {/* Show age restriction message for new users */}
+            {inviteData?.userAge.isNewUser && (
+              <div className="text-sm text-muted-foreground bg-gray-200/50 p-3 rounded-md">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="h-4 w-4" />
+                  <span className="font-medium">{t('invites.messages.newUserRestriction')}</span>
+                </div>
+                <div className="text-xs">
+                  {t('invites.messages.newUserRestrictionDetails', { 
+                    date: format(new Date(inviteData.userAge.canCreateAfter), 'MMM dd, yyyy')
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Invites List */}
