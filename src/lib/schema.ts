@@ -9,6 +9,7 @@ export const user = sqliteTable("user", {
   image: text("image"),
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
+  username: text("username").unique(), // New field for URL-friendly usernames, nullable initially
   timezone: text("timezone"), // nullable, null = Asia/Tokyo (JP default)
   language: text("language", { enum: ["en", "en-GB", "ja", "zh-TW", "zh-CN"] }), // nullable, null = auto-detect
   region: text("region", { enum: ["intl", "jp"] }), // nullable, null = intl (default)

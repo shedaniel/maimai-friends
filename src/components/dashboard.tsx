@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "@/lib/auth-client";
 import { DataBanner } from "@/components/data-banner";
 import { TokenDialog } from "@/components/token-dialog";
 import { DataContent } from "@/components/data-content";
 import { UserHeader } from "@/components/user-header";
 import { SettingsDialog } from "@/components/settings-dialog";
+import { UsernameSetupDialog } from "@/components/username-setup-dialog";
 import { useSnapshots } from "@/hooks/useSnapshots";
 import { useFetchSession } from "@/hooks/useFetchSession";
 import { trpc } from "@/lib/trpc-client";
@@ -20,6 +21,7 @@ interface DashboardProps {
 export function Dashboard({ user }: DashboardProps) {
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isUsernameSetupOpen, setIsUsernameSetupOpen] = useState(false);
 
   // Get user region preference
   const { data: regionData, refetch: refetchRegion } = trpc.user.getRegion.useQuery(
@@ -27,8 +29,18 @@ export function Dashboard({ user }: DashboardProps) {
     { refetchOnWindowFocus: false }
   );
 
+  // Check if user has username
+  const { data: usernameData, refetch: refetchUsername } = trpc.user.hasUsername.useQuery();
+
   // Use the stored region preference, fallback to "intl" if not set
   const selectedRegion: Region = regionData?.region || "intl";
+
+  // Show username setup dialog if user doesn't have username
+  useEffect(() => {
+    if (usernameData && !usernameData.hasUsername) {
+      setIsUsernameSetupOpen(true);
+    }
+  }, [usernameData]);
 
   const {
     snapshots,
@@ -183,6 +195,11 @@ export function Dashboard({ user }: DashboardProps) {
     await updateLanguageMutation.mutateAsync({ language: language as "en" | "en-GB" | "ja" | "zh-TW" | "zh-CN" | null });
   };
 
+  const handleUsernameSetupComplete = () => {
+    setIsUsernameSetupOpen(false);
+    refetchUsername(); // Refresh to update the state
+  };
+
   return (
     <div className="container mx-auto max-w-[1300px] px-4 py-8">
       <UserHeader 
@@ -223,10 +240,15 @@ export function Dashboard({ user }: DashboardProps) {
         onClose={() => setIsSettingsOpen(false)}
         currentTimezone={timezoneData?.timezone ?? null}
         currentLanguage={languageData?.language ?? null}
-        username={user.name ?? undefined}
+        username={usernameData?.username ?? undefined}
         onTimezoneUpdate={handleTimezoneUpdate}
         onLanguageUpdate={handleLanguageUpdate}
         onOpenTokenDialog={handleOpenTokenDialog}
+      />
+
+      <UsernameSetupDialog
+        isOpen={isUsernameSetupOpen}
+        onComplete={handleUsernameSetupComplete}
       />
     </div>
   );
