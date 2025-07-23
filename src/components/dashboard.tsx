@@ -46,8 +46,12 @@ export function Dashboard({ user }: DashboardProps) {
     snapshots,
     selectedSnapshot,
     selectedSnapshotData,
+    availableVersions,
+    isLoadingVersions,
     setSelectedSnapshot,
     deleteSnapshot,
+    copySnapshot,
+    isCopying,
     isLoading: isLoadingSnapshots,
     resetSnapshots,
     refreshSnapshots,
@@ -215,6 +219,16 @@ export function Dashboard({ user }: DashboardProps) {
     }
   };
 
+  const handleCopySnapshot = async (snapshotId: string, targetVersion: number) => {
+    try {
+      const result = await copySnapshot(snapshotId, targetVersion);
+      return result;
+    } catch (error) {
+      console.error("Failed to copy snapshot:", error);
+      throw error; // Re-throw to let DataBanner handle the error display
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-[1300px] px-4 py-8">
       <UserHeader 
@@ -235,6 +249,10 @@ export function Dashboard({ user }: DashboardProps) {
           onFetchData={handleFetchData}
           isFetching={isFetching}
           userTimezone={timezoneData?.timezone ?? null}
+          availableVersions={availableVersions}
+          isLoadingVersions={isLoadingVersions}
+          onCopySnapshot={handleCopySnapshot}
+          isCopying={isCopying}
         />
 
         <DataContent

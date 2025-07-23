@@ -6,9 +6,10 @@ import { protectedProcedure, publicProcedure, router } from '@/lib/trpc';
 import { SongWithScore } from '@/lib/types';
 import { TRPCError } from '@trpc/server';
 import { randomUUID } from 'crypto';
-import { and, desc, eq, isNull, lt, or } from 'drizzle-orm';
+import { and, desc, eq, isNull, lt, or, count } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
+import { getAvailableVersions, getVersionInfo } from '@/lib/metadata';
 
 const regionSchema = z.enum(['intl', 'jp']);
 
@@ -1296,6 +1297,235 @@ export const userRouter = router({
           createdAt: inviteData.createdAt,
           expiresAt: inviteData.expiresAt,
         },
+      };
+    }),
+
+  // Get available versions for copying (check if versions have songs data)
+  getAvailableVersionsForCopy: protectedProcedure
+    .input(z.object({
+      region: regionSchema,
+      currentVersion: z.number(),
+    }))
+    .query(async ({ input }) => {
+      const availableVersions = getAvailableVersions(input.region);
+      
+      // Filter out the current version
+      const otherVersions = availableVersions.filter(v => v.id !== input.currentVersion);
+      
+      // Check which versions have songs in the database
+      const versionsWithData = await Promise.all(
+        otherVersions.map(async (version) => {
+          const songCount = await db
+            .select({ count: count() })
+            .from(songs)
+            .where(
+              and(
+                eq(songs.region, input.region),
+                eq(songs.gameVersion, version.id)
+              )
+            );
+
+          return {
+            version,
+            hasSongs: songCount[0].count > 0,
+          };
+        })
+      );
+
+      // Only return versions that have songs
+      return {
+        availableVersions: versionsWithData
+          .filter(v => v.hasSongs)
+          .map(v => v.version),
+      };
+    }),
+
+  // Copy snapshot to another game version
+  copySnapshotToVersion: protectedProcedure
+    .input(z.object({
+      snapshotId: z.string(),
+      region: regionSchema,
+      targetVersion: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // First verify the snapshot belongs to the user
+      const sourceSnapshot = await db
+        .select()
+        .from(userSnapshots)
+        .where(
+          and(
+            eq(userSnapshots.id, input.snapshotId),
+            eq(userSnapshots.userId, ctx.session.user.id),
+            eq(userSnapshots.region, input.region)
+          )
+        )
+        .limit(1);
+
+      if (sourceSnapshot.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Snapshot not found or access denied',
+        });
+      }
+
+      const originalSnapshot = sourceSnapshot[0];
+
+      // Create new snapshot with modified data
+      const newSnapshotId = randomUUID();
+      const newFetchedAt = new Date(originalSnapshot.fetchedAt.getTime() + 1000); // 1 second later
+
+      await db.insert(userSnapshots).values({
+        id: newSnapshotId,
+        userId: ctx.session.user.id,
+        region: input.region,
+        fetchedAt: newFetchedAt,
+        gameVersion: input.targetVersion,
+        rating: originalSnapshot.rating,
+        courseRankUrl: originalSnapshot.courseRankUrl,
+        classRankUrl: originalSnapshot.classRankUrl,
+        stars: originalSnapshot.stars,
+        versionPlayCount: 0, // Reset version play count
+        totalPlayCount: originalSnapshot.totalPlayCount,
+        iconUrl: originalSnapshot.iconUrl,
+        displayName: originalSnapshot.displayName,
+        title: originalSnapshot.title,
+      });
+
+      // Get original scores with song info
+      const originalScores = await db
+        .select({
+          songName: songs.songName,
+          songType: songs.type,
+          songDifficulty: songs.difficulty,
+          achievement: userScores.achievement,
+          dxScore: userScores.dxScore,
+          fc: userScores.fc,
+          fs: userScores.fs,
+        })
+        .from(userScores)
+        .innerJoin(songs, eq(userScores.songId, songs.id))
+        .where(eq(userScores.snapshotId, input.snapshotId));
+
+      // Get target version songs for mapping
+      const targetVersionSongs = await db
+        .select({
+          id: songs.id,
+          songName: songs.songName,
+          type: songs.type,
+          difficulty: songs.difficulty,
+        })
+        .from(songs)
+        .where(
+          and(
+            eq(songs.region, input.region),
+            eq(songs.gameVersion, input.targetVersion)
+          )
+        );
+
+      // Create lookup map for target version songs
+      const targetSongLookup = new Map<string, string>(); // key: "songName|type|difficulty", value: songId
+      for (const song of targetVersionSongs) {
+        const key = `${song.songName}|${song.type}|${song.difficulty}`;
+        targetSongLookup.set(key, song.id);
+      }
+
+      // Copy scores to new snapshot, mapping song IDs
+      const newScores = [];
+      for (const originalScore of originalScores) {
+        const lookupKey = `${originalScore.songName}|${originalScore.songType}|${originalScore.songDifficulty}`;
+        const targetSongId = targetSongLookup.get(lookupKey);
+
+        if (targetSongId) {
+          newScores.push({
+            id: randomUUID(),
+            snapshotId: newSnapshotId,
+            songId: targetSongId,
+            achievement: originalScore.achievement,
+            dxScore: originalScore.dxScore,
+            fc: originalScore.fc,
+            fs: originalScore.fs,
+          });
+        }
+      }
+
+      // Insert new scores
+      if (newScores.length > 0) {
+        await db.insert(userScores).values(newScores);
+      }
+
+      // Recalculate rating for the new snapshot
+      let newRating = originalSnapshot.rating; // Default fallback
+      
+      if (newScores.length > 0) {
+        // Get all scores with song info for rating calculation
+        const scoresWithSongs = await db
+          .select({
+            songId: songs.id,
+            songName: songs.songName,
+            artist: songs.artist,
+            cover: songs.cover,
+            difficulty: songs.difficulty,
+            level: songs.level,
+            levelPrecise: songs.levelPrecise,
+            type: songs.type,
+            genre: songs.genre,
+            addedVersion: songs.addedVersion,
+            achievement: userScores.achievement,
+            dxScore: userScores.dxScore,
+            fc: userScores.fc,
+            fs: userScores.fs,
+          })
+          .from(userScores)
+          .innerJoin(songs, eq(userScores.songId, songs.id))
+          .where(eq(userScores.snapshotId, newSnapshotId));
+
+        // Convert to SongWithScore format for rating calculation
+        const songsForCalculation: SongWithScore[] = scoresWithSongs.map(song => ({
+          songId: song.songId,
+          songName: song.songName,
+          artist: song.artist,
+          cover: song.cover,
+          difficulty: song.difficulty as any, // Cast to match enum
+          level: song.level,
+          levelPrecise: song.levelPrecise,
+          type: song.type as any, // Cast to match enum
+          genre: song.genre,
+          addedVersion: song.addedVersion,
+          achievement: song.achievement,
+          dxScore: song.dxScore,
+          fc: song.fc as any, // Cast to match enum
+          fs: song.fs as any, // Cast to match enum
+        }));
+
+        // Calculate ratings for all songs and sort by rating
+        const songsWithRating = addRatingsAndSort(songsForCalculation);
+
+        // Separate new and old songs based on target game version
+        const newSongs = songsWithRating.filter(song => song.addedVersion === input.targetVersion);
+        const oldSongs = songsWithRating.filter(song => song.addedVersion !== input.targetVersion);
+
+        // Take top 15 new and top 35 old songs
+        const top15New = newSongs.slice(0, 15);
+        const top35Old = oldSongs.slice(0, 35);
+
+        // Calculate total rating (sum of all rating contributing songs)
+        const ratingContributingSongs = [...top15New, ...top35Old];
+        newRating = ratingContributingSongs.reduce((sum, song) => sum + song.rating, 0);
+      }
+
+      // Update the snapshot with the recalculated rating
+      await db
+        .update(userSnapshots)
+        .set({ rating: newRating })
+        .where(eq(userSnapshots.id, newSnapshotId));
+
+      return {
+        success: true,
+        newSnapshotId,
+        copiedScores: newScores.length,
+        totalOriginalScores: originalScores.length,
+        originalRating: originalSnapshot.rating,
+        newRating: newRating,
       };
     }),
 

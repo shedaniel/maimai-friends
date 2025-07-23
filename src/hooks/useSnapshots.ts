@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc-client";
 import { Region, Snapshot } from "@/lib/types";
+import { VersionInfo } from "@/lib/metadata";
 
 export function useSnapshots(region: Region, isAuthenticated: boolean) {
   const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);
@@ -37,7 +38,25 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
     }
   );
 
+  // Get available versions for copying when a snapshot is selected
+  const currentGameVersion = selectedSnapshotData?.snapshot?.gameVersion;
+  const {
+    data: availableVersionsData,
+    isLoading: isLoadingVersions,
+  } = trpc.user.getAvailableVersionsForCopy.useQuery(
+    {
+      region,
+      currentVersion: currentGameVersion!,
+    },
+    {
+      enabled: isAuthenticated && !!currentGameVersion,
+      refetchOnWindowFocus: false,
+      staleTime: 30 * 60 * 1000, // 30 minutes - versions don't change often
+    }
+  );
+
   const snapshots: Snapshot[] = snapshotsData?.snapshots || [];
+  const availableVersions: VersionInfo[] = availableVersionsData?.availableVersions || [];
   const isLoading = isLoadingSnapshots || (!!selectedSnapshot && isLoadingSnapshotData);
 
   // Auto-select the latest snapshot if none selected and we have snapshots
@@ -76,6 +95,18 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
     },
   });
 
+  // Copy snapshot mutation
+  const copySnapshotMutation = trpc.user.copySnapshotToVersion.useMutation({
+    onSuccess: () => {
+      // Refresh snapshots list after copying
+      refreshSnapshots();
+    },
+    onError: (error) => {
+      console.error("Failed to copy snapshot:", error);
+      throw error; // Let the caller handle the error
+    },
+  });
+
   const refreshSnapshotsCallback = () => {
     refreshSnapshots();
     if (selectedSnapshot) {
@@ -100,12 +131,27 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
     });
   };
 
+  const handleCopySnapshot = async (snapshotId: string, targetVersion: number) => {
+    // Copy the snapshot to another version
+    const result = await copySnapshotMutation.mutateAsync({
+      snapshotId,
+      region,
+      targetVersion,
+    });
+    
+    return result;
+  };
+
   return {
     snapshots,
     selectedSnapshot,
     selectedSnapshotData: selectedSnapshotData || undefined,
+    availableVersions,
+    isLoadingVersions,
     setSelectedSnapshot: handleSnapshotSelect,
     deleteSnapshot: handleDeleteSnapshot,
+    copySnapshot: handleCopySnapshot,
+    isCopying: copySnapshotMutation.isPending,
     isLoading,
     resetSnapshots,
     refreshSnapshots: refreshSnapshotsCallback,
