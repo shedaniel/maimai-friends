@@ -1312,31 +1312,30 @@ export const userRouter = router({
       // Filter out the current version
       const otherVersions = availableVersions.filter(v => v.id !== input.currentVersion);
       
-      // Check which versions have songs in the database
-      const versionsWithData = await Promise.all(
-        otherVersions.map(async (version) => {
-          const songCount = await db
-            .select({ count: count() })
-            .from(songs)
-            .where(
-              and(
-                eq(songs.region, input.region),
-                eq(songs.gameVersion, version.id)
-              )
-            );
-
-          return {
-            version,
-            hasSongs: songCount[0].count > 0,
-          };
+      // Get all versions that have songs in a single query
+      const versionsWithSongs = await db
+        .select({
+          gameVersion: songs.gameVersion,
+          count: count()
         })
+        .from(songs)
+        .where(eq(songs.region, input.region))
+        .groupBy(songs.gameVersion);
+
+      // Create a set of versions that have songs for efficient lookup
+      const versionsWithSongsSet = new Set(
+        versionsWithSongs
+          .filter(v => v.count > 0)
+          .map(v => v.gameVersion)
       );
 
-      // Only return versions that have songs
+      // Filter otherVersions to only include those that have songs
+      const availableVersionsWithSongs = otherVersions.filter(
+        version => versionsWithSongsSet.has(version.id)
+      );
+
       return {
-        availableVersions: versionsWithData
-          .filter(v => v.hasSongs)
-          .map(v => v.version),
+        availableVersions: availableVersionsWithSongs,
       };
     }),
 

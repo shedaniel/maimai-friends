@@ -1,0 +1,2 @@
+CREATE INDEX `fetch_sessions_userid_region_startedat_idx` ON `fetch_sessions` (`userId`,`region`,`startedAt`);--> statement-breakpoint
+CREATE INDEX `user_snapshots_userid_region_fetchedat_idx` ON `user_snapshots` (`userId`,`region`,`fetchedAt`);

@@ -1,0 +1,1 @@
+CREATE INDEX `songs_region_gameversion_idx` ON `songs` (`region`,`gameVersion`);

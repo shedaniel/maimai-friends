@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique, index } from "drizzle-orm/sqlite-core";
 
 // Existing auth tables
 export const user = sqliteTable("user", {
@@ -91,7 +91,9 @@ export const fetchSessions = sqliteTable("fetch_sessions", {
   startedAt: integer("startedAt", { mode: "timestamp" }).notNull(),
   completedAt: integer("completedAt", { mode: "timestamp" }),
   errorMessage: text("errorMessage"),
-});
+}, (table) => ({
+  userIdRegionStartedAtIndex: index("fetch_sessions_userid_region_startedat_idx").on(table.userId, table.region, table.startedAt),
+}));
 
 export const userSnapshots = sqliteTable("user_snapshots", {
   id: text("id").primaryKey(),
@@ -108,7 +110,10 @@ export const userSnapshots = sqliteTable("user_snapshots", {
   iconUrl: text("iconUrl").notNull(),
   displayName: text("displayName").notNull(),
   title: text("title").notNull(),
-});
+}, (table) => ({
+  userIdRegionIndex: index("user_snapshots_userid_region_idx").on(table.userId, table.region),
+  userIdRegionFetchedAtIndex: index("user_snapshots_userid_region_fetchedat_idx").on(table.userId, table.region, table.fetchedAt),
+}));
 
 export const songs = sqliteTable("songs", {
   id: text("id").primaryKey(),
@@ -127,6 +132,8 @@ export const songs = sqliteTable("songs", {
   addedVersion: integer("addedVersion").notNull(), // -1 for legacy versions, or actual version number for newer versions
 }, (table) => ({
   songNameDifficultyTypeRegionVersionUnique: unique("song_name_difficulty_type_region_version_unique").on(table.songName, table.difficulty, table.type, table.region, table.gameVersion),
+  regionGameVersionIndex: index("songs_region_gameversion_idx").on(table.region, table.gameVersion),
+  songNameDifficultyIndex: index("songs_songname_difficulty_idx").on(table.songName, table.difficulty),
 }));
 
 export const userScores = sqliteTable("user_scores", {
@@ -137,7 +144,9 @@ export const userScores = sqliteTable("user_scores", {
   dxScore: integer("dxScore").notNull(),
   fc: text("fc", { enum: ["none", "fc", "fc+", "ap", "ap+"] }).notNull(),
   fs: text("fs", { enum: ["none", "sync", "fs", "fs+", "fdx", "fdx+"] }).notNull(),
-});
+}, (table) => ({
+  snapshotIdIndex: index("user_scores_snapshotid_idx").on(table.snapshotId),
+}));
 
 export const detailedScores = sqliteTable("detailed_scores", {
   id: text("id").primaryKey(),
