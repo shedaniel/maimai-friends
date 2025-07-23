@@ -5,7 +5,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Download } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Calendar, Download, Trash2 } from "lucide-react";
 import { getVersionInfo } from "@/lib/metadata";
 import { Region, Snapshot } from "@/lib/types";
 import { useTranslations } from "next-intl";
@@ -15,6 +26,7 @@ interface DataBannerProps {
   snapshots: Snapshot[];
   selectedSnapshot: string | null;
   onSnapshotChange: (snapshotId: string) => void;
+  onDeleteSnapshot: (snapshotId: string) => void;
   onFetchData: () => void;
   isFetching: boolean;
   userTimezone?: string | null; // null = Asia/Tokyo (JP default)
@@ -25,6 +37,7 @@ export function DataBanner({
   snapshots,
   selectedSnapshot,
   onSnapshotChange,
+  onDeleteSnapshot,
   onFetchData,
   isFetching,
   userTimezone,
@@ -58,23 +71,57 @@ export function DataBanner({
             </div>
             
             {hasSnapshots ? (
-              <Select value={selectedSnapshot || undefined} onValueChange={onSnapshotChange}>
-                <SelectTrigger className="w-80">
-                  <SelectValue placeholder={t('dataBanner.selectSnapshot')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {snapshots.map((snapshot) => (
-                    <SelectItem key={snapshot.id} value={snapshot.id}>
-                      <div className="flex flex-col items-start">
-                        <span>{formatDate(snapshot.fetchedAt)}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {snapshot.displayName} • {snapshot.rating} rating • {getVersionInfo(snapshot.gameVersion)?.shortName || "Unknown"}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center space-x-2">
+                <Select value={selectedSnapshot || undefined} onValueChange={onSnapshotChange}>
+                  <SelectTrigger className="w-80">
+                    <SelectValue placeholder={t('dataBanner.selectSnapshot')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {snapshots.map((snapshot) => (
+                      <SelectItem key={snapshot.id} value={snapshot.id}>
+                        <div className="flex flex-col items-start">
+                          <span>{formatDate(snapshot.fetchedAt)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {snapshot.displayName} • {snapshot.rating} rating • {getVersionInfo(snapshot.gameVersion)?.shortName || "Unknown"}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {selectedSnapshot && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-10 w-10 p-0"
+                        title="Delete selected snapshot"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Snapshot</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this snapshot? This action cannot be undone and will permanently remove all your scores from this snapshot.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          onClick={() => onDeleteSnapshot(selectedSnapshot)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             ) : (
               <Badge variant="secondary">{t('dataBanner.noDataAvailable')}</Badge>
             )}

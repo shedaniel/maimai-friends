@@ -47,6 +47,7 @@ export function Dashboard({ user }: DashboardProps) {
     selectedSnapshot,
     selectedSnapshotData,
     setSelectedSnapshot,
+    deleteSnapshot,
     isLoading: isLoadingSnapshots,
     resetSnapshots,
     refreshSnapshots,
@@ -200,6 +201,20 @@ export function Dashboard({ user }: DashboardProps) {
     refetchUsername(); // Refresh to update the state
   };
 
+  const handleDeleteSnapshot = async (snapshotId: string) => {
+    try {
+      await deleteSnapshot(snapshotId);
+      toast.success("Snapshot deleted successfully!");
+    } catch (error) {
+      console.error("Failed to delete snapshot:", error);
+      if (error instanceof Error) {
+        toast.error(`Failed to delete snapshot: ${error.message}`);
+      } else {
+        toast.error("Failed to delete snapshot");
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-[1300px] px-4 py-8">
       <UserHeader 
@@ -216,6 +231,7 @@ export function Dashboard({ user }: DashboardProps) {
           snapshots={snapshots}
           selectedSnapshot={selectedSnapshot}
           onSnapshotChange={setSelectedSnapshot}
+          onDeleteSnapshot={handleDeleteSnapshot}
           onFetchData={handleFetchData}
           isFetching={isFetching}
           userTimezone={timezoneData?.timezone ?? null}

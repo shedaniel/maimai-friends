@@ -64,6 +64,18 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
     previousLengthRef.current = 0; // Reset the length tracking
   };
 
+  // Delete snapshot mutation
+  const deleteSnapshotMutation = trpc.user.deleteSnapshot.useMutation({
+    onSuccess: () => {
+      // Refresh snapshots list after deletion
+      refreshSnapshots();
+    },
+    onError: (error) => {
+      console.error("Failed to delete snapshot:", error);
+      throw error; // Let the caller handle the error
+    },
+  });
+
   const refreshSnapshotsCallback = () => {
     refreshSnapshots();
     if (selectedSnapshot) {
@@ -75,11 +87,25 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
     setSelectedSnapshot(snapshotId);
   };
 
+  const handleDeleteSnapshot = async (snapshotId: string) => {
+    // If we're deleting the currently selected snapshot, clear the selection
+    if (selectedSnapshot === snapshotId) {
+      setSelectedSnapshot(null);
+    }
+    
+    // Delete the snapshot
+    await deleteSnapshotMutation.mutateAsync({
+      snapshotId,
+      region,
+    });
+  };
+
   return {
     snapshots,
     selectedSnapshot,
     selectedSnapshotData: selectedSnapshotData || undefined,
     setSelectedSnapshot: handleSnapshotSelect,
+    deleteSnapshot: handleDeleteSnapshot,
     isLoading,
     resetSnapshots,
     refreshSnapshots: refreshSnapshotsCallback,

@@ -261,6 +261,46 @@ export const userRouter = router({
       };
     }),
 
+  // Delete a snapshot
+  deleteSnapshot: protectedProcedure
+    .input(z.object({
+      snapshotId: z.string(),
+      region: regionSchema
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // First verify the snapshot belongs to the user
+      const snapshot = await db
+        .select({ id: userSnapshots.id })
+        .from(userSnapshots)
+        .where(
+          and(
+            eq(userSnapshots.id, input.snapshotId),
+            eq(userSnapshots.userId, ctx.session.user.id),
+            eq(userSnapshots.region, input.region)
+          )
+        )
+        .limit(1);
+
+      if (snapshot.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Snapshot not found or access denied',
+        });
+      }
+
+      // Delete user scores associated with this snapshot
+      await db
+        .delete(userScores)
+        .where(eq(userScores.snapshotId, input.snapshotId));
+
+      // Delete the snapshot itself
+      await db
+        .delete(userSnapshots)
+        .where(eq(userSnapshots.id, input.snapshotId));
+
+      return { success: true };
+    }),
+
   // Check if user has a saved token for a region
   hasToken: protectedProcedure
     .input(z.object({ region: regionSchema }))
