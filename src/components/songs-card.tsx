@@ -193,14 +193,14 @@ function CompactSongSection({ title, songs, count, t, sum, average }: {
         {(sum !== undefined || average !== undefined) && (
           <div className="flex gap-4 text-xs text-muted-foreground">
             {sum !== undefined && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 whitespace-nowrap">
                 <Plus className="h-3 w-3" />
                 <span>{t('dataContent.statistics.sum')}</span>
                 <span className="font-mono font-medium">{sum}</span>
               </div>
             )}
             {average !== undefined && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 whitespace-nowrap">
                 <TrendingUp className="h-3 w-3" />
                 <span>{t('dataContent.statistics.average')}</span>
                 <span className="font-mono font-medium">{average.toFixed(2)}</span>
@@ -437,14 +437,14 @@ function SongSection({ title, songs, count, displayMode, t, sum, average }: {
         {(sum !== undefined || average !== undefined) && (
           <div className="flex gap-4 text-xs text-muted-foreground">
             {sum !== undefined && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 whitespace-nowrap">
                 <Plus className="h-3 w-3" />
                 <span>{t('dataContent.statistics.sum')}</span>
                 <span className="font-mono font-medium">{sum}</span>
               </div>
             )}
             {average !== undefined && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 whitespace-nowrap">
                 <TrendingUp className="h-3 w-3" />
                 <span>{t('dataContent.statistics.average')}</span>
                 <span className="font-mono font-medium">{average.toFixed(2)}</span>
@@ -479,14 +479,14 @@ function SongGridSection({ title, songs, count, t, sum, average }: {
         {(sum !== undefined || average !== undefined) && (
           <div className="flex gap-4 text-xs text-muted-foreground">
             {sum !== undefined && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 whitespace-nowrap">
                 <Plus className="h-3 w-3" />
                 <span>{t('dataContent.statistics.sum')}</span>
                 <span className="font-mono font-medium">{sum}</span>
               </div>
             )}
             {average !== undefined && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 whitespace-nowrap">
                 <TrendingUp className="h-3 w-3" />
                 <span>{t('dataContent.statistics.average')}</span>
                 <span className="font-mono font-medium">{average.toFixed(2)}</span>
