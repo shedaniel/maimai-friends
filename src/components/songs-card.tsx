@@ -3,15 +3,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getCurrentVersion } from "@/lib/metadata";
 import { addRatingsAndSort, SongWithRating } from "@/lib/rating-calculator";
-import { Region, SnapshotWithSongs } from "@/lib/types";
+import { SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
+import { LayoutGrid, LayoutList, Menu, Plus, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Fragment, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
-import { LayoutList, LayoutGrid, Menu, Plus, TrendingUp } from "lucide-react";
 
 // Helper function to group songs by individual rating values and difficulty
 function groupSongsByRating(songs: SongWithRating[]) {
@@ -584,20 +583,18 @@ function SongsGrid({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
   );
 }
 
-export function SongsCard({ selectedSnapshotData, region }: { selectedSnapshotData: SnapshotWithSongs; region: Region }) {
+export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: SnapshotWithSongs }) {
   const t = useTranslations();
   const [displayMode, setDisplayMode] = useState<"list" | "grid" | "compact">("grid");
 
-  const { songs } = selectedSnapshotData;
+  const { songs, snapshot } = selectedSnapshotData;
 
   // Calculate ratings and sort by highest rating first
   const songsWithRating: SongWithRating[] = addRatingsAndSort(songs);
 
-  const currentVersion = getCurrentVersion(region);
-
   // Separate songs by new/old
-  const newSongs = songsWithRating.filter(song => song.addedVersion === currentVersion);
-  const oldSongs = songsWithRating.filter(song => song.addedVersion !== currentVersion);
+  const newSongs = songsWithRating.filter(song => song.addedVersion === snapshot.gameVersion);
+  const oldSongs = songsWithRating.filter(song => song.addedVersion !== snapshot.gameVersion);
 
   // Get top songs for B15/B35
   const newSongsB15 = newSongs.slice(0, 15);

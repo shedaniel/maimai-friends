@@ -1,14 +1,13 @@
 import { db } from '@/lib/db';
 import { fetchMaimaiData } from '@/lib/maimai-fetcher';
-import { getCurrentVersion } from '@/lib/metadata';
 import { addRatingsAndSort } from '@/lib/rating-calculator';
-import { fetchSessions, songs, user, userScores, userSnapshots, userTokens, invites } from '@/lib/schema';
+import { fetchSessions, invites, songs, user, userScores, userSnapshots, userTokens } from '@/lib/schema';
 import { protectedProcedure, publicProcedure, router } from '@/lib/trpc';
 import { SongWithScore } from '@/lib/types';
 import { TRPCError } from '@trpc/server';
 import { randomUUID } from 'crypto';
+import { and, desc, eq, isNull, lt, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { and, desc, eq, or, lt, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 
 const regionSchema = z.enum(['intl', 'jp']);
@@ -865,14 +864,12 @@ export const userRouter = router({
 
       if (!userData.profileShowAllScores) {
         // Show only top 50 songs (top 15 new + top 35 old) based on rating
-        const currentVersion = getCurrentVersion(input.region);
-
         // Calculate ratings and sort by rating
         const songsWithRating = addRatingsAndSort(songsForCalculation);
 
         // Separate new and old songs
-        const newSongs = songsWithRating.filter(song => song.addedVersion === currentVersion);
-        const oldSongs = songsWithRating.filter(song => song.addedVersion !== currentVersion);
+        const newSongs = songsWithRating.filter(song => song.addedVersion === snapshot[0].gameVersion);
+        const oldSongs = songsWithRating.filter(song => song.addedVersion !== snapshot[0].gameVersion);
 
         // Take top 15 new and top 35 old
         const top15New = newSongs.slice(0, 15);

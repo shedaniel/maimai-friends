@@ -2,14 +2,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getCurrentVersion } from "@/lib/metadata";
-import { addRatingsAndSort, SongWithRating, getRatingFactor, calculateSongRating } from "@/lib/rating-calculator";
-import { Region, SnapshotWithSongs } from "@/lib/types";
+import { addRatingsAndSort, getRatingFactor, SongWithRating } from "@/lib/rating-calculator";
+import { SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
+import { Heart, Target, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useState } from "react";
-import { Heart, TrendingUp, Target, Zap } from "lucide-react";
 
 interface RecommendationData {
   song: SongWithRating;
@@ -56,12 +55,10 @@ function findRequiredAccuracy(targetFactor: number): number {
   return 101; // Impossible if factor is too high
 }
 
-function generateRecommendations(songsWithRating: SongWithRating[], region: Region): RecommendationData[] {
-  const currentVersion = getCurrentVersion(region);
-  
+function generateRecommendations(songsWithRating: SongWithRating[], version: number): RecommendationData[] {
   // Separate songs by new/old
-  const newSongs = songsWithRating.filter(song => song.addedVersion === currentVersion);
-  const oldSongs = songsWithRating.filter(song => song.addedVersion !== currentVersion);
+  const newSongs = songsWithRating.filter(song => song.addedVersion === version);
+  const oldSongs = songsWithRating.filter(song => song.addedVersion !== version);
 
   // Get B15/B35 and minimum required ratings
   const newSongsB15 = newSongs.slice(0, 15);
@@ -74,7 +71,7 @@ function generateRecommendations(songsWithRating: SongWithRating[], region: Regi
 
   // Check each song for recommendation potential
   [...newSongs, ...oldSongs].forEach(song => {
-    const isNew = song.addedVersion === currentVersion;
+    const isNew = song.addedVersion === version;
     const isInB15 = isNew && newSongsB15.some(s => s.songId === song.songId && s.difficulty === song.difficulty);
     const isInB35 = !isNew && oldSongsB35.some(s => s.songId === song.songId && s.difficulty === song.difficulty);
     const isInBest = isInB15 || isInB35;
@@ -201,14 +198,14 @@ function RecommendationRow({ recommendation }: { recommendation: RecommendationD
   );
 }
 
-export function RecommendationCard({ selectedSnapshotData, region }: { selectedSnapshotData: SnapshotWithSongs; region: Region }) {
+export function RecommendationCard({ selectedSnapshotData }: { selectedSnapshotData: SnapshotWithSongs }) {
   const t = useTranslations();
   const [filterCategory, setFilterCategory] = useState<"all" | "new" | "old" | "best">("all");
 
-  const { songs } = selectedSnapshotData;
+  const { songs, snapshot } = selectedSnapshotData;
   const songsWithRating: SongWithRating[] = addRatingsAndSort(songs);
   
-  const recommendations = generateRecommendations(songsWithRating, region);
+  const recommendations = generateRecommendations(songsWithRating, snapshot.gameVersion);
   
   // Filter recommendations based on selected category
   const filteredRecommendations = recommendations.filter(rec => {

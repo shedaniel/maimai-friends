@@ -170,10 +170,10 @@ export function DataContent({
           />
         </TabsContent>
         <TabsContent value="songs" className="mt-0 flex-1 min-w-0">
-          <SongsCard selectedSnapshotData={selectedSnapshotData} region={region} />
+          <SongsCard selectedSnapshotData={selectedSnapshotData} />
         </TabsContent>
         <TabsContent value="recommendations" className="mt-0 flex-1 min-w-0">
-          <RecommendationCard selectedSnapshotData={selectedSnapshotData} region={region} />
+          <RecommendationCard selectedSnapshotData={selectedSnapshotData} />
         </TabsContent>
         {privacySettings.showPlates && (
           <TabsContent value="plates" className="mt-0 flex-1 min-w-0">
