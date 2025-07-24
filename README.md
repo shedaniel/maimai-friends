@@ -69,6 +69,11 @@ A modern web application for tracking and analyzing your maimai DX scores with f
    
    # Optional: Admin functionality for song database updates
    ADMIN_UPDATE_TOKEN=your-secure-admin-token
+   
+   # Discord Bot (required for Discord bot functionality)
+   DISCORD_APPLICATION_ID=your-discord-application-id
+   DISCORD_BOT_TOKEN=your-discord-bot-token
+   DISCORD_PUBLIC_KEY=your-discord-public-key
    ```
 
 4. **Set up database**
@@ -76,7 +81,17 @@ A modern web application for tracking and analyzing your maimai DX scores with f
    npm run db:push
    ```
 
-5. **Start development server**
+   **Note**: If you're upgrading from a previous version, you'll need to run database migrations:
+   ```bash
+   npm run db:push      # Apply any pending migrations
+   ```
+
+5. **Register Discord bot commands (optional)**
+   ```bash
+   npm run discord:register
+   ```
+
+6. **Start development server**
    ```bash
    npm run dev
    ```
@@ -189,7 +204,9 @@ src/
 └── middleware.ts         # Next.js middleware
 ```
 
-## 🌐 Discord OAuth Setup
+## 🌐 Discord Setup
+
+### Discord OAuth (for user authentication)
 
 1. **Create Discord Application**
    - Visit [Discord Developer Portal](https://discord.com/developers/applications)
@@ -200,6 +217,70 @@ src/
    - Add redirect URI: `http://localhost:3000/api/auth/callback/discord`
    - For production: `https://yourdomain.com/api/auth/callback/discord`
    - Copy Client ID and Client Secret to your `.env.local`
+
+### Discord Bot (for bot functionality)
+
+1. **Enable Bot**
+   - In your Discord Application, navigate to "Bot" section
+   - Click "Add Bot" to create a bot user
+   - Copy the Bot Token to your `.env.local` as `DISCORD_BOT_TOKEN`
+
+2. **Get Application Credentials**
+   - Go to "General Information" section
+   - Copy "Application ID" to your `.env.local` as `DISCORD_APPLICATION_ID`
+   - Copy "Public Key" to your `.env.local` as `DISCORD_PUBLIC_KEY`
+
+3. **Set Interactions Endpoint URL (for production)**
+   - In "General Information", scroll to "Interactions Endpoint URL"
+   - Set it to: `https://yourdomain.com/api/interactions`
+   - This tells Discord where to send slash command interactions
+
+4. **Register Bot Commands**
+   ```bash
+   npm run discord:register
+   ```
+
+5. **Invite Bot to Server**
+   - Use `/invite` slash command to get an invite link
+   - Or manually create: `https://discord.com/oauth2/authorize?client_id=YOUR_APPLICATION_ID&scope=applications.commands`
+
+## 🤖 Discord Bot Features
+
+The maimai friends Discord bot extends the web application's functionality directly into Discord servers:
+
+### Available Commands
+
+- **`/invite`** - Get an invite link to add the bot to your server
+  - Returns a beautiful embed with bot information and features
+  - Public response for server promotion
+
+- **`/top`** - Show your latest maimai rating (International region)
+  - Displays your current rating with playful commentary
+  - Shows stars, total plays, and last update time
+  - Public response to show off your scores
+
+- **`/topjp`** - Show your latest maimai rating (Japan region)  
+  - Same as `/top` but for Japan region data
+  - Requires Japan region scores to be imported
+
+- **Error Handling**: Commands show helpful ephemeral messages if:
+  - User hasn't linked their Discord account
+  - No score data found for the region
+  - Database connection issues
+
+### Bot Architecture
+
+- **Serverless**: Runs on Vercel using HTTP interactions (no persistent connection needed)
+- **Secure**: All requests are verified using Discord's signature verification
+- **Extensible**: Easy to add new slash commands by updating the interactions endpoint
+
+### Limitations
+
+- **HTTP-only**: Cannot listen to message events or maintain persistent state
+- **Slash commands only**: Focused on structured interactions rather than message parsing
+- **No real-time features**: Perfect for on-demand information and utility commands
+
+---
 
 ## 🏗 Database Setup
 

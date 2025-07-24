@@ -334,6 +334,11 @@ TURSO_AUTH_TOKEN=your-turso-auth-token
 
 # Admin functionality (optional, for song database updates)
 ADMIN_UPDATE_TOKEN=your-secure-admin-token
+
+# Discord Bot (required for Discord bot functionality)
+DISCORD_APPLICATION_ID=your-discord-application-id
+DISCORD_BOT_TOKEN=your-discord-bot-token
+DISCORD_PUBLIC_KEY=your-discord-public-key
 ```
 
 ## Future Considerations

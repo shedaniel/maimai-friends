@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "discord:register": "node scripts/register-discord-commands.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -35,6 +36,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "discord-api-types": "^0.38.16",
+    "discord-interactions": "^4.3.0",
     "dotenv": "^17.2.0",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.3",
