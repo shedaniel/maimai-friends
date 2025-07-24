@@ -14,12 +14,20 @@ const commands = [
     description: 'Get an invite link to add maimai friends bot to your server',
   },
   {
-    name: 'top',
+    name: 'profile',
     description: 'Show your latest maimai rating (International region)',
   },
   {
-    name: 'topjp',
+    name: 'profilejp',
     description: 'Show your latest maimai rating (Japan region)',
+  },
+  {
+    name: 'top',
+    description: 'Fetch and update your latest maimai scores (International region)',
+  },
+  {
+    name: 'topjp',
+    description: 'Fetch and update your latest maimai scores (Japan region)',
   },
 ];
 
