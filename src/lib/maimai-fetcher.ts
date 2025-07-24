@@ -821,27 +821,35 @@ async function fetchSongsData(cookies: string, difficulty: number, region: "intl
 
 // Fetch all songs data for all difficulties (0-4)
 async function fetchAllSongsData(cookies: string, region: "intl" | "jp", sessionId?: string): Promise<{ [difficulty: number]: ScoreData[] }> {
-  const songsData: { [difficulty: number]: ScoreData[] } = {};
-  
   console.log(`Fetching songs data for all difficulties (0-4)${sessionId ? ' with tracking' : ''}`);
   
-  for (let difficulty = 0; difficulty <= 4; difficulty++) {
-    try {
-      const scoreData = await fetchSongsData(cookies, difficulty, region);
-      songsData[difficulty] = scoreData;
+  // Create promises for all difficulties to fetch concurrently
+  const difficultyPromises = Array.from({ length: 5 }, (_, difficulty) => {
+    return fetchSongsData(cookies, difficulty, region).then((scoreData) => {
       console.log(`Successfully fetched ${scoreData.length} scores for difficulty ${difficulty}`);
       
       // Track progress if sessionId is provided
       if (sessionId) {
         const state = getStateForDifficulty(difficulty);
         if (state) {
-          await appendFetchState(sessionId, state);
+          appendFetchState(sessionId, state); // Fire and forget
         }
       }
-    } catch (error) {
+      
+      return { difficulty, scoreData };
+    }).catch((error) => {
       console.error(`Failed to fetch songs for difficulty ${difficulty}:`, error);
       throw new Error(`Failed to fetch songs for difficulty ${difficulty}: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
+    });
+  });
+  
+  // Wait for all difficulties to complete
+  const results = await Promise.all(difficultyPromises);
+  
+  // Convert results back to the expected format
+  const songsData: { [difficulty: number]: ScoreData[] } = {};
+  for (const { difficulty, scoreData } of results) {
+    songsData[difficulty] = scoreData;
   }
   
   console.log(`Successfully fetched songs data for all difficulties`);
@@ -852,6 +860,7 @@ async function fetchAllSongsData(cookies: string, region: "intl" | "jp", session
 
 interface PlayerData {
   iconUrl: string;
+  iconBase64: string;
   displayName: string;
   rating: number;
   title: string;
@@ -990,6 +999,7 @@ async function extractPlayerData(region: "intl" | "jp", html: string): Promise<P
   
   return {
     iconUrl,
+    iconBase64: await fetchImageAsBase64(region, iconUrl),
     displayName,
     rating,
     title,
@@ -1031,7 +1041,6 @@ async function createUserSnapshot(
   userId: string,
   region: "intl" | "jp",
   playerData: PlayerData,
-  iconBase64: string
 ): Promise<string> {
   const snapshotId = randomUUID();
   
@@ -1049,7 +1058,7 @@ async function createUserSnapshot(
     stars: playerData.stars,
     versionPlayCount: playerData.versionPlayCount,
     totalPlayCount: playerData.totalPlayCount,
-    iconUrl: iconBase64,
+    iconUrl: playerData.iconBase64,
     displayName: playerData.displayName,
     title: playerData.title,
   });
@@ -1184,27 +1193,26 @@ export async function fetchMaimaiData(
 
   try {
     // Mark login state as completed (after token validation)
-    await appendFetchState(sessionId, FETCH_STATES.LOGIN);
+    appendFetchState(sessionId, FETCH_STATES.LOGIN); // Fire and forget
     
     // Fetch player data HTML using login flow
     const { html: playerDataHtml, cookies } = await fetchPlayerDataWithLogin(region, validation.redirectUrl, validation.cookies || null);
     
-    // Extract player data from HTML
-    const playerData = await extractPlayerData(region, playerDataHtml);
-    
-    // Fetch and encode icon as base64
-    const iconBase64 = await fetchImageAsBase64(region, playerData.iconUrl);
-    
-    // Mark player data state as completed
-    await appendFetchState(sessionId, FETCH_STATES.PLAYER_DATA);
-    
-    // Fetch all songs data using the same cookies
-    console.log("Starting songs data fetch...");
-    const allSongsData = await fetchAllSongsData(cookies, region, sessionId);
-    console.log("Songs data fetch completed");
+    // Extract player data and fetch songs data concurrently
+    console.log("Starting player data extraction and songs data fetch...");
+    const [playerData, allSongsData] = await Promise.all([
+      // Extract player data from HTML and track progress
+      extractPlayerData(region, playerDataHtml).then((data) => {
+        appendFetchState(sessionId, FETCH_STATES.PLAYER_DATA); // Fire and forget
+        return data;
+      }),
+      // Fetch all songs data using the same cookies
+      fetchAllSongsData(cookies, region, sessionId)
+    ]);
+    console.log("Player data extraction and songs data fetch completed");
     
     // Create user snapshot with real player data
-    const snapshotId = await createUserSnapshot(userId, region, playerData, iconBase64);
+    const snapshotId = await createUserSnapshot(userId, region, playerData);
     
     // Insert user scores into database
     console.log("Starting user scores insertion...");
