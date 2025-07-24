@@ -1,14 +1,14 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Database, UserCheck, AlertCircle, ArrowLeft } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
+import { signIn, useSession } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc-client";
-import { useSession, signIn } from "@/lib/auth-client";
+import { AlertCircle, Database, UserCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled';
 
@@ -98,10 +98,6 @@ export default function AcceptInvitationPage() {
       console.error("Discord auth error:", error);
       toast.error(t('acceptInvitation.authError'));
     }
-  };
-
-  const handleGoHome = () => {
-    router.push('/');
   };
 
   const formatDate = (dateString: string) => {

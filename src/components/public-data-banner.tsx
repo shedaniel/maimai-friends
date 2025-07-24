@@ -1,11 +1,11 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, User } from "lucide-react";
-import { getVersionInfo } from "@/lib/metadata";
 import { RegionSwitcher } from "@/components/region-switcher";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { getVersionInfo } from "@/lib/metadata";
 import { Region } from "@/lib/types";
+import { User } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 interface PublicDataBannerProps {

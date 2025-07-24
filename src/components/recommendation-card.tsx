@@ -32,29 +32,6 @@ const ACCURACY_VALUES = [
     100.5,
 ]
 
-// Find the minimum rating factor that would push the song above a target rating
-function findRequiredRatingFactor(levelPrecise: number, targetRating: number): number {
-  // Rating = factor * accuracy * levelPrecise / 10
-  // We want: factor * 100.5 * levelPrecise / 10 >= targetRating
-  // So: factor >= targetRating * 10 / (100.5 * levelPrecise)
-  return (targetRating * 10) / (100.5 * levelPrecise);
-}
-
-// Find the minimum accuracy needed to achieve a certain rating factor
-function findRequiredAccuracy(targetFactor: number): number {
-  // Rating factors are in ranges, find the minimum accuracy for this factor
-  if (targetFactor >= 0.224) return 100.5;
-  if (targetFactor >= 0.216) return 100.0;
-  if (targetFactor >= 0.211) return 99.5;
-  if (targetFactor >= 0.208) return 99.0;
-  if (targetFactor >= 0.203) return 98.0;
-  if (targetFactor >= 0.2) return 97.0;
-  if (targetFactor >= 0.168) return 94.0;
-  if (targetFactor >= 0.152) return 90.0;
-  if (targetFactor >= 0.136) return 80.0;
-  return 101; // Impossible if factor is too high
-}
-
 function generateRecommendations(songsWithRating: SongWithRating[], version: number): RecommendationData[] {
   // Separate songs by new/old
   const newSongs = songsWithRating.filter(song => song.addedVersion === version);
@@ -277,7 +254,7 @@ export function RecommendationCard({ selectedSnapshotData }: { selectedSnapshotD
       </CardHeader>
       <CardContent>
         <div className="divide-y divide-dashed divide-gray-200">
-          {filteredRecommendations.map((rec, index) => (
+          {filteredRecommendations.map(rec => (
             <RecommendationRow key={`${rec.song.songId}-${rec.song.difficulty}`} recommendation={rec} />
           ))}
         </div>

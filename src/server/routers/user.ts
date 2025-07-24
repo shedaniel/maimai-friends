@@ -1,16 +1,15 @@
 import { db } from '@/lib/db';
-import { fetchMaimaiData } from '@/lib/maimai-fetcher';
+import { getFetchStatusServer, Region, startFetchServer } from '@/lib/maimai-server-actions';
+import { getAvailableVersions } from '@/lib/metadata';
 import { addRatingsAndSort } from '@/lib/rating-calculator';
-import { fetchSessions, invites, songs, user, userScores, userSnapshots, userTokens } from '@/lib/schema';
+import { invites, songs, user, userScores, userSnapshots, userTokens } from '@/lib/schema';
 import { protectedProcedure, publicProcedure, router } from '@/lib/trpc';
 import { SongWithScore } from '@/lib/types';
 import { TRPCError } from '@trpc/server';
 import { randomUUID } from 'crypto';
-import { and, desc, eq, isNull, lt, or, count } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, lt, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
-import { getAvailableVersions, getVersionInfo } from '@/lib/metadata';
-import { startFetchServer, getFetchStatusServer, Region } from '@/lib/maimai-server-actions';
 
 const regionSchema = z.enum(['intl', 'jp']);
 

@@ -23,7 +23,6 @@ interface DataContentProps {
 }
 
 export function DataContent({
-  region,
   selectedSnapshotData,
   isLoading,
   privacySettings = {

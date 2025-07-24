@@ -28,26 +28,6 @@ interface Invite {
   revoked: boolean;
 }
 
-interface InviteQuota {
-  used: number;
-  total: number;
-  canCreateNew: boolean;
-  activeCount: number;
-  recentlyClaimedCount: number;
-}
-
-interface UserAge {
-  isNewUser: boolean;
-  accountCreatedAt: Date;
-  canCreateAfter: Date;
-}
-
-interface InviteData {
-  invites: Invite[];
-  quota: InviteQuota;
-  userAge: UserAge;
-}
-
 interface InvitesDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -113,7 +93,7 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
       try {
         await navigator.clipboard.writeText(inviteUrl);
         toast.success(t('invites.messages.linkCopied'));
-      } catch (error) {
+      } catch {
         toast.error(t('invites.messages.copyFailed'));
       }
     } else {

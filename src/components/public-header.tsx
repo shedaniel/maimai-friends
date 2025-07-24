@@ -10,9 +10,7 @@ interface PublicHeaderProps {
   profileUsername: string;
 }
 
-export function PublicHeader({ 
-  profileUsername
-}: PublicHeaderProps) {
+export function PublicHeader({}: PublicHeaderProps) {
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
   
