@@ -5,6 +5,8 @@ import { load } from "cheerio";
 import { randomUUID } from "crypto";
 import { getCurrentVersion } from "./metadata";
 import { Agent } from "undici";
+import { FETCH_STATES, getStateForDifficulty } from "./fetch-states";
+import { appendFetchState } from "./fetch-states-server";
 
 export const JP_AGENT = new Agent({
   connect: {
@@ -818,16 +820,24 @@ async function fetchSongsData(cookies: string, difficulty: number, region: "intl
 }
 
 // Fetch all songs data for all difficulties (0-4)
-async function fetchAllSongsData(cookies: string, region: "intl" | "jp"): Promise<{ [difficulty: number]: ScoreData[] }> {
+async function fetchAllSongsData(cookies: string, region: "intl" | "jp", sessionId?: string): Promise<{ [difficulty: number]: ScoreData[] }> {
   const songsData: { [difficulty: number]: ScoreData[] } = {};
   
-  console.log(`Fetching songs data for all difficulties (0-4)`);
+  console.log(`Fetching songs data for all difficulties (0-4)${sessionId ? ' with tracking' : ''}`);
   
   for (let difficulty = 0; difficulty <= 4; difficulty++) {
     try {
       const scoreData = await fetchSongsData(cookies, difficulty, region);
       songsData[difficulty] = scoreData;
       console.log(`Successfully fetched ${scoreData.length} scores for difficulty ${difficulty}`);
+      
+      // Track progress if sessionId is provided
+      if (sessionId) {
+        const state = getStateForDifficulty(difficulty);
+        if (state) {
+          await appendFetchState(sessionId, state);
+        }
+      }
     } catch (error) {
       console.error(`Failed to fetch songs for difficulty ${difficulty}:`, error);
       throw new Error(`Failed to fetch songs for difficulty ${difficulty}: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -837,6 +847,8 @@ async function fetchAllSongsData(cookies: string, region: "intl" | "jp"): Promis
   console.log(`Successfully fetched songs data for all difficulties`);
   return songsData;
 }
+
+
 
 interface PlayerData {
   iconUrl: string;
@@ -1171,6 +1183,9 @@ export async function fetchMaimaiData(
   }
 
   try {
+    // Mark login state as completed (after token validation)
+    await appendFetchState(sessionId, FETCH_STATES.LOGIN);
+    
     // Fetch player data HTML using login flow
     const { html: playerDataHtml, cookies } = await fetchPlayerDataWithLogin(region, validation.redirectUrl, validation.cookies || null);
     
@@ -1180,9 +1195,12 @@ export async function fetchMaimaiData(
     // Fetch and encode icon as base64
     const iconBase64 = await fetchImageAsBase64(region, playerData.iconUrl);
     
+    // Mark player data state as completed
+    await appendFetchState(sessionId, FETCH_STATES.PLAYER_DATA);
+    
     // Fetch all songs data using the same cookies
     console.log("Starting songs data fetch...");
-    const allSongsData = await fetchAllSongsData(cookies, region);
+    const allSongsData = await fetchAllSongsData(cookies, region, sessionId);
     console.log("Songs data fetch completed");
     
     // Create user snapshot with real player data

@@ -42,7 +42,7 @@ export function useFetchSession(onFetchComplete?: () => void) {
   };
 
   const pollFetchStatus = async (sessionId: string, region: Region) => {
-    const maxAttempts = 150; // 5 minutes max (300 seconds / 2 seconds = 150 attempts)
+    const maxAttempts = 300; // 5 minutes max (300 seconds / 1 second = 300 attempts)
     let attempts = 0;
 
     const poll = async () => {
@@ -60,6 +60,7 @@ export function useFetchSession(onFetchComplete?: () => void) {
             startedAt: result.startedAt,
             completedAt: result.completedAt || undefined,
             errorMessage: result.errorMessage || undefined,
+            statusStates: result.statusStates || undefined,
           };
           setCurrentSession(updatedSession);
 
@@ -81,7 +82,7 @@ export function useFetchSession(onFetchComplete?: () => void) {
 
         attempts++;
         if (attempts < maxAttempts) {
-          setTimeout(poll, 2000); // Poll every 2 seconds
+          setTimeout(poll, 1000); // Poll every 1 second
         } else {
           setFetchError("Fetch timeout");
           return "timeout";

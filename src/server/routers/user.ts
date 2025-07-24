@@ -481,7 +481,14 @@ export const userRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       const fetchSession = await db
-        .select()
+        .select({
+          id: fetchSessions.id,
+          status: fetchSessions.status,
+          startedAt: fetchSessions.startedAt,
+          completedAt: fetchSessions.completedAt,
+          errorMessage: fetchSessions.errorMessage,
+          statusStates: fetchSessions.statusStates,
+        })
         .from(fetchSessions)
         .where(
           and(
@@ -503,6 +510,7 @@ export const userRouter = router({
         startedAt: session.startedAt,
         completedAt: session.completedAt,
         errorMessage: session.errorMessage,
+        statusStates: session.statusStates,
       };
     }),
 

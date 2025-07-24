@@ -26,8 +26,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Calendar, Download, Trash2, MoreHorizontal, Copy } from "lucide-react";
 import { getVersionInfo } from "@/lib/metadata";
-import { Region, Snapshot } from "@/lib/types";
+import { Region, Snapshot, FetchSession } from "@/lib/types";
 import { VersionInfo } from "@/lib/metadata";
+import { parseStatusStates, calculateProgress } from "@/lib/fetch-states";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -40,6 +41,7 @@ interface DataBannerProps {
   onDeleteSnapshot: (snapshotId: string) => void;
   onFetchData: () => void;
   isFetching: boolean;
+  currentSession: FetchSession | null;
   userTimezone?: string | null; // null = Asia/Tokyo (JP default)
   // New props for copy functionality
   availableVersions: VersionInfo[];
@@ -221,29 +223,47 @@ function CopySnapshotButton({
 function FetchDataButton({
   onFetchData,
   isFetching,
+  currentSession,
   t
 }: {
   onFetchData: () => void;
   isFetching: boolean;
+  currentSession: FetchSession | null;
   t: any;
 }) {
+  // Calculate progress based on statusStates
+  const progress = currentSession?.statusStates 
+    ? calculateProgress(parseStatusStates(currentSession.statusStates))
+    : 0;
+
   return (
     <Button
       onClick={onFetchData}
       disabled={isFetching}
-      className="flex h-10 items-center space-x-2"
+      className="relative flex h-10 items-center space-x-2 overflow-hidden disabled:opacity-100 disabled:bg-primary/50"
     >
-      {isFetching ? (
-        <>
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-          <span>{t('dataBanner.fetchingData')}</span>
-        </>
-      ) : (
-        <>
-          <Download className="h-4 w-4" />
-          <span>{t('dataBanner.fetchNewData')}</span>
-        </>
+      {/* Progress background */}
+      {isFetching && (
+        <div
+          className="absolute inset-0 bg-black transition-all duration-300 ease-out z-5"
+          style={{ width: `${progress}%` }}
+        />
       )}
+
+      {/* Button content */}
+      <div className="relative z-10 flex items-center space-x-2">
+        {isFetching ? (
+          <>
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+            <span>{t('dataBanner.fetchingData')}</span>
+          </>
+        ) : (
+          <>
+            <Download className="h-4 w-4" />
+            <span>{t('dataBanner.fetchNewData')}</span>
+          </>
+        )}
+      </div>
     </Button>
   );
 }
@@ -277,6 +297,7 @@ export function DataBanner({
   onDeleteSnapshot,
   onFetchData,
   isFetching,
+  currentSession,
   userTimezone,
   availableVersions,
   isLoadingVersions,
@@ -355,6 +376,7 @@ export function DataBanner({
             <FetchDataButton
               onFetchData={onFetchData}
               isFetching={isFetching}
+              currentSession={currentSession}
               t={t}
             />
           </div>

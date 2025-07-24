@@ -59,6 +59,7 @@ export function Dashboard({ user }: DashboardProps) {
 
   const {
     isFetching,
+    currentSession,
     startDataFetch,
     startAutomaticFetch,
     resetFetchSession,
@@ -248,6 +249,7 @@ export function Dashboard({ user }: DashboardProps) {
           onDeleteSnapshot={handleDeleteSnapshot}
           onFetchData={handleFetchData}
           isFetching={isFetching}
+          currentSession={currentSession}
           userTimezone={timezoneData?.timezone ?? null}
           availableVersions={availableVersions}
           isLoadingVersions={isLoadingVersions}

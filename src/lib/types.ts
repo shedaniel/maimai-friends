@@ -57,6 +57,7 @@ export interface FetchSession {
   startedAt: Date;
   completedAt?: Date;
   errorMessage?: string;
+  statusStates?: string; // Comma-separated list of completed states
 }
 
 // ===== DATABASE TYPES =====
