@@ -31,6 +31,7 @@
     "@trpc/next": "^11.4.3",
     "@trpc/react-query": "^11.4.3",
     "@trpc/server": "^11.4.3",
+    "@vercel/functions": "^2.2.4",
     "better-auth": "^1.2.9",
     "cheerio": "^1.1.0",
     "class-variance-authority": "^0.7.1",

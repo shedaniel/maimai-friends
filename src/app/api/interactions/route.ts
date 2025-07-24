@@ -10,6 +10,7 @@ import { user, userSnapshots, account } from '@/lib/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { startFetchServer, getFetchStatusServer, Region } from '@/lib/maimai-server-actions';
 import { parseStatusStates, getAllStates, FETCH_STATES } from '@/lib/fetch-states';
+import { waitUntil } from '@vercel/functions';
 
 // Discord bot configuration
 const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY!;
@@ -300,8 +301,8 @@ export async function POST(request: NextRequest) {
               type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
             });
 
-            // Start the fetch process in the background
-            (async () => {
+            // Start the fetch process in the background using waitUntil to prevent termination
+            const backgroundTask = (async () => {
               try {                
                 // Start the fetch
                 const startResult = await startFetchServer(dbUser.id, fetchRegion as Region);
@@ -523,11 +524,14 @@ export async function POST(request: NextRequest) {
                       }],
                     }),
                   }
-                );
-              }
-            })();
+                                 );
+               }
+             })();
 
-            return deferredResponse;
+             // Use waitUntil to ensure the background task continues after response
+             waitUntil(backgroundTask);
+
+             return deferredResponse;
           } catch (error) {
             console.error('Error starting fetch:', error);
             return Response.json({
