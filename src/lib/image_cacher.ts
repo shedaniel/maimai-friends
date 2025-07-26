@@ -77,7 +77,7 @@ export async function getCachedImagePath(url: string): Promise<string> {
       try {
         await fs.access(testPath);
         existingFile = `/res/preloaded/${urlHash}.${ext}`;
-        console.log(`Using cached image: ${existingFile}`);
+        // console.log(`Using cached image: ${existingFile}`);
         break;
       } catch {
         // File doesn't exist, continue
@@ -89,7 +89,7 @@ export async function getCachedImagePath(url: string): Promise<string> {
     }
     
     // File doesn't exist, fetch it
-    console.log(`Caching image from: ${url}`);
+    // console.log(`Caching image from: ${url}`);
     
     const { Agent } = await import('undici');
     const httpsAgent = new Agent({
@@ -122,7 +122,7 @@ export async function getCachedImagePath(url: string): Promise<string> {
     await fs.writeFile(cachedFilePath, buffer);
     
     const publicPath = `/res/preloaded/${urlHash}.${extension}`;
-    console.log(`Cached image saved: ${publicPath}`);
+    // console.log(`Cached image saved: ${publicPath}`);
     
     return publicPath;
     
@@ -160,7 +160,7 @@ export async function getCachedImageBuffer(url: string): Promise<{ buffer: Buffe
           : ext === 'svg' ? 'image/svg+xml'
           : 'image/png';
         
-        console.log(`Serving cached image buffer: ${urlHash}.${ext}`);
+        // console.log(`Serving cached image buffer: ${urlHash}.${ext}`);
         return { buffer, contentType };
       } catch {
         // File doesn't exist, continue

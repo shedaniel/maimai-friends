@@ -42,7 +42,7 @@ async function fabricImageFromURL(
 
       if (finalUrl.startsWith('/')) {
         // Local file - read directly from filesystem
-        console.log("reading local file", finalUrl);
+        // console.log("reading local file", finalUrl);
         const fs = await import('fs/promises');
         const path = await import('path');
         
@@ -60,8 +60,7 @@ async function fabricImageFromURL(
           : ext === '.svg' ? 'image/svg+xml'
           : 'image/png'; // default fallback
       } else {
-        // Remote URL - fetch it
-        console.log("fetching remote image", finalUrl);
+        // console.log("fetching remote image", finalUrl);
         const { Agent } = await import('undici');
         const httpsAgent = new Agent({
           connect: {

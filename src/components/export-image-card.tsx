@@ -79,7 +79,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
       const dataURL = fabricCanvasRef.current.toDataURL({
         format: 'png',
         quality: 1,
-        multiplier: 1, // Keep original size (1200x1920)
+        multiplier: 2, // Keep original size (1200x1920)
       });
 
       // Create download link
@@ -100,7 +100,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(selectedSnapshotData),
+        body: JSON.stringify({ snapshotId: selectedSnapshotData.snapshot.id }),
       });
 
       if (!response.ok) {
@@ -151,9 +151,9 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Button onClick={handleExport} className="flex items-center gap-2">
               <Download className="h-4 w-4" />
-              Download (Client)
+              Download
             </Button>
-            <Button 
+            {/* <Button 
               onClick={handleServerDownload} 
               disabled={isServerGenerating}
               variant="secondary" 
@@ -170,7 +170,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
                   Download (Server)
                 </>
               )}
-            </Button>
+            </Button> */}
             {process.env.NODE_ENV === 'development' && (
               <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
                 <RefreshCw className="h-4 w-4" />
@@ -178,10 +178,10 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
               </Button>
             )}
           </div>
-          <div className="text-center text-sm text-muted-foreground space-y-1">
+          {/* <div className="text-center text-sm text-muted-foreground space-y-1">
             <p><strong>Client:</strong> Fast, direct canvas export</p>
             <p><strong>Server:</strong> High-quality server-rendered image with better font support</p>
-          </div>
+          </div> */}
           <div
             ref={containerRef}
             className="border rounded-xl overflow-hidden shadow-sm w-full"

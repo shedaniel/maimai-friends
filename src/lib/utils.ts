@@ -43,7 +43,7 @@ export async function createSafeMaimaiImageUrlAsync(originalUrl: string): Promis
             await fs.access(cachedFilePath);
             // File exists, return direct URL to cached file
             const cachedUrl = `/res/preloaded/${urlHash}.${ext}`;
-            console.log(`Using cached URL: ${cachedUrl} for ${originalUrl}`);
+            console.debug(`Using cached URL: ${cachedUrl} for ${originalUrl}`);
             return cachedUrl;
           } catch {
             // File doesn't exist, continue checking other extensions

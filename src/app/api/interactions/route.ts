@@ -378,34 +378,151 @@ export async function POST(request: NextRequest) {
                             else if (rating >= 10000) comment = "impressive, as a beginner";
                             else comment = "you REALLY suck";
 
+                            // Show image generation status
                             await editMessage({
                               embeds: [{
-                                title: `✅ ${fetchRegionName} Data Updated`,
-                                description: `<@${discordUserId}> ${comment}, you only have **${rating}** rating! 😤`,
-                                color: 0x57F287, // Discord green
-                                fields: [
-                                  {
-                                    name: '⭐ Stars',
-                                    value: latestSnapshot.stars.toString(),
-                                    inline: true,
-                                  },
-                                  {
-                                    name: '🎮 Total Plays',
-                                    value: latestSnapshot.totalPlayCount.toString(),
-                                    inline: true,
-                                  },
-                                  {
-                                    name: '📅 Updated',
-                                    value: `<t:${Math.floor(latestSnapshot.fetchedAt.getTime() / 1000)}:R>`,
-                                    inline: true,
-                                  },
-                                ],
+                                title: `🔄 Fetching ${fetchRegionName} Data`,
+                                description: `<@${discordUserId}> Data fetch completed, generating profile image...`,
+                                color: 0xFEE75C, // Discord yellow
+                                fields: [{
+                                  name: '📊 Status',
+                                  value: '⏳ Generating Profile Image',
+                                  inline: false,
+                                }],
                                 footer: {
                                   text: 'maimai friends • maimai DX score tracker',
                                 },
                                 timestamp: new Date().toISOString(),
                               }],
                             });
+
+                            // Function to edit message with image attachment
+                            const editMessageWithImage = async (embedData: any, imageBuffer: Buffer) => {
+                              const formData = new FormData();
+                              
+                              // Add the image file
+                              const blob = new Blob([new Uint8Array(imageBuffer)], { type: 'image/png' });
+                              formData.append('files[0]', blob, 'maimai-profile.png');
+                              
+                              // Add the payload without embedding the image
+                              const payload = {
+                                embeds: [embedData]
+                              };
+                              formData.append('payload_json', JSON.stringify(payload));
+
+                              await fetch(
+                                `https://discord.com/api/v10/webhooks/${APPLICATION_ID}/${interaction.token}/messages/@original`,
+                                {
+                                  method: 'PATCH',
+                                  body: formData,
+                                }
+                              );
+                            };
+
+                            try {
+                              // Generate the image
+                              const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+                              const imageResponse = await fetch(`${baseUrl}/api/export-image`, {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ snapshotId: latestSnapshot.id }),
+                              });
+
+                              if (imageResponse.ok) {
+                                const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+                                
+                                await editMessageWithImage({
+                                  title: `✅ ${fetchRegionName} Data Updated`,
+                                  description: `<@${discordUserId}> ${comment}, you only have **${rating}** rating! 😤`,
+                                  color: 0x57F287, // Discord green
+                                  fields: [
+                                    {
+                                      name: '⭐ Stars',
+                                      value: latestSnapshot.stars.toString(),
+                                      inline: true,
+                                    },
+                                    {
+                                      name: '🎮 Total Plays',
+                                      value: latestSnapshot.totalPlayCount.toString(),
+                                      inline: true,
+                                    },
+                                    {
+                                      name: '📅 Updated',
+                                      value: `<t:${Math.floor(latestSnapshot.fetchedAt.getTime() / 1000)}:R>`,
+                                      inline: true,
+                                    },
+                                  ],
+                                  footer: {
+                                    text: 'maimai friends • maimai DX score tracker',
+                                  },
+                                  timestamp: new Date().toISOString(),
+                                }, imageBuffer);
+                              } else {
+                                // Fallback to regular message if image generation fails
+                                console.error('Failed to generate image:', await imageResponse.text());
+                                await editMessage({
+                                  embeds: [{
+                                    title: `✅ ${fetchRegionName} Data Updated`,
+                                    description: `<@${discordUserId}> ${comment}, you only have **${rating}** rating! 😤`,
+                                    color: 0x57F287, // Discord green
+                                    fields: [
+                                      {
+                                        name: '⭐ Stars',
+                                        value: latestSnapshot.stars.toString(),
+                                        inline: true,
+                                      },
+                                      {
+                                        name: '🎮 Total Plays',
+                                        value: latestSnapshot.totalPlayCount.toString(),
+                                        inline: true,
+                                      },
+                                      {
+                                        name: '📅 Updated',
+                                        value: `<t:${Math.floor(latestSnapshot.fetchedAt.getTime() / 1000)}:R>`,
+                                        inline: true,
+                                      },
+                                    ],
+                                    footer: {
+                                      text: 'maimai friends • maimai DX score tracker',
+                                    },
+                                    timestamp: new Date().toISOString(),
+                                  }],
+                                });
+                              }
+                            } catch (imageError) {
+                              // Fallback to regular message if image generation fails
+                              console.error('Error generating image:', imageError);
+                              await editMessage({
+                                embeds: [{
+                                  title: `✅ ${fetchRegionName} Data Updated`,
+                                  description: `<@${discordUserId}> ${comment}, you only have **${rating}** rating! 😤`,
+                                  color: 0x57F287, // Discord green
+                                  fields: [
+                                    {
+                                      name: '⭐ Stars',
+                                      value: latestSnapshot.stars.toString(),
+                                      inline: true,
+                                    },
+                                    {
+                                      name: '🎮 Total Plays',
+                                      value: latestSnapshot.totalPlayCount.toString(),
+                                      inline: true,
+                                    },
+                                    {
+                                      name: '📅 Updated',
+                                      value: `<t:${Math.floor(latestSnapshot.fetchedAt.getTime() / 1000)}:R>`,
+                                      inline: true,
+                                    },
+                                  ],
+                                  footer: {
+                                    text: 'maimai friends • maimai DX score tracker',
+                                  },
+                                  timestamp: new Date().toISOString(),
+                                }],
+                              });
+                            }
                           } else {
                             await editMessage({
                               embeds: [{
