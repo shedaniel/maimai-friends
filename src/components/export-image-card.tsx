@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { renderImage } from "@/lib/render-image";
 import { SnapshotWithSongs } from "@/lib/types";
 import { fabric } from "fabric";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, Loader2, RefreshCw, Server } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
@@ -153,7 +153,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
               <Download className="h-4 w-4" />
               Download
             </Button>
-            {/* <Button 
+            <Button 
               onClick={handleServerDownload} 
               disabled={isServerGenerating}
               variant="secondary" 
@@ -170,7 +170,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
                   Download (Server)
                 </>
               )}
-            </Button> */}
+            </Button>
             {process.env.NODE_ENV === 'development' && (
               <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
                 <RefreshCw className="h-4 w-4" />

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
 
 export async function POST(request: NextRequest) {
   // console.log('🚀 Starting export-image API request');
@@ -12,22 +11,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Snapshot ID is required' }, { status: 400 });
     }
     
-    // Launch Puppeteer browser
+    // Launch Puppeteer browser following Vercel's recommended pattern
     // console.log('🌐 Launching Puppeteer browser...');
     const browserStartTime = Date.now();
-    const browser = await puppeteer.launch({
+    
+    const isVercel = !!process.env.VERCEL_ENV;
+    let puppeteer: any;
+    let launchOptions: any = {
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
-        '--enable-font-antialiasing',     // Enable font antialiasing
-      ]
-    });
+    };
+
+    if (isVercel) {
+      // Production: Use puppeteer-core with Sparticuz Chromium
+      const chromium = (await import('@sparticuz/chromium')).default;
+      puppeteer = await import('puppeteer-core');
+      launchOptions = {
+        ...launchOptions,
+        args: [...chromium.args, '--disable-web-security'],
+        executablePath: await chromium.executablePath(),
+      };
+    } else {
+      // Development: Use regular puppeteer
+      puppeteer = await import('puppeteer');
+      launchOptions = {
+        ...launchOptions,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--enable-font-antialiasing',
+        ],
+      };
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
     // console.log(`✅ Browser launched in ${Date.now() - browserStartTime}ms`);
 
     try {
@@ -43,17 +61,17 @@ export async function POST(request: NextRequest) {
       });
       
       // Enable console logging from the page
-      page.on('console', (msg) => {
+      page.on('console', (msg: any) => {
         // console.log('🖥️ Browser console:', msg.type(), msg.text());
       });
       
       // Log page errors
-      page.on('pageerror', (err) => {
+      page.on('pageerror', (err: Error) => {
         console.error('❌ Page error:', err.message);
       });
       
       // Log failed requests
-      page.on('requestfailed', (req) => {
+      page.on('requestfailed', (req: any) => {
         console.error('🚫 Request failed:', req.url(), req.failure()?.errorText);
       });
 
