@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Agent } from 'undici';
+import { getCachedImageBuffer, getCachedImagePath } from '@/lib/image_cacher';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -15,7 +16,32 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Create custom HTTPS agent that ignores SSL certificate issues for maimaidx domains
+    // First, try to get cached image buffer
+    const cachedResult = await getCachedImageBuffer(imageUrl);
+    if (cachedResult) {
+      return new NextResponse(new Uint8Array(cachedResult.buffer), {
+        headers: {
+          'Content-Type': cachedResult.contentType,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    }
+
+    // If not cached, cache it first (this will save to filesystem)
+    await getCachedImagePath(imageUrl);
+    
+    // Try to get the cached buffer again
+    const newCachedResult = await getCachedImageBuffer(imageUrl);
+    if (newCachedResult) {
+      return new NextResponse(new Uint8Array(newCachedResult.buffer), {
+        headers: {
+          'Content-Type': newCachedResult.contentType,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    }
+
+    // Fallback: fetch directly if caching failed
     const httpsAgent = new Agent({
       connect: {
         rejectUnauthorized: false
@@ -40,7 +66,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(imageBuffer, {
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable', // Cache for 1 year
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
 

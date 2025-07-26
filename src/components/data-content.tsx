@@ -9,6 +9,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { InfoCard } from "./info-card";
 import { SongsCard } from "./songs-card";
 import { RecommendationCard } from "./recommendation-card";
+import { ExportImageCard } from "./export-image-card";
 
 interface DataContentProps {
   region: Region;
@@ -193,11 +194,7 @@ export function DataContent({
           </TabsContent>
         )}
         <TabsContent value="exportImage" className="mt-0 flex-1 min-w-0">
-          <div className="p-8 text-center w-full h-[calc(100vh-20rem)] flex flex-col items-center justify-center">
-            <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">{t('dataContent.tabs.exportImage')}</h3>
-            <p className="text-muted-foreground">Coming soon...</p>
-          </div>
+          <ExportImageCard selectedSnapshotData={selectedSnapshotData} />
         </TabsContent>
       </Tabs>
     )

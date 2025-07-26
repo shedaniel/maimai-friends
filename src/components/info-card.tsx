@@ -1,28 +1,15 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { getRatingImageUrl } from "@/lib/render-image";
 import { SnapshotWithSongs } from "@/lib/types";
 import { createSafeMaimaiImageUrl } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
 function RatingImage({ rating }: { rating: number }) {
-  const variant = rating >= 15000 ? "rainbow"
-  : rating >= 14500 ? "platinum" 
-  : rating >= 14000 ? "gold"
-  : rating >= 13000 ? "silver"
-  : rating >= 12000 ? "bronze"
-  : rating >= 10000 ? "purple"
-  : rating >= 7000 ? "red"
-  : rating >= 4000 ? "yellow"
-  : rating >= 2000 ? "green"
-  : rating >= 1 ? "blue"
-  : "white";
-
-  const ratingImageUrl = `https://maimaidx.jp/maimai-mobile/img/rating_base_${variant}.png?ver=1.55`;
-
   return (
-    <Image src={createSafeMaimaiImageUrl(ratingImageUrl)} alt={rating.toString()} width={120} height={35} />
+    <Image src={createSafeMaimaiImageUrl(getRatingImageUrl(rating))} alt={rating.toString()} width={120} height={35} crossOrigin="anonymous" />
   );
 }
 
