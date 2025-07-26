@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { renderImage } from "@/lib/render-image";
 import { SnapshotWithSongs } from "@/lib/types";
-import { StaticCanvas } from "fabric";
+import { fabric } from "fabric";
 import { Download, Loader2, RefreshCw, Server } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
@@ -16,7 +16,7 @@ interface ExportImageCardProps {
 export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) {
   const t = useTranslations();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<StaticCanvas | null>(null);
+  const fabricCanvasRef = useRef<fabric.StaticCanvas | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isServerGenerating, setIsServerGenerating] = useState(false);
 
@@ -41,7 +41,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
       canvasRef.current.height = CANVAS_HEIGHT;
 
       // Initialize Fabric.js canvas with actual rendering dimensions
-      fabricCanvasRef.current = new StaticCanvas(canvasRef.current, {
+      fabricCanvasRef.current = new fabric.StaticCanvas(canvasRef.current, {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
       });

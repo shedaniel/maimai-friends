@@ -2,26 +2,15 @@ import { addRatingsAndSort, SongWithRating } from "./rating-calculator";
 import { SnapshotWithSongs } from "./types";
 import { createSafeMaimaiImageUrlAsync } from "./utils";
 import { getCachedImagePath } from "./image_cacher";
+import { fabric } from 'fabric';
 
 // Helper function to detect if we're on the server
 function isServer() {
   return typeof window === 'undefined';
 }
 
-export const getFabric = async () => {
-  if (isServer()) {
-    console.log('Loading Node.js Fabric...');
-    const fabric = await import('fabric/node');
-    return fabric;
-  } else {
-    console.log('Loading Browser Fabric...');
-    const fabric = await import('fabric');
-    return fabric;
-  }
-};
-
-type FabricType = Awaited<ReturnType<typeof getFabric>>;
-import type { FabricImage, FabricText, Gradient, Group, Rect, Shadow, StaticCanvas } from 'fabric';
+const CANVAS_WIDTH = 1200;
+const CANVAS_HEIGHT = 2020;
 
 const TARGET_HEIGHT = 204;
 const PADDING = 36;
@@ -36,11 +25,9 @@ function isDataUrl(url: string): boolean {
 
 // Relay method for FabricImage.fromURL that handles both client and server environments
 async function fabricImageFromURL(
-  fabric: FabricType,
   url: string, 
-  options: any = {}, 
   fabricOptions: any = {}
-): Promise<FabricImage> {
+): Promise<fabric.Image> {
   if (isServer() && !isDataUrl(url)) {
     try {
       let finalUrl = url;
@@ -95,7 +82,9 @@ async function fabricImageFromURL(
       }
       
       const base64 = `data:${contentType};base64,${buffer.toString('base64')}`;
-      return fabric.FabricImage.fromURL(base64, options, fabricOptions);
+      return new Promise((resolve) => {
+        fabric.Image.fromURL(base64, image => resolve(image), fabricOptions)!
+      });
     } catch (error) {
       console.error('Error loading image for server-side rendering:', error);
       throw error;
@@ -103,13 +92,15 @@ async function fabricImageFromURL(
   } else {
     // On client: use FabricImage.fromURL directly
     // Add crossOrigin: 'anonymous' if it's not a data URL and not already specified
-    const finalOptions = { ...options };
+    const finalOptions = { ...fabricOptions };
     if (!isDataUrl(url) && !finalOptions.crossOrigin) {
       finalOptions.crossOrigin = 'anonymous';
     }
     
     const safeUrl = await createSafeMaimaiImageUrlAsync(url);
-    return fabric.FabricImage.fromURL(safeUrl, finalOptions, fabricOptions);
+    return new Promise((resolve) => {
+      fabric.Image.fromURL(safeUrl, image => resolve(image), finalOptions)!
+    });
   }
 }
 
@@ -129,23 +120,22 @@ export function getRatingImageUrl(rating: number) {
   return `https://maimaidx.jp/maimai-mobile/img/rating_base_${variant}.png?ver=1.55`;
 }
 
-export async function renderImage(canvas: StaticCanvas, data: SnapshotWithSongs) {
-  const fabric = await getFabric();
+export async function renderImage(canvas: fabric.StaticCanvas, data: SnapshotWithSongs) {
   canvas.clear();
 
-  await renderBackground(fabric, canvas, data);
-  const { overlayRect } = await renderHeader(fabric, canvas, data);
-  await renderContent(fabric, canvas, data, overlayRect);
+  await renderBackground(canvas, data);
+  const { overlayRect } = await renderHeader(canvas, data);
+  await renderContent(canvas, data, overlayRect);
 
   canvas.renderAll();
 }
 
-async function renderBackground(fabric: FabricType, canvas: StaticCanvas, data: SnapshotWithSongs) {
+async function renderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithSongs) {
   const backgroundGradient = new fabric.Gradient({
     type: 'linear',
     coords: {
       x1: 0,
-      y1: canvas.height,  // Start from bottom (0deg = vertical)
+      y1: CANVAS_HEIGHT,  // Start from bottom (0deg = vertical)
       x2: 0,
       y2: 0               // End at top
     },
@@ -159,57 +149,57 @@ async function renderBackground(fabric: FabricType, canvas: StaticCanvas, data: 
   });
 
   const backgroundRect = new fabric.Rect({
-    width: canvas.width,
-    height: canvas.height,
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT,
     fill: backgroundGradient,
   });
   canvas.add(backgroundRect);
 }
 
-async function renderHeaderBackground(fabric: FabricType, canvas: StaticCanvas, data: SnapshotWithSongs, trophyBackground: FabricImage) {
+async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, trophyBackground: fabric.Image) {
   const INNER_PADDING = 30;
 
   const shineImg = await fabricImageFromURL(
-    fabric, `/res/shine/${data.snapshot.gameVersion}.png`, {}, {
+    `/res/shine/${data.snapshot.gameVersion}.png`, {
     opacity: 0.3,
   });
-  shineImg.scaleToWidth(canvas.width);
-  canvas.insertAt(1, shineImg);
+  shineImg.scaleToWidth(CANVAS_WIDTH);
+  canvas.insertAt(shineImg, 1, false);
 
   const cloudImg = await fabricImageFromURL(
-    fabric, `/res/down/${data.snapshot.gameVersion}.png`, {}, {
+    `/res/down/${data.snapshot.gameVersion}.png`, {
     opacity: 0.2,
   });
-  cloudImg.scaleToWidth(canvas.width);
-  cloudImg.top = canvas.height - cloudImg.getScaledHeight() - PADDING;
-  canvas.insertAt(1, cloudImg);
+  cloudImg.scaleToWidth(CANVAS_WIDTH);
+  cloudImg.top = CANVAS_HEIGHT - cloudImg.getScaledHeight() - PADDING;
+  canvas.insertAt(cloudImg, 1, false);
 
   const characterImg = await fabricImageFromURL(
-    fabric, `/res/character/${data.snapshot.gameVersion}.png`, {}, data.snapshot.gameVersion === 10 ? {
+    `/res/character/${data.snapshot.gameVersion}.png`, data.snapshot.gameVersion === 10 ? {
     scaleX: 0.56,
     scaleY: 0.56,
-    left: canvas.width - 580,
+    left: CANVAS_WIDTH - 580,
     top: -100,
     opacity: 0.9,
   } : data.snapshot.gameVersion === 11 ? {
     scaleX: 0.7,
     scaleY: 0.7,
-    left: canvas.width - 520,
+    left: CANVAS_WIDTH - 520,
     top: -100,
     opacity: 0.9,
   } : {});
   characterImg.clipPath = new fabric.Rect({
     top: 0,
     left: 0,
-    width: canvas.width,
+    width: CANVAS_WIDTH,
     height: TARGET_HEIGHT + PADDING * 2,
     absolutePositioned: true,
   });
 
-  canvas.insertAt(2, characterImg);
+  canvas.insertAt(characterImg, 2, false);
 
   const logoImg = await fabricImageFromURL(
-    fabric, `/res/logo/${data.snapshot.gameVersion}.png`, {}, {
+    `/res/logo/${data.snapshot.gameVersion}.png`, {
     shadow: new fabric.Shadow({
       color: '#FFFFFF50',
       blur: 32,
@@ -218,34 +208,34 @@ async function renderHeaderBackground(fabric: FabricType, canvas: StaticCanvas, 
     }),
   });
 
-  logoImg.scaleX = logoImg.scaleY = (TARGET_HEIGHT - INNER_PADDING * 2) / logoImg.height;
+  logoImg.scaleX = logoImg.scaleY = (TARGET_HEIGHT - INNER_PADDING * 2) / logoImg.height!;
   logoImg.top = TARGET_HEIGHT - logoImg.getScaledHeight() / 2;
   // logoImg.left = canvas.width - (logoImg.width * logoImg.scaleX + PADDING + INNER_PADDING / 2);
-  logoImg.left = canvas.width - (canvas.width - trophyBackground.left - trophyBackground.getScaledWidth()) / 2 - logoImg.getScaledWidth() / 2;
-  logoImg.left = characterImg.left + characterImg.getScaledWidth() / 2 - logoImg.getScaledWidth() / 2;
+  logoImg.left = CANVAS_WIDTH - (CANVAS_WIDTH - trophyBackground.left! - trophyBackground.getScaledWidth()) / 2 - logoImg.getScaledWidth() / 2;
+  logoImg.left = characterImg.left! + characterImg.getScaledWidth()! / 2 - logoImg.getScaledWidth() / 2;
   canvas.add(logoImg);
 }
 
-async function renderHeader(fabric: FabricType, canvas: StaticCanvas, data: SnapshotWithSongs): Promise<{
-  overlayRect: Rect,
+async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs): Promise<{
+  overlayRect: fabric.Rect,
 }> {
   const TROPHY_FONT_SIZE = 18, NAME_FONT_SIZE = 28;
   const PROFILE_IMG_RIGHT_MARGIN = 28;
   const TROPHY_BOTTOM_MARGIN = 20;
 
   const profileImg = await fabricImageFromURL(
-    fabric, data.snapshot.iconUrl, {},
+    data.snapshot.iconUrl,
     {
       left: PADDING,
       top: PADDING,
     }
   )
 
-  profileImg.scaleX = profileImg.scaleY = TARGET_HEIGHT / profileImg.height;
+  profileImg.scaleX = profileImg.scaleY = TARGET_HEIGHT / profileImg.height!;
   canvas.add(profileImg);
 
   const trophyBackground = await fabricImageFromURL(
-    fabric, '/res/trophy/normal.png', {}, {
+    '/res/trophy/normal.png', {
     scaleX: 1.6,
     scaleY: 1.6,
     left: PADDING + PROFILE_IMG_RIGHT_MARGIN + profileImg.getScaledWidth(),
@@ -253,7 +243,7 @@ async function renderHeader(fabric: FabricType, canvas: StaticCanvas, data: Snap
   });
   canvas.add(trophyBackground);
 
-  const trophyText = new fabric.FabricText(data.snapshot.title, {
+  const trophyText = new fabric.Text(data.snapshot.title, {
     fontSize: TROPHY_FONT_SIZE,
     fill: 'white',
     stroke: '#111111',
@@ -265,7 +255,7 @@ async function renderHeader(fabric: FabricType, canvas: StaticCanvas, data: Snap
     top: PADDING + trophyBackground.getScaledHeight() / 2 - TROPHY_FONT_SIZE / 2 - 2,
     textAlign: 'center',
   });
-  trophyText.left += trophyBackground.getScaledWidth() / 2 - trophyText.getLineWidth(0) / 2;
+  trophyText.left! += trophyBackground.getScaledWidth()! / 2 - trophyText.getLineWidth(0) / 2;
   canvas.add(trophyText);
 
   const nameRect = new fabric.Rect({
@@ -281,68 +271,68 @@ async function renderHeader(fabric: FabricType, canvas: StaticCanvas, data: Snap
 
   canvas.add(nameRect);
 
-  const nameText = new fabric.FabricText(data.snapshot.displayName, {
+  const nameText = new fabric.Text(data.snapshot.displayName, {
     fontSize: NAME_FONT_SIZE,
     fill: '#f9f0f4',
     fontWeight: 'bold',
     fontFamily: 'Inter, "Noto Sans JP"',
-    left: nameRect.left,
-    top: nameRect.top + nameRect.getScaledHeight() / 2 - NAME_FONT_SIZE / 2,
+    left: nameRect.left!,
+    top: nameRect.top! + nameRect.getScaledHeight() / 2 - NAME_FONT_SIZE / 2,
     textAlign: 'center',
   });
-  nameText.left += trophyBackground.getScaledWidth() / 2 - nameText.getLineWidth(0) / 2;
+  nameText.left! += trophyBackground.getScaledWidth()! / 2 - nameText.getLineWidth(0)! / 2;
   canvas.add(nameText);
 
   const ratingFrame = await fabricImageFromURL(
-    fabric, getRatingImageUrl(data.snapshot.rating), {}, {
+    getRatingImageUrl(data.snapshot.rating), {
     scaleX: 0.75,
     scaleY: 0.75,
-    left: nameRect.left - 2,
-    top: nameRect.top + nameRect.getScaledHeight() + TROPHY_BOTTOM_MARGIN - 2,
+    left: nameRect.left! - 2,
+    top: nameRect.top! + nameRect.getScaledHeight() + TROPHY_BOTTOM_MARGIN - 2,
   });
 
   canvas.add(ratingFrame);
 
-  let left = ratingFrame.left + ratingFrame.getScaledWidth() * 0.43;
+  let left = ratingFrame.left! + ratingFrame.getScaledWidth() * 0.43;
   for (const char of data.snapshot.rating.toString()) {
-    canvas.add(new fabric.FabricText(char, {
+    canvas.add(new fabric.Text(char, {
       fontSize: ratingFrame.getScaledHeight() * 0.53,
       fill: '#f9f0f4',
       fontWeight: '400',
       fontFamily: FONT_FAMILY_MONO,
       left: left,
-      top: ratingFrame.top + ratingFrame.getScaledHeight() * 0.24,
+      top: ratingFrame.top! + ratingFrame.getScaledHeight()! * 0.24,
     }));
     left += 23;
   }
 
   const classRankImg = await fabricImageFromURL(
-    fabric, data.snapshot.classRankUrl, {}, {
+    data.snapshot.classRankUrl, {
     scaleX: 0.7,
     scaleY: 0.7,
-    left: ratingFrame.left + ratingFrame.getScaledWidth() + 10,
-    top: ratingFrame.top + ratingFrame.getScaledHeight() / 2,
+    left: ratingFrame.left! + ratingFrame.getScaledWidth()! + 10,
+    top: ratingFrame.top! + ratingFrame.getScaledHeight()! / 2,
     originY: 'center',
   })
   canvas.add(classRankImg);
 
   const courseRankImg = await fabricImageFromURL(
-    fabric, data.snapshot.courseRankUrl, {}, {
+    data.snapshot.courseRankUrl, {
     scaleX: 0.6,
     scaleY: 0.6,
-    left: classRankImg.left + classRankImg.getScaledWidth() + 10,
-    top: ratingFrame.top + ratingFrame.getScaledHeight() / 2,
+    left: classRankImg.left! + classRankImg.getScaledWidth()! + 10,
+    top: ratingFrame.top! + ratingFrame.getScaledHeight()! / 2,
     originY: 'center',
   });
   canvas.add(courseRankImg);
 
-  await renderHeaderBackground(fabric, canvas, data, trophyBackground);
+  await renderHeaderBackground(canvas, data, trophyBackground);
 
   const darkGradient = new fabric.Gradient({
     type: 'linear',
     coords: {
       x1: 0,
-      y1: canvas.height,
+      y1: CANVAS_HEIGHT,
       x2: 0,
       y2: 0
     },
@@ -353,8 +343,8 @@ async function renderHeader(fabric: FabricType, canvas: StaticCanvas, data: Snap
   });
 
   const overlayRect = new fabric.Rect({
-    width: canvas.width - PADDING * 2,
-    height: canvas.height - TARGET_HEIGHT - PADDING * 3,
+    width: CANVAS_WIDTH - PADDING * 2,
+    height: CANVAS_HEIGHT - TARGET_HEIGHT - PADDING * 3,
     fill: darkGradient,
     left: PADDING,
     top: TARGET_HEIGHT + PADDING * 2,
@@ -365,11 +355,11 @@ async function renderHeader(fabric: FabricType, canvas: StaticCanvas, data: Snap
   // canvas.add(overlayRect);
 
   canvas.add(new fabric.Rect({
-    width: canvas.width,
-    height: canvas.height - overlayRect.top,
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT - overlayRect.top!,
     fill: darkGradient,
     left: 0,
-    top: overlayRect.top,
+    top: overlayRect.top!,
   }));
 
   return {
@@ -380,7 +370,7 @@ async function renderHeader(fabric: FabricType, canvas: StaticCanvas, data: Snap
 const SONG_OUTER_PADDING = 0
 const SONG_PADDING = 16
 
-async function renderSong(fabric: FabricType, canvas: StaticCanvas, overlayRect: Rect, song: SongWithRating, index: number, yOffset: number) {
+async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect, song: SongWithRating, index: number, yOffset: number) {
   const difficultyColor = song.difficulty === "basic" ? "green" :
   song.difficulty === "advanced" ? "yellow" :
     song.difficulty === "expert" ? "#d13b42" :
@@ -389,14 +379,14 @@ async function renderSong(fabric: FabricType, canvas: StaticCanvas, overlayRect:
           song.difficulty === "utage" ? "pink" :
             "white"
   
-  const img = await fabricImageFromURL(fabric, song.cover);
+  const img = await fabricImageFromURL(song.cover);
 
-  img.scaleToWidth((overlayRect.width - SONG_OUTER_PADDING * 2 - SONG_PADDING * 4) / 5);
+  img.scaleToWidth((overlayRect.width! - SONG_OUTER_PADDING * 2 - SONG_PADDING * 4) / 5);
   const requiredHeight = img.getScaledWidth() / 16 * 11;
 
-  img.top = overlayRect.top + SONG_OUTER_PADDING + yOffset + Math.floor(index / 5) * (requiredHeight + 2 + SONG_PADDING);
-  img.left = overlayRect.left + SONG_OUTER_PADDING + (index % 5) * (img.getScaledWidth() + SONG_PADDING);
-
+  img.top = overlayRect.top! + SONG_OUTER_PADDING + yOffset + Math.floor(index / 5) * (requiredHeight + 2 + SONG_PADDING);
+  img.left = overlayRect.left! + SONG_OUTER_PADDING + (index % 5) * (img.getScaledWidth() + SONG_PADDING);
+  
   const realBounds = {
     top: img.top,
     left: img.left,
@@ -450,7 +440,7 @@ async function renderSong(fabric: FabricType, canvas: StaticCanvas, overlayRect:
     }),
   })
 
-  const ratingText = new fabric.FabricText(song.rating.toString(), {
+  const ratingText = new fabric.Text(song.rating.toString(), {
     fontSize: 20,
     fill: '#dcdcdc',
     fontWeight: '600',
@@ -461,7 +451,7 @@ async function renderSong(fabric: FabricType, canvas: StaticCanvas, overlayRect:
     originY: 'bottom',
   })
 
-  const achievementText = new fabric.FabricText((song.achievement / 10000).toFixed(4) + '%', {
+  const achievementText = new fabric.Text((song.achievement / 10000).toFixed(4) + '%', {
     fontSize: 12,
     fill: '#dcdcdc',
     fontWeight: '400',
@@ -472,14 +462,14 @@ async function renderSong(fabric: FabricType, canvas: StaticCanvas, overlayRect:
     originY: 'bottom',
   })
 
-  const songNameText = new fabric.FabricText(song.songName, {
+  const songNameText = new fabric.Text(song.songName, {
     fontSize: 16,
     fill: '#dcdcdc',
     fontWeight: '600',
     fontFamily: FONT_FAMILY,
     charSpacing: 24,
     left: realBounds.left + 14,
-    top: achievementText.top - achievementText.getScaledHeight() - 8,
+    top: achievementText.top! - achievementText.getScaledHeight() - 8,
     width: realBounds.width - 28,
     originX: 'left',
     originY: 'bottom',
@@ -492,7 +482,7 @@ async function renderSong(fabric: FabricType, canvas: StaticCanvas, overlayRect:
     }),
   })
 
-  const songDifficultyText = new fabric.FabricText((song.levelPrecise / 10).toFixed(1), {
+  const songDifficultyText = new fabric.Text((song.levelPrecise / 10).toFixed(1), {
     fontSize: 14,
     fill: '#dcdcdc',
     fontWeight: '400',
@@ -527,8 +517,8 @@ async function renderSong(fabric: FabricType, canvas: StaticCanvas, overlayRect:
       height: 16,
     }),
     new fabric.Rect({
-      top: songDifficultyTextBg.top + songDifficultyTextBg.getScaledHeight() - 16,
-      left: songDifficultyTextBg.left + songDifficultyTextBg.getScaledWidth() - 16,
+      top: songDifficultyTextBg.top! + songDifficultyTextBg.getScaledHeight() - 16,
+      left: songDifficultyTextBg.left! + songDifficultyTextBg.getScaledWidth() - 16,
       width: 16,
       height: 16,
     })
@@ -537,11 +527,10 @@ async function renderSong(fabric: FabricType, canvas: StaticCanvas, overlayRect:
   })
 
   const songTypeBadgeImg = await fabricImageFromURL(
-    fabric,
     song.type === "dx"
       ? "https://maimaidx.jp/maimai-mobile/img/music_dx.png"
       : "https://maimaidx.jp/maimai-mobile/img/music_standard.png"
-    , {}, {
+    , {
     scaleX: 0.4,
     scaleY: 0.4,
     left: realBounds.left + 14,
@@ -557,7 +546,7 @@ async function renderSong(fabric: FabricType, canvas: StaticCanvas, overlayRect:
   canvas.add(songTypeBadgeImg);
 }
 
-async function renderContent(fabric: FabricType, canvas: StaticCanvas, data: SnapshotWithSongs, overlayRect: Rect) {
+async function renderContent(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, overlayRect: fabric.Rect) {
   const songs = addRatingsAndSort(data.songs);
   const newSongs = songs.filter(song => song.addedVersion === data.snapshot.gameVersion);
   const oldSongs = songs.filter(song => song.addedVersion !== data.snapshot.gameVersion);
@@ -567,10 +556,10 @@ async function renderContent(fabric: FabricType, canvas: StaticCanvas, data: Sna
 
   // Use proper async iteration for server-side reliability
   for (let i = 0; i < newSongsB15.length; i++) {
-    await renderSong(fabric, canvas, overlayRect, newSongsB15[i], i, 32);
+    await renderSong(canvas, overlayRect, newSongsB15[i], i, 32);
   }
 
   for (let i = 0; i < oldSongsB35.length; i++) {
-    await renderSong(fabric, canvas, overlayRect, oldSongsB35[i], i + 15, 74);
+    await renderSong(canvas, overlayRect, oldSongsB35[i], i + 15, 74);
   }
 }

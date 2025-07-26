@@ -1,17 +1,20 @@
 import { SnapshotWithSongs } from '@/lib/types';
 import { NextRequest, NextResponse } from 'next/server';
-import { StaticCanvas } from 'fabric/node';
+import { fabric } from 'fabric';
 
 export async function POST(request: NextRequest) {
   try {
     const data: SnapshotWithSongs = await request.json();
     
-    const canvas = new StaticCanvas(undefined, {
+    const canvas = new fabric.StaticCanvas(null, {
       width: 1200,
       height: 2020,
     });
     await require("@/lib/render-image").renderImage(canvas, data);
-    const imageBuffer = canvas.getNodeCanvas().toBuffer("image/png");
+    const dataUrl = canvas.toDataURL({format: 'png'});
+
+    // Remove base64 prefix and convert to buffer
+    const buffer = Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64');
     
     // Sanitize filename to remove non-ASCII characters
     const sanitizedName = (data.snapshot.displayName || 'export')
@@ -19,12 +22,12 @@ export async function POST(request: NextRequest) {
       .replace(/[<>:"/\\|?*]/g, '') // Remove invalid filename characters
       .trim() || 'export'; // Fallback if name becomes empty
     
-    return new Response(new Uint8Array(imageBuffer), {
+    return new Response(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'image/png',
         'Content-Disposition': `attachment; filename="maimai-profile-${sanitizedName}.png"`,
-        'Content-Length': imageBuffer.length.toString(),
+        'Content-Length': buffer.length.toString(),
       },
     });
   } catch (error) {
