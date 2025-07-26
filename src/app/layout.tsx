@@ -5,8 +5,7 @@ import { getLocale } from '@/i18n/locale-server';
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-import { Geist_Mono, Inter, Kaisei_Decol, Murecho, Noto_Sans_JP, Noto_Sans_SC, Noto_Sans_TC, Zen_Kaku_Gothic_New } from "next/font/google";
-import localFont from 'next/font/local';
+import { Geist_Mono, Inter, Murecho, Noto_Sans_JP, Noto_Sans_SC, Noto_Sans_TC } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({

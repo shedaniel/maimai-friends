@@ -1,5 +1,4 @@
 import { createHash } from 'crypto';
-import { Agent } from 'undici';
 
 // Helper function to detect if we're on the server
 function isServer() {

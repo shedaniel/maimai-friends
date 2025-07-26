@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { renderImage } from "@/lib/render-image";
 import { SnapshotWithSongs } from "@/lib/types";
 import { fabric } from "fabric";
-import { Download, Loader2, RefreshCw, Server } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
