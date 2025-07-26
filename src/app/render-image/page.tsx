@@ -5,7 +5,7 @@ import { SnapshotWithSongs } from "@/lib/types";
 import RenderImageClient from "./render-client";
 
 interface PageProps {
-  searchParams: { snapshotId?: string };
+  searchParams: Promise<{ snapshotId?: string }>;
 }
 
 export default async function RenderImagePage({ searchParams }: PageProps) {

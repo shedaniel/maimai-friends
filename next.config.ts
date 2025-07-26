@@ -27,6 +27,16 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  webpack: (config, { isServer }) => {
+    // Ignore server-only file on client builds
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        './render-image-server': false,
+      };
+    }
+    return config;
+  },
 };
 
 export default withNextIntl(nextConfig);

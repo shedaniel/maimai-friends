@@ -1,7 +1,6 @@
 import { addRatingsAndSort, SongWithRating } from "./rating-calculator";
 import { SnapshotWithSongs } from "./types";
 import { createSafeMaimaiImageUrlAsync } from "./utils";
-import { getCachedImagePath } from "./image_cacher";
 import { fabric } from 'fabric';
 
 // Helper function to detect if we're on the server
@@ -29,65 +28,9 @@ async function fabricImageFromURL(
   fabricOptions: any = {}
 ): Promise<fabric.Image> {
   if (isServer() && !isDataUrl(url)) {
-    try {
-      let finalUrl = url;
-      
-      // For maimaidx URLs, use caching system
-      if (url.includes('maimaidx.jp') || url.includes('maimaidx-eng.com')) {
-        finalUrl = await getCachedImagePath(url);
-      }
-      
-      let buffer: Buffer;
-      let contentType: string;
-
-      if (finalUrl.startsWith('/')) {
-        // Local file - read directly from filesystem
-        // console.log("reading local file", finalUrl);
-        const fs = await import('fs/promises');
-        const path = await import('path');
-        
-        // Convert URL path to filesystem path (remove leading /, add public/)
-        const filePath = path.join(process.cwd(), 'public', finalUrl);
-        
-        buffer = await fs.readFile(filePath);
-        
-        // Determine content type from file extension
-        const ext = path.extname(finalUrl).toLowerCase();
-        contentType = ext === '.png' ? 'image/png' 
-          : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg'
-          : ext === '.gif' ? 'image/gif'
-          : ext === '.webp' ? 'image/webp'
-          : ext === '.svg' ? 'image/svg+xml'
-          : 'image/png'; // default fallback
-      } else {
-        // console.log("fetching remote image", finalUrl);
-        const { Agent } = await import('undici');
-        const httpsAgent = new Agent({
-          connect: {
-            rejectUnauthorized: false
-          }
-        });
-        const response = await fetch(finalUrl, {
-          // @ts-ignore - dispatcher property exists but TypeScript doesn't recognize it
-          dispatcher: httpsAgent,
-        });
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${response.statusText}`);
-        }
-        
-        const arrayBuffer = await response.arrayBuffer();
-        buffer = Buffer.from(arrayBuffer);
-        contentType = response.headers.get('content-type') || 'image/png';
-      }
-      
-      const base64 = `data:${contentType};base64,${buffer.toString('base64')}`;
-      return new Promise((resolve) => {
-        fabric.Image.fromURL(base64, image => resolve(image), fabricOptions)!
-      });
-    } catch (error) {
-      console.error('Error loading image for server-side rendering:', error);
-      throw error;
-    }
+    // Use server-only module for Node.js-specific logic
+    const { fabricImageFromURLServer } = await import('./render-image-server');
+    return fabricImageFromURLServer(url, fabricOptions);
   } else {
     // On client: use FabricImage.fromURL directly
     // Add crossOrigin: 'anonymous' if it's not a data URL and not already specified

@@ -38,44 +38,6 @@ const notoSansSC = Noto_Sans_SC({
   display: "swap",
 });
 
-const zenKakuGothicNew = Zen_Kaku_Gothic_New({
-  weight: ["300", "400", "500", "700", "900"],
-  variable: "--font-zen-kaku-gothic-new",
-  display: "swap",
-});
-
-const higureGothic = localFont({
-  src: [
-    {
-      path: "../../public/fonts/HigureGothic-Light.woff2",
-      weight: "300",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/HigureGothic-Regular.woff2",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/HigureGothic-Medium.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/HigureGothic-Bold.woff2",
-      weight: "700",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/HigureGothic-Black.woff2",
-      weight: "900",
-      style: "normal",
-    },
-  ],
-  variable: "--font-higure-gothic",
-  display: "swap",
-});
-
 const murecho = Murecho({
   variable: "--font-murecho",
   subsets: ["latin"],
@@ -84,7 +46,7 @@ const murecho = Murecho({
 
 // Function to get locale-specific font variables
 function getLocaleFontClass(locale: string) {
-  const baseClasses = `${inter.variable} ${geistMono.variable} ${higureGothic.variable} ${zenKakuGothicNew.variable} ${murecho.variable}`;
+  const baseClasses = `${inter.variable} ${geistMono.variable} ${murecho.variable}`;
   
   switch (locale) {
     case 'zh-TW':
