@@ -93,7 +93,12 @@ export async function POST(request: NextRequest) {
       });
 
       // Construct the URL for our rendering page
-      const renderUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/render-image?snapshotId=${snapshotId}`;
+      let renderUrl: string;
+      if (process.env.VERCEL_URL) {
+        renderUrl = `https://${process.env.VERCEL_URL}/render-image?snapshotId=${snapshotId}`;
+      } else {
+        renderUrl = `http://localhost:3000/render-image?snapshotId=${snapshotId}`;
+      }
 
       // console.log('🔗 Render URL:', renderUrl);
 

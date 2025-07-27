@@ -46,6 +46,14 @@ function isMaimaidxDomain(url: string): boolean {
   }
 }
 
+// Helper function to detect serverless environment
+function isServerless(): boolean {
+  return process.env.VERCEL === '1' || 
+         process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined ||
+         process.env.NETLIFY === 'true' ||
+         process.cwd() === '/var/task';
+}
+
 // Cache and return local path for maimaidx images
 export async function getCachedImagePath(url: string): Promise<string> {
   // Only cache on server and for maimaidx domains
@@ -60,8 +68,19 @@ export async function getCachedImagePath(url: string): Promise<string> {
     // Generate hash for filename
     const urlHash = generateUrlHash(url);
     
-    // Create cache directory if it doesn't exist
-    const cacheDir = path.join(process.cwd(), 'public', 'res', 'preloaded');
+    // Use different cache directory based on environment
+    let cacheDir: string;
+    let basePublicPath: string;
+    
+    if (isServerless()) {
+      // In serverless environments, skip caching and return original URL
+      return url;
+    } else {
+      // In normal environments, use public directory
+      cacheDir = path.join(process.cwd(), 'public', 'res', 'preloaded');
+      basePublicPath = `/res/preloaded/${urlHash}`;
+    }
+    
     await fs.mkdir(cacheDir, { recursive: true });
     
     // Try to determine extension from URL first
@@ -135,6 +154,11 @@ export async function getCachedImagePath(url: string): Promise<string> {
 // Get cached image buffer for API routes
 export async function getCachedImageBuffer(url: string): Promise<{ buffer: Buffer; contentType: string } | null> {
   if (!isServer() || !isMaimaidxDomain(url)) {
+    return null;
+  }
+
+  // In serverless environments, no filesystem caching available
+  if (isServerless()) {
     return null;
   }
 
