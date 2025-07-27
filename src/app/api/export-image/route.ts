@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Browser } from 'puppeteer-core';
 
 const CHROMIUM_PATH =
   "https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.x64.tar"
 
 export const dynamic = "force-dynamic";
 
-async function getBrowser() {
+async function getBrowser(): Promise<Browser> {
   if (process.env.VERCEL_ENV === "production") {
     const chromium = await import("@sparticuz/chromium-min").then(
       (mod) => mod.default
@@ -43,7 +44,7 @@ async function getBrowser() {
         '--enable-font-antialiasing',
       ],
     });
-    return browser;
+    return browser as unknown as Browser;
   }
 }
 
