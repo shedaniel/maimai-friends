@@ -22,10 +22,6 @@ async function getBrowser(): Promise<Browser> {
       executablePath,
       headless: true,
       args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
         '--enable-font-antialiasing',
         ...chromium.args,
       ],

@@ -14,8 +14,8 @@ const CANVAS_HEIGHT = 2020;
 const TARGET_HEIGHT = 204;
 const PADDING = 36;
 
-const FONT_FAMILY = 'Inter, Murecho, "Noto Sans JP"';
-const FONT_FAMILY_MONO = 'Geist Mono, Inter, "Noto Sans JP"';
+const FONT_FAMILY = 'Inter, Murecho';
+const FONT_FAMILY_MONO = '"Geist Mono"';
 
 // Helper function to check if a URL is a data URL (base64)
 function isDataUrl(url: string): boolean {
@@ -240,10 +240,10 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
     canvas.add(new fabric.Text(char, {
       fontSize: ratingFrame.getScaledHeight() * 0.53,
       fill: '#f9f0f4',
-      fontWeight: '400',
+      fontWeight: '600',
       fontFamily: FONT_FAMILY_MONO,
       left: left,
-      top: ratingFrame.top! + ratingFrame.getScaledHeight()! * 0.24,
+      top: ratingFrame.top! + ratingFrame.getScaledHeight()! * 0.225,
     }));
     left += 23;
   }
@@ -426,9 +426,9 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
 
   const songDifficultyText = new fabric.Text((song.levelPrecise / 10).toFixed(1), {
     fontSize: 14,
-    fill: '#dcdcdc',
-    fontWeight: '400',
-    fontFamily: FONT_FAMILY,
+    fill: song.difficulty === "remaster" ? "#591a8b" : "#dcdcdc",
+    fontWeight: '600',
+    fontFamily: FONT_FAMILY_MONO,
     left: realBounds.left + realBounds.width - 10,
     top: realBounds.top + 6,
     originX: 'right',
@@ -440,7 +440,7 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
     height: songDifficultyText.getScaledHeight() + 10,
     fill: difficultyColor,
     left: realBounds.left + realBounds.width - songDifficultyText.getScaledWidth() - 22,
-    top: realBounds.top - 1,
+    top: realBounds.top,
   })
 
   songDifficultyTextBg.clipPath = new fabric.Group([
@@ -479,13 +479,15 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
     top: realBounds.top + 14,
   })
 
-  canvas.add(cover);
-  canvas.add(ratingText);
-  canvas.add(achievementText);
-  canvas.add(songNameText);
-  canvas.add(songDifficultyTextBg);
-  canvas.add(songDifficultyText);
-  canvas.add(songTypeBadgeImg);
+  canvas.add(new fabric.Group([
+    cover,
+    ratingText,
+    achievementText,
+    songNameText,
+    songDifficultyTextBg,
+    songDifficultyText,
+    songTypeBadgeImg,
+  ]))
 }
 
 async function renderContent(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, overlayRect: fabric.Rect) {
@@ -496,12 +498,16 @@ async function renderContent(canvas: fabric.StaticCanvas, data: SnapshotWithSong
   const newSongsB15 = newSongs.slice(0, 15);
   const oldSongsB35 = oldSongs.slice(0, 35);
 
+  const promises = [];
+
   // Use proper async iteration for server-side reliability
   for (let i = 0; i < newSongsB15.length; i++) {
-    await renderSong(canvas, overlayRect, newSongsB15[i], i, 32);
+    promises.push(renderSong(canvas, overlayRect, newSongsB15[i], i, 32));
   }
 
   for (let i = 0; i < oldSongsB35.length; i++) {
-    await renderSong(canvas, overlayRect, oldSongsB35[i], i + 15, 74);
+    promises.push(renderSong(canvas, overlayRect, oldSongsB35[i], i + 15, 74));
   }
+
+  await Promise.all(promises);
 }
