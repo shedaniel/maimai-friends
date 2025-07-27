@@ -5,26 +5,36 @@ import { getLocale } from '@/i18n/locale-server';
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-import { Geist_Mono, Inter, Murecho, Noto_Sans_JP, Noto_Sans_SC, Noto_Sans_TC } from "next/font/google";
+import localFont from "next/font/local";
+import { Noto_Sans_SC, Noto_Sans_TC } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+// Local fonts
+const inter = localFont({
+  src: "../../public/res/fonts/Inter-VariableFont_opsz,wght.woff2",
   variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Noto Sans fonts for different locales
-const notoSansJP = Noto_Sans_JP({
-  variable: "--font-noto-sans-jp",
-  subsets: ["latin"],
   display: "swap",
 });
 
+const geistMono = localFont({
+  src: "../../public/res/fonts/GeistMono-VariableFont_wght.woff2",
+  variable: "--font-geist-mono",
+  display: "swap",
+});
+
+const notoSansJP = localFont({
+  src: "../../public/res/fonts/NotoSansJP-VariableFont_wght.woff2",
+  variable: "--font-noto-sans-jp",
+  display: "swap",
+});
+
+const murecho = localFont({
+  src: "../../public/res/fonts/Murecho-VariableFont_wght.woff2",
+  variable: "--font-murecho",
+  display: "swap",
+});
+
+// Google Fonts for Chinese variants
 const notoSansTC = Noto_Sans_TC({
   variable: "--font-noto-sans-tc", 
   subsets: ["latin"],
@@ -34,12 +44,6 @@ const notoSansTC = Noto_Sans_TC({
 const notoSansSC = Noto_Sans_SC({
   variable: "--font-noto-sans-sc",
   subsets: ["latin"], 
-  display: "swap",
-});
-
-const murecho = Murecho({
-  variable: "--font-murecho",
-  subsets: ["latin"],
   display: "swap",
 });
 
