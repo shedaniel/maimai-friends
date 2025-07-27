@@ -94,8 +94,8 @@ export async function POST(request: NextRequest) {
 
       // Construct the URL for our rendering page
       let renderUrl: string;
-      if (process.env.VERCEL_URL) {
-        renderUrl = `https://${process.env.VERCEL_URL}/render-image?snapshotId=${snapshotId}`;
+      if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+        renderUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/render-image?snapshotId=${snapshotId}`;
       } else {
         renderUrl = `http://localhost:3000/render-image?snapshotId=${snapshotId}`;
       }
