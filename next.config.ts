@@ -4,7 +4,6 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
-  // Prevent bundling puppeteer packages as recommended by Vercel
   serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
   images: {
     minimumCacheTTL: 2678400, // 31 days

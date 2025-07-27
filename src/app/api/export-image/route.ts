@@ -1,5 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const CHROMIUM_PATH =
+  "https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.x64.tar"
+
+export const dynamic = "force-dynamic";
+
+async function getBrowser() {
+  if (process.env.VERCEL_ENV === "production") {
+    const chromium = await import("@sparticuz/chromium-min").then(
+      (mod) => mod.default
+    );
+
+    const puppeteerCore = await import("puppeteer-core").then(
+      (mod) => mod.default
+    );
+
+    const executablePath = await chromium.executablePath(CHROMIUM_PATH);
+
+    const browser = await puppeteerCore.launch({
+      executablePath,
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--enable-font-antialiasing',
+        ...chromium.args,
+      ],
+    });
+    return browser;
+  } else {
+    const puppeteer = await import("puppeteer").then((mod) => mod.default);
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--enable-font-antialiasing',
+      ],
+    });
+    return browser;
+  }
+}
+
 export async function POST(request: NextRequest) {
   // console.log('🚀 Starting export-image API request');
   try {
@@ -14,38 +61,7 @@ export async function POST(request: NextRequest) {
     // Launch Puppeteer browser following Vercel's recommended pattern
     // console.log('🌐 Launching Puppeteer browser...');
     const browserStartTime = Date.now();
-    
-    const isVercel = !!process.env.VERCEL_ENV;
-    let puppeteer: any;
-    let launchOptions: any = {
-      headless: true,
-    };
-
-    if (isVercel) {
-      // Production: Use puppeteer-core with Sparticuz Chromium
-      const chromium = (await import('@sparticuz/chromium')).default;
-      puppeteer = await import('puppeteer-core');
-      launchOptions = {
-        ...launchOptions,
-        args: [...chromium.args, '--disable-web-security'],
-        executablePath: await chromium.executablePath(),
-      };
-    } else {
-      // Development: Use regular puppeteer
-      puppeteer = await import('puppeteer');
-      launchOptions = {
-        ...launchOptions,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--enable-font-antialiasing',
-        ],
-      };
-    }
-
-    const browser = await puppeteer.launch(launchOptions);
+    const browser = await getBrowser();
     // console.log(`✅ Browser launched in ${Date.now() - browserStartTime}ms`);
 
     try {
