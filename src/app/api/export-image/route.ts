@@ -18,16 +18,6 @@ async function getBrowser(): Promise<Browser> {
 
     const executablePath = await chromium.executablePath(CHROMIUM_PATH);
 
-    // Load the required fonts for text rendering from local files
-    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL 
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : 'http://localhost:3000';
-    
-    await chromium.font(`${baseUrl}/res/fonts/Inter-VariableFont_opsz,wght.woff2`);
-    await chromium.font(`${baseUrl}/res/fonts/Murecho-VariableFont_wght.woff2`);
-    await chromium.font(`${baseUrl}/res/fonts/GeistMono-VariableFont_wght.woff2`);
-    await chromium.font(`${baseUrl}/res/fonts/NotoSansJP-VariableFont_wght.woff2`);
-
     const browser = await puppeteerCore.launch({
       executablePath,
       headless: true,

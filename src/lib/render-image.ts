@@ -14,7 +14,7 @@ const CANVAS_HEIGHT = 2020;
 const TARGET_HEIGHT = 204;
 const PADDING = 36;
 
-const FONT_FAMILY = 'Inter, Murecho';
+const FONT_FAMILY = 'Inter, Murecho, "Noto Sans JP"';
 const FONT_FAMILY_MONO = '"Geist Mono"';
 
 // Helper function to check if a URL is a data URL (base64)
@@ -65,11 +65,86 @@ export function getRatingImageUrl(rating: number) {
 export async function renderImage(canvas: fabric.StaticCanvas, data: SnapshotWithSongs) {
   canvas.clear();
 
+  // Load fonts before rendering
+  await loadFonts();
+
   await renderBackground(canvas, data);
   const { overlayRect } = await renderHeader(canvas, data);
   await renderContent(canvas, data, overlayRect);
 
   canvas.renderAll();
+}
+
+async function loadFonts() {
+  // Skip font loading on server side
+  if (isServer()) {
+    return;
+  }
+
+  try {
+    // Get base URL for font loading
+    const baseUrl = typeof window !== 'undefined' && window.location 
+      ? `${window.location.protocol}//${window.location.host}`
+      : 'http://localhost:3000';
+
+    // Font URL map
+    const urlMap = {
+      Inter: `url(${baseUrl}/res/fonts/Inter-VariableFont_opsz,wght.woff2)`,
+      Murecho: `url(${baseUrl}/res/fonts/Murecho-VariableFont_wght.woff2)`,
+      GeistMono: `url(${baseUrl}/res/fonts/GeistMono-VariableFont_wght.woff2)`,
+      NotoSansJP: `url(${baseUrl}/res/fonts/NotoSansJP-VariableFont_wght.woff2)`,
+    };
+
+    // Create FontFace instances
+    const fontInter = new FontFace('Inter', urlMap.Inter, {
+      style: 'normal',
+      weight: '100 900', // Variable font weight range
+    });
+
+    const fontMurecho = new FontFace('Murecho', urlMap.Murecho, {
+      style: 'normal',
+      weight: '100 900', // Variable font weight range
+    });
+
+    const fontGeistMono = new FontFace('Geist Mono', urlMap.GeistMono, {
+      style: 'normal',
+      weight: '100 900', // Variable font weight range
+    });
+
+    const fontNotoSansJP = new FontFace('Noto Sans JP', urlMap.NotoSansJP, {
+      style: 'normal',
+      weight: '100 900', // Variable font weight range
+    });
+
+    // Load all fonts
+    console.log('🔤 Loading fonts for canvas rendering...');
+    await Promise.all([
+      fontInter.load().then(font => {
+        document.fonts.add(font);
+        console.log('✅ Inter font loaded');
+      }),
+      fontMurecho.load().then(font => {
+        document.fonts.add(font);
+        console.log('✅ Murecho font loaded');
+      }),
+      fontGeistMono.load().then(font => {
+        document.fonts.add(font);
+        console.log('✅ Geist Mono font loaded');
+      }),
+      fontNotoSansJP.load().then(font => {
+        document.fonts.add(font);
+        console.log('✅ Noto Sans JP font loaded');
+      }),
+    ]);
+
+    console.log('✅ All fonts loaded successfully for canvas rendering');
+    
+    // Small delay to ensure fonts are available to fabric.js
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+  } catch (error) {
+    console.warn('⚠️ Font loading failed, continuing with fallback fonts:', error);
+  }
 }
 
 async function renderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithSongs) {
