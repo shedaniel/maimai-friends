@@ -6,6 +6,8 @@ import { load } from "cheerio";
 import { randomUUID } from "crypto";
 import { sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { promises as fs } from "fs";
+import { join } from "path";
 
 // Helper function to convert level string to precise value (stored as 10x)
 function levelToPrecise(level: string): number {
@@ -452,7 +454,91 @@ function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any,
   return records;
 }
 
- 
+// Helper function to load fallback JSON data
+async function loadFallbackJsonData(region: "intl" | "jp", version: number): Promise<any[] | null> {
+  try {
+    const filePath = join(process.cwd(), "data", "extra", `${region}-${version}.json`);
+    console.log(`Checking for fallback JSON file: ${filePath}`);
+    
+    const fileContent = await fs.readFile(filePath, "utf-8");
+    const jsonData = JSON.parse(fileContent);
+    
+    console.log(`Loaded ${jsonData.length} fallback songs from ${region}-${version}.json`);
+    return jsonData;
+  } catch (error) {
+    console.log(`No fallback JSON file found for ${region}-${version} or error reading it:`, error instanceof Error ? error.message : "Unknown error");
+    return null;
+  }
+}
+
+// Helper function to convert fallback JSON songs to database records
+function convertFallbackJsonToRecords(fallbackSongs: any[], region: "intl" | "jp", gameVersion: number): any[] {
+  const records: any[] = [];
+  const difficultyMap = {
+    "easy": "basic",
+    "advanced": "advanced", 
+    "expert": "expert",
+    "master": "master",
+    "remaster": "remaster"
+  };
+
+  for (const song of fallbackSongs) {
+    const { title, artist, genre, type, addedVersion, cover, levels } = song;
+    
+    // Process each difficulty level in the song
+    for (const [difficultyKey, difficultyData] of Object.entries(levels)) {
+      const mappedDifficulty = difficultyMap[difficultyKey as keyof typeof difficultyMap];
+      if (!mappedDifficulty || !difficultyData) continue;
+      
+      const levelData = difficultyData as { level: string; levelPrecise: number };
+      
+      records.push({
+        id: randomUUID(),
+        songName: title,
+        artist,
+        cover,
+        difficulty: mappedDifficulty as "basic" | "advanced" | "expert" | "master" | "remaster",
+        level: levelData.level,
+        levelPrecise: levelData.levelPrecise,
+        type: type as "std" | "dx",
+        genre,
+        region,
+        gameVersion,
+        addedVersion,
+      });
+    }
+  }
+
+  console.log(`Converted ${records.length} records from ${fallbackSongs.length} fallback songs`);
+  return records;
+}
+
+// Helper function to check if a song record already exists in the list
+function songRecordExists(records: any[], songName: string, difficulty: string, type: string): boolean {
+  return records.some(record => 
+    record.songName === songName && 
+    record.difficulty === difficulty && 
+    record.type === type
+  );
+}
+
+// Helper function to add fallback songs that don't already exist
+function addFallbackSongs(allRecords: any[], fallbackRecords: any[]): number {
+  let addedCount = 0;
+  
+  for (const fallbackRecord of fallbackRecords) {
+    if (!songRecordExists(allRecords, fallbackRecord.songName, fallbackRecord.difficulty, fallbackRecord.type)) {
+      allRecords.push(fallbackRecord);
+      addedCount++;
+      console.log(`Added fallback song: ${fallbackRecord.songName} (${fallbackRecord.difficulty}, ${fallbackRecord.type})`);
+    } else {
+      console.log(`Skipped duplicate fallback song: ${fallbackRecord.songName} (${fallbackRecord.difficulty}, ${fallbackRecord.type})`);
+    }
+  }
+  
+  console.log(`Added ${addedCount} fallback songs out of ${fallbackRecords.length} candidates`);
+  return addedCount;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -674,6 +760,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Step 7.5: Load and add fallback songs from JSON files if they exist
+    console.log("Step 7.5: Loading fallback songs from JSON files...");
+    const currentVersionForRegion = getCurrentVersion(region);
+    const fallbackJsonData = await loadFallbackJsonData(region, currentVersionForRegion);
+    
+    let fallbackSongsAdded = 0;
+    if (fallbackJsonData && fallbackJsonData.length > 0) {
+      console.log(`Found fallback JSON data with ${fallbackJsonData.length} songs`);
+      
+      // Convert fallback JSON to database records format
+      const fallbackRecords = convertFallbackJsonToRecords(fallbackJsonData, region, currentVersionForRegion);
+      
+      // Add fallback songs that don't already exist
+      fallbackSongsAdded = addFallbackSongs(allRecordsToInsert, fallbackRecords);
+      
+      console.log(`Added ${fallbackSongsAdded} fallback songs from ${region}-${currentVersionForRegion}.json`);
+    } else {
+      console.log(`No fallback songs found for ${region}-${currentVersionForRegion}.json`);
+    }
+
     // Step 8: Batch upsert all records
     if (allRecordsToInsert.length > 0) {
       console.log(`Step 8: Performing batch upsert of ${allRecordsToInsert.length} records...`);
@@ -710,7 +816,7 @@ export async function GET(request: NextRequest) {
     }
 
     const totalProcessed = processedFromJson + processedFromFetch;
-    console.log(`Successfully processed ${totalProcessed} songs total (${processedFromJson} from JSON, ${processedFromFetch} from individual fetch)`);
+    console.log(`Successfully processed ${totalProcessed} songs total (${processedFromJson} from JSON, ${processedFromFetch} from individual fetch, ${fallbackSongsAdded} fallback songs added)`);
 
     return NextResponse.json({
       success: true,
@@ -719,6 +825,7 @@ export async function GET(request: NextRequest) {
         total: totalProcessed,
         fromJson: processedFromJson,
         fromFetch: processedFromFetch,
+        fallbackSongsAdded,
         totalRecords: allRecordsToInsert.length,
         region,
         gameVersion: getCurrentVersion(region),

@@ -40,7 +40,7 @@ function generateUrlHash(url: string): string {
 function isMaimaidxDomain(url: string): boolean {
   try {
     const urlObj = new URL(url);
-    return urlObj.hostname.includes('maimaidx.jp') || urlObj.hostname.includes('maimaidx-eng.com');
+    return urlObj.hostname.includes('maimaidx.jp') || urlObj.hostname.includes('maimai.sega.jp') || urlObj.hostname.includes('cdn.gamerch.com') || urlObj.hostname.includes('maimaidx-eng.com');
   } catch {
     return false;
   }

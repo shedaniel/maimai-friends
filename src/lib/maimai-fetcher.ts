@@ -856,6 +856,132 @@ async function fetchAllSongsData(cookies: string, region: "intl" | "jp", session
   return songsData;
 }
 
+// Fetch hidden songs data from rating target music page (intl only)
+async function fetchHiddenSongsData(cookies: string, allSongsData: { [difficulty: number]: ScoreData[] }): Promise<ScoreData[]> {
+  console.log("Fetching hidden songs data from rating target music page...");
+  
+  const hiddenSongsUrl = "https://maimaidx-eng.com/maimai-mobile/home/ratingTargetMusic/";
+  
+  const response = await fetch(hiddenSongsUrl, {
+    method: "GET",
+    headers: {
+      "Cookie": cookies,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "Referer": "https://maimaidx-eng.com/maimai-mobile/",
+    },
+  });
+
+  console.log(`Hidden songs data response status: ${response.status}`);
+
+  if (response.status !== 200) {
+    throw new Error(`Failed to fetch hidden songs data: HTTP ${response.status}`);
+  }
+
+  const html = await response.text();
+  console.log(`Hidden songs data fetched successfully, length: ${html.length} characters`);
+  
+  const $ = load(html);
+  const hiddenSongs: ScoreData[] = [];
+  
+  // Define difficulty selectors and their corresponding numbers
+  const difficultyInfo = [
+    { selector: ".music_basic_score_back", difficulty: "basic", difficultyNumber: 0 },
+    { selector: ".music_advanced_score_back", difficulty: "advanced", difficultyNumber: 1 },
+    { selector: ".music_expert_score_back", difficulty: "expert", difficultyNumber: 2 },
+    { selector: ".music_master_score_back", difficulty: "master", difficultyNumber: 3 },
+    { selector: ".music_remaster_score_back", difficulty: "remaster", difficultyNumber: 4 }
+  ];
+
+  // Process each difficulty
+  for (const { selector, difficulty, difficultyNumber } of difficultyInfo) {
+    const blocks = $(selector);
+    console.log(`Found ${blocks.length} score blocks for ${difficulty} difficulty`);
+
+    blocks.each((index, element) => {
+      try {
+        const block = $(element);
+
+        // Extract song name
+        const nameElement = block.find('.music_name_block');
+        if (nameElement.length === 0) {
+          console.warn(`No music name block found for ${difficulty} score block ${index}`);
+          return;
+        }
+        const songName = nameElement.text().trim();
+
+        // Extract music type (dx/std) from icon image
+        const iconElement = block.find('img.music_kind_icon');
+        if (iconElement.length === 0) {
+          console.warn(`No music kind icon found for ${difficulty} score block ${index}: ${songName}`);
+          return;
+        }
+
+        const iconSrc = iconElement.attr('src');
+        if (!iconSrc) {
+          console.warn(`No src attribute found for music kind icon in ${difficulty} score block ${index}: ${songName}`);
+          return;
+        }
+
+        let musicType: "dx" | "std";
+        if (iconSrc.includes('music_dx.png')) {
+          musicType = "dx";
+        } else if (iconSrc.includes('music_standard.png')) {
+          musicType = "std";
+        } else {
+          console.warn(`Unknown music type icon: ${iconSrc} for ${difficulty} score block ${index}: ${songName}`);
+          return;
+        }
+
+        // Check if this song already exists in allSongsData
+        const existingSongs = allSongsData[difficultyNumber] || [];
+        const songExists = existingSongs.some(song => 
+          song.songName === songName && song.musicType === musicType
+        );
+
+        if (songExists) {
+          // Song already exists, skip it
+          return;
+        }
+
+        // This is a hidden song! Extract achievement from music_score_block
+        const scoreBlocks = block.find('.music_score_block');
+        let achievement = 0;
+
+        if (scoreBlocks.length > 0) {
+          const achievementText = scoreBlocks.eq(0).text().trim();
+          const achievementMatch = achievementText.match(/(\d+\.?\d*)%/);
+          if (achievementMatch) {
+            const achievementFloat = parseFloat(achievementMatch[1]);
+            achievement = Math.round(achievementFloat * 10000); // Convert to 10000x format
+          }
+        }
+
+        // Create ScoreData for hidden song
+        const hiddenSongData: ScoreData = {
+          songName,
+          level: "0",
+          musicType,
+          difficulty,
+          difficultyNumber,
+          achievement,
+          dxScore: 0,
+          fc: "none",
+          fs: "none"
+        };
+
+        hiddenSongs.push(hiddenSongData);
+        console.log(`Found hidden song: ${songName} (${musicType}, ${difficulty}) - ${achievement / 10000}%`);
+
+      } catch (error) {
+        console.error(`Error processing hidden song ${difficulty} score block ${index}:`, error);
+      }
+    });
+  }
+
+  console.log(`Successfully found ${hiddenSongs.length} hidden songs`);
+  return hiddenSongs;
+}
+
 
 
 interface PlayerData {
@@ -1210,6 +1336,28 @@ export async function fetchMaimaiData(
       fetchAllSongsData(cookies, region, sessionId)
     ]);
     console.log("Player data extraction and songs data fetch completed");
+
+    // Fetch hidden songs data for intl region only
+    if (region === "intl") {
+      try {
+        console.log("Fetching hidden songs data for intl region...");
+        const hiddenSongs = await fetchHiddenSongsData(cookies, allSongsData);
+        
+        // Add hidden songs to allSongsData
+        for (const hiddenSong of hiddenSongs) {
+          const difficulty = hiddenSong.difficultyNumber;
+          if (!allSongsData[difficulty]) {
+            allSongsData[difficulty] = [];
+          }
+          allSongsData[difficulty].push(hiddenSong);
+        }
+        
+        console.log(`Added ${hiddenSongs.length} hidden songs to songs data`);
+      } catch (error) {
+        console.error("Failed to fetch hidden songs data, continuing without hidden songs:", error);
+        // Don't throw error - continue without hidden songs
+      }
+    }
     
     // Create user snapshot with real player data
     const snapshotId = await createUserSnapshot(userId, region, playerData);

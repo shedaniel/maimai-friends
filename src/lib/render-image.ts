@@ -159,10 +159,10 @@ async function renderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithS
     },
     colorStops: (data.snapshot.gameVersion === 10 ? [
       { offset: 0, color: '#C0F4E2' },
-      { offset: 1, color: '#96ADF5' },
+      { offset: 1, color: '#BFCCF2' },
     ] : data.snapshot.gameVersion === 11 ? [
-      { offset: 0, color: '#D69DFA' },
-      { offset: 1, color: '#E392A5' },
+      { offset: 0, color: '#EBBAF5' },
+      { offset: 1, color: '#F5BAC8' },
     ] : [])
   });
 
