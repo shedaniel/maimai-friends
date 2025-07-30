@@ -1,15 +1,16 @@
 "use client";
 
-import { renderImage } from "@/lib/render-image";
+import { CANVAS_HEIGHT, CANVAS_WIDTH, renderImage } from "@/lib/render-image";
 import { SnapshotWithSongs } from "@/lib/types";
 import { fabric } from "fabric";
 import { useEffect, useRef, useState } from "react";
 
 interface RenderImageClientProps {
   data: SnapshotWithSongs;
+  visitableProfileAt: string | null;
 }
 
-export default function RenderImageClient({ data }: RenderImageClientProps) {
+export default function RenderImageClient({ data, visitableProfileAt }: RenderImageClientProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.StaticCanvas | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -38,8 +39,8 @@ export default function RenderImageClient({ data }: RenderImageClientProps) {
         // Initialize Fabric.js canvas
         console.log('🖼️ Creating Fabric canvas...');
         fabricCanvasRef.current = new fabric.StaticCanvas(canvasRef.current, {
-          width: 1200,
-          height: 2020,
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
         });
         console.log('✅ Fabric canvas created');
 
@@ -47,7 +48,7 @@ export default function RenderImageClient({ data }: RenderImageClientProps) {
         console.log('🎨 Starting image rendering...');
         const renderStartTime = Date.now();
         
-        await renderImage(fabricCanvasRef.current, data);
+        await renderImage(fabricCanvasRef.current, data, visitableProfileAt);
         
         const renderTime = Date.now() - renderStartTime;
         console.log(`✅ Image rendering completed in ${renderTime}ms`);
@@ -75,14 +76,14 @@ export default function RenderImageClient({ data }: RenderImageClientProps) {
         fabricCanvasRef.current = null;
       }
     };
-  }, [data]);
+  }, [data, visitableProfileAt]);
 
   return (
     <div style={{ margin: 0, padding: '20px', background: '#f0f0f0' }}>
       <canvas
         ref={canvasRef}
-        width={1200}
-        height={2020}
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
         style={{ border: '1px solid #ccc', display: 'block' }}
       />
       {isReady && (

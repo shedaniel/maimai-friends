@@ -20,6 +20,7 @@ interface DataContentProps {
     showPlates?: boolean;
     showEvents?: boolean;
   };
+  visitableProfileAt: string | null;
   initialTab?: string;
 }
 
@@ -31,6 +32,7 @@ export function DataContent({
     showPlates: true,
     showEvents: true,
   },
+  visitableProfileAt,
   initialTab,
 }: DataContentProps) {
   const t = useTranslations();
@@ -194,7 +196,7 @@ export function DataContent({
           </TabsContent>
         )}
         <TabsContent value="exportImage" className="mt-0 flex-1 min-w-0">
-          <ExportImageCard selectedSnapshotData={selectedSnapshotData} />
+          <ExportImageCard selectedSnapshotData={selectedSnapshotData} visitableProfileAt={visitableProfileAt} />
         </TabsContent>
       </Tabs>
     )

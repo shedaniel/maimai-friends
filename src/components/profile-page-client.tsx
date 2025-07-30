@@ -119,6 +119,7 @@ export function ProfilePageClient({
           selectedSnapshotData={snapshotWithSongs}
           isLoading={false}
           privacySettings={snapshotData.privacySettings}
+          visitableProfileAt={username}
           initialTab={initialTab}
         />
       </div>

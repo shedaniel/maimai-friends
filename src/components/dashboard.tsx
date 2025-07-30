@@ -261,6 +261,7 @@ export function Dashboard({ user }: DashboardProps) {
           region={selectedRegion}
           selectedSnapshotData={selectedSnapshotData || null}
           isLoading={isLoadingSnapshots}
+          visitableProfileAt={usernameData?.publishProfile ? usernameData?.username : null}
         />
       </div>
 

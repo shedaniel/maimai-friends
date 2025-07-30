@@ -8,8 +8,8 @@ function isServer() {
   return typeof window === 'undefined';
 }
 
-const CANVAS_WIDTH = 1200;
-const CANVAS_HEIGHT = 2020;
+export const CANVAS_WIDTH = 1200;
+export const CANVAS_HEIGHT = 2100;
 
 const TARGET_HEIGHT = 204;
 const PADDING = 36;
@@ -62,7 +62,7 @@ export function getRatingImageUrl(rating: number) {
   return `https://maimaidx.jp/maimai-mobile/img/rating_base_${variant}.png?ver=1.55`;
 }
 
-export async function renderImage(canvas: fabric.StaticCanvas, data: SnapshotWithSongs) {
+export async function renderImage(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, visitableProfileAt: string | null) {
   canvas.clear();
 
   // Load fonts before rendering
@@ -71,6 +71,7 @@ export async function renderImage(canvas: fabric.StaticCanvas, data: SnapshotWit
   await renderBackground(canvas, data);
   const { overlayRect } = await renderHeader(canvas, data);
   await renderContent(canvas, data, overlayRect);
+  await renderFooter(canvas, data, visitableProfileAt);
 
   canvas.renderAll();
 }
@@ -160,7 +161,7 @@ async function renderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithS
       { offset: 0, color: '#C0F4E2' },
       { offset: 1, color: '#96ADF5' },
     ] : data.snapshot.gameVersion === 11 ? [
-      { offset: 0, color: '#9B71B6' },
+      { offset: 0, color: '#D69DFA' },
       { offset: 1, color: '#E392A5' },
     ] : [])
   });
@@ -185,7 +186,7 @@ async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: Snapsho
 
   const cloudImg = await fabricImageFromURL(
     `/res/down/${data.snapshot.gameVersion}.png`, {
-    opacity: 0.2,
+    opacity: 0.4,
   });
   cloudImg.scaleToWidth(CANVAS_WIDTH);
   cloudImg.top = CANVAS_HEIGHT - cloudImg.getScaledHeight() - PADDING;
@@ -291,8 +292,8 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
   const nameText = new fabric.Text(data.snapshot.displayName, {
     fontSize: NAME_FONT_SIZE,
     fill: '#f9f0f4',
-    fontWeight: 'bold',
-    fontFamily: 'Inter, "Noto Sans JP"',
+    fontWeight: 600,
+    fontFamily: FONT_FAMILY,
     left: nameRect.left!,
     top: nameRect.top! + nameRect.getScaledHeight() / 2 - NAME_FONT_SIZE / 2,
     textAlign: 'center',
@@ -433,9 +434,9 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
       y2: 0,
     },
     colorStops: [
-      { offset: 0, color: '#000000CC' },
-      { offset: 0.5, color: '#00000099' },
-      { offset: 1, color: '#0000004C' },
+      { offset: 0, color: '#000000AC' },
+      { offset: 0.5, color: '#00000069' },
+      { offset: 1, color: '#0000005C' },
     ]
   });
 
@@ -466,6 +467,12 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
     top: realBounds.top + realBounds.height - 10,
     originX: 'right',
     originY: 'bottom',
+    shadow: new fabric.Shadow({
+      color: '#000000AA',
+      blur: 10,
+      offsetX: 2,
+      offsetY: 2,
+    }),
   })
 
   const achievementText = new fabric.Text((song.achievement / 10000).toFixed(4) + '%', {
@@ -477,6 +484,12 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
     top: realBounds.top + realBounds.height - 14,
     originX: 'left',
     originY: 'bottom',
+    shadow: new fabric.Shadow({
+      color: '#000000AA',
+      blur: 10,
+      offsetX: 2,
+      offsetY: 2,
+    }),
   })
 
   const songNameText = new fabric.Text(song.songName, {
@@ -497,17 +510,24 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
       height: realBounds.height - 28,
       absolutePositioned: true,
     }),
+    shadow: new fabric.Shadow({
+      color: '#000000AA',
+      blur: 10,
+      offsetX: 2,
+      offsetY: 2,
+    }),
   })
 
   const songDifficultyText = new fabric.Text((song.levelPrecise / 10).toFixed(1), {
     fontSize: 14,
     fill: song.difficulty === "remaster" ? "#591a8b" : "#dcdcdc",
-    fontWeight: '600',
+    fontWeight: '500',
     fontFamily: FONT_FAMILY_MONO,
     left: realBounds.left + realBounds.width - 10,
     top: realBounds.top + 6,
     originX: 'right',
     originY: 'top',
+    charSpacing: -10,
   })
 
   const songDifficultyTextBg = new fabric.Rect({
@@ -577,12 +597,72 @@ async function renderContent(canvas: fabric.StaticCanvas, data: SnapshotWithSong
 
   // Use proper async iteration for server-side reliability
   for (let i = 0; i < newSongsB15.length; i++) {
-    promises.push(renderSong(canvas, overlayRect, newSongsB15[i], i, 32));
+    promises.push(renderSong(canvas, overlayRect, newSongsB15[i], i, 60));
   }
 
   for (let i = 0; i < oldSongsB35.length; i++) {
-    promises.push(renderSong(canvas, overlayRect, oldSongsB35[i], i + 15, 74));
+    promises.push(renderSong(canvas, overlayRect, oldSongsB35[i], i + 15, 110));
   }
 
   await Promise.all(promises);
+
+  await renderSongsLabel(canvas, overlayRect, true, 24);
+  await renderSongsLabel(canvas, overlayRect, false, 566);
+}
+
+async function renderSongsLabel(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect, newSongs: boolean, yOffset: number) {
+  const label = await fabricImageFromURL(
+    newSongs
+      ? "/res/label/new.png"
+      : "/res/label/old.png"
+    , {
+    scaleX: 0.26,
+    scaleY: 0.26,
+    top: overlayRect.top! + yOffset,
+    left: overlayRect.left! + 2,
+    opacity: 0.98,
+    shadow: new fabric.Shadow({
+      color: '#00000010',
+      blur: 30,
+      offsetX: 0,
+      offsetY: 0,
+    }),
+  });
+
+  canvas.add(label);
+}
+
+async function renderFooter(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, visitableProfileAt: string | null) {
+  const rect = new fabric.Rect({
+    width: CANVAS_WIDTH,
+    height: 50,
+    fill: '#00000020',
+    left: 0,
+    top: CANVAS_HEIGHT - 50,
+  });
+
+  const text = new fabric.Text(visitableProfileAt ? `Visit my profile at https://tomomai.lol/profile/${visitableProfileAt}/` : "Generated with https://tomomai.lol/", {
+    fontSize: 16,
+    fill: '#f9f0f4',
+    fontWeight: 500,
+    fontFamily: FONT_FAMILY,
+    left: 15,
+    top: rect.top! + 15,
+    charSpacing: 40,
+    opacity: 0.86,
+  });
+
+  const dateText = new fabric.Text("at " + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), {
+    fontSize: 16,
+    fill: '#f9f0f4',
+    fontWeight: 400,
+    fontFamily: FONT_FAMILY,
+    left: CANVAS_WIDTH - 15,
+    top: rect.top! + 15,
+    charSpacing: 40,
+    opacity: 0.86,
+    originX: 'right',
+  });
+
+  canvas.add(new fabric.Group([rect, text, dateText]));
 }

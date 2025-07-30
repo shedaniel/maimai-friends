@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
-import { userSnapshots, userScores, songs } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { songs, user, userScores, userSnapshots } from "@/lib/schema";
 import { SnapshotWithSongs } from "@/lib/types";
+import { eq } from "drizzle-orm";
 import RenderImageClient from "./render-client";
 
 interface PageProps {
@@ -35,6 +35,17 @@ export default async function RenderImagePage({ searchParams }: PageProps) {
       );
     }
 
+    // Get user privacy settings
+    const publishProfile = await db.select({ username: user.username, publishProfile: user.publishProfile }).from(user).where(eq(user.id, snapshot[0].userId)).limit(1);
+
+    if (publishProfile.length === 0) {
+      return (
+        <div style={{ padding: '20px', color: 'red' }}>
+          ❌ User not found
+        </div>
+      );
+    }
+
     // Get songs with scores for this snapshot
     const songsWithScores = await db
       .select({
@@ -63,7 +74,7 @@ export default async function RenderImagePage({ searchParams }: PageProps) {
       songs: songsWithScores,
     };
 
-    return <RenderImageClient data={data} />;
+    return <RenderImageClient data={data} visitableProfileAt={publishProfile[0].publishProfile ? publishProfile[0].username : null} />;
   } catch (error) {
     console.error('Error fetching snapshot data:', error);
     return (

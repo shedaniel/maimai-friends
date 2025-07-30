@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { renderImage } from "@/lib/render-image";
+import { CANVAS_HEIGHT, CANVAS_WIDTH, renderImage } from "@/lib/render-image";
 import { SnapshotWithSongs } from "@/lib/types";
 import { fabric } from "fabric";
 import { Download, Loader2, RefreshCw, Server } from "lucide-react";
@@ -11,9 +11,10 @@ import { useEffect, useRef, useState } from "react";
 
 interface ExportImageCardProps {
   selectedSnapshotData: SnapshotWithSongs;
+  visitableProfileAt: string | null;
 }
 
-export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) {
+export function ExportImageCard({ selectedSnapshotData, visitableProfileAt }: ExportImageCardProps) {
   const t = useTranslations();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.StaticCanvas | null>(null);
@@ -21,9 +22,6 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
   const [isServerGenerating, setIsServerGenerating] = useState(false);
 
   // Canvas dimensions - actual size for rendering
-  const CANVAS_WIDTH = 1200;
-  const CANVAS_HEIGHT = 2020;
-
   const updateCanvasScale = () => {
     if (canvasRef.current && containerRef.current) {
       const containerWidth = containerRef.current.offsetWidth;
@@ -47,7 +45,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
       });
 
       // Initial render
-      renderImage(fabricCanvasRef.current, selectedSnapshotData);
+      renderImage(fabricCanvasRef.current, selectedSnapshotData, visitableProfileAt);
     }
 
     return () => {
@@ -56,7 +54,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
         fabricCanvasRef.current = null;
       }
     };
-  }, [selectedSnapshotData]);
+  }, [selectedSnapshotData, visitableProfileAt]);
 
   useEffect(() => {
     // Small delay to ensure container is properly sized
@@ -79,7 +77,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
       const dataURL = fabricCanvasRef.current.toDataURL({
         format: 'png',
         quality: 1,
-        multiplier: 2, // Keep original size (1200x1920)
+        multiplier: 2, // Keep original size (CANVAS_WIDTHxCANVAS_HEIGHT)
       });
 
       // Create download link
@@ -131,7 +129,7 @@ export function ExportImageCard({ selectedSnapshotData }: ExportImageCardProps) 
 
   const handleRefresh = () => {
     if (fabricCanvasRef.current) {
-      renderImage(fabricCanvasRef.current, selectedSnapshotData);
+      renderImage(fabricCanvasRef.current, selectedSnapshotData, visitableProfileAt);
     }
   };
 

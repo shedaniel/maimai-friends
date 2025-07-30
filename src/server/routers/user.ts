@@ -39,7 +39,7 @@ export const userRouter = router({
   hasUsername: protectedProcedure
     .query(async ({ ctx }) => {
       const userRecord = await db
-        .select({ username: user.username })
+        .select({ username: user.username, publishProfile: user.publishProfile })
         .from(user)
         .where(eq(user.id, ctx.session.user.id))
         .limit(1);
@@ -53,7 +53,8 @@ export const userRouter = router({
 
       return { 
         hasUsername: !!userRecord[0].username,
-        username: userRecord[0].username 
+        username: userRecord[0].username,
+        publishProfile: userRecord[0].publishProfile,
       };
     }),
 

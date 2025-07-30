@@ -386,7 +386,7 @@ function SongGridCard({ song }: { song: SongWithRating }) {
 
         {/* Song Info */}
         <div className="absolute bottom-0 left-0 right-0 p-2.5 text-white z-30">
-          <div className="2xs:max-xs:text-xs text-sm font-bold truncate mb-0.5 drop-shadow-md">
+          <div className="2xs:max-xs:text-xs text-sm font-[600] truncate mb-0.5 drop-shadow-md">
             {song.songName}
           </div>
 
