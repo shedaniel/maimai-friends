@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Database } from "lucide-react";
 import { useTranslations } from "next-intl";
-
-const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled'; // disabled, invite-only, enabled
+import { trpc } from "@/lib/trpc-client";
 
 interface LoginScreenProps {
   onAuth: () => void;
@@ -13,6 +12,7 @@ interface LoginScreenProps {
 
 export function LoginScreen({ onAuth }: LoginScreenProps) {
   const t = useTranslations();
+  const { data: signupRequirements, isLoading } = trpc.user.getSignupRequirements.useQuery();
 
   return (
     <div className="container mx-auto max-w-md mt-8 px-4">
@@ -50,21 +50,21 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
                   variant="link"
                   size="sm"
                   onClick={onAuth}
-                  disabled={SIGNUP_TYPE !== 'enabled'}
+                  disabled={isLoading || !signupRequirements?.signupEnabled}
                 >
                   {t('auth.signupWithDiscord')}
                 </Button>
               </p>
             </div>
 
-            {SIGNUP_TYPE === 'disabled' && (
+            {!isLoading && signupRequirements?.reason === 'disabled' && (
               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded-md text-sm">
                 <p className="font-medium">{t('auth.signupDisabled')}</p>
                 <p className="text-xs mt-1">{t('auth.signupDisabledMessage')}</p>
               </div>
             )}
 
-            {SIGNUP_TYPE === 'invite-only' && (
+            {!isLoading && signupRequirements?.reason === 'invite-only' && (
               <div className="bg-blue-50 border border-blue-200 text-blue-800 px-3 py-2 rounded-md text-sm">
                 <p className="font-medium">Invitation Required</p>
                 <p className="text-xs mt-1">New signups require an invitation from an existing user.</p>

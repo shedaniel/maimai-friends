@@ -11,6 +11,8 @@ import { and, count, desc, eq, isNull, lt, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
+const SIGNUP_REQUIRED_AMOUNT = 128;
+
 const regionSchema = z.enum(['intl', 'jp']);
 
 // Username validation helper
@@ -35,6 +37,52 @@ const generateDefaultUsername = (displayName: string): string => {
 };
 
 export const userRouter = router({
+  // Check if invites are required for signup
+  getSignupRequirements: publicProcedure
+    .query(async () => {
+      const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled';
+      
+      // If explicitly disabled or enabled, respect that setting
+      if (SIGNUP_TYPE === 'disabled') {
+        return { 
+          signupEnabled: false, 
+          inviteRequired: false,
+          reason: 'disabled'
+        };
+      }
+      
+      if (SIGNUP_TYPE === 'enabled') {
+        return { 
+          signupEnabled: true, 
+          inviteRequired: false,
+          reason: 'enabled'
+        };
+      }
+      
+      // For invite-only mode, check user count
+      if (SIGNUP_TYPE === 'invite-only') {
+        const [userCount] = await db
+          .select({ count: count() })
+          .from(user);
+          
+        const totalUsers = userCount.count;
+        const inviteRequired = totalUsers >= SIGNUP_REQUIRED_AMOUNT;
+        
+        return {
+          signupEnabled: true,
+          inviteRequired,
+          reason: inviteRequired ? 'invite-only' : 'open'
+        };
+      }
+      
+      // Default fallback
+      return { 
+        signupEnabled: false, 
+        inviteRequired: false,
+        reason: 'disabled'
+      };
+    }),
+
   // Check if user has set a username
   hasUsername: protectedProcedure
     .query(async ({ ctx }) => {

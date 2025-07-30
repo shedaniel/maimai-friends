@@ -1,12 +1,26 @@
 import { betterAuth } from "better-auth";
-import { nextCookies } from "better-auth/next-js";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
+import { and, count, eq, isNull, lt, or } from "drizzle-orm";
 import { db } from "./db";
 import * as schema from "./schema";
 import { invites } from "./schema";
-import { and, eq, isNull, lt, or } from "drizzle-orm";
 
 const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled'; // disabled, invite-only, enabled
+const SIGNUP_REQUIRED_AMOUNT = 128;
+// Helper function to check if invites are required based on user count
+async function checkInviteRequirement(): Promise<boolean> {
+  if (SIGNUP_TYPE !== 'invite-only') {
+    return SIGNUP_TYPE === 'disabled'; // Always require invite if disabled, never if enabled
+  }
+  
+  // For invite-only mode, check user count
+  const [userCount] = await db
+    .select({ count: count() })
+    .from(schema.user);
+    
+  return userCount.count >= SIGNUP_REQUIRED_AMOUNT;
+}
 
 // Helper function to validate and claim invitations
 async function validateAndClaimInvite(inviteCode: string, userId: string) {
@@ -95,12 +109,14 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user, context) => {
+          const inviteRequired = await checkInviteRequirement();
+          
           if (SIGNUP_TYPE === 'disabled') {
             throw new Error("unable_to_create_user");
           }
           
-          // For invite-only mode, check if there's an invitation
-          if (SIGNUP_TYPE === 'invite-only') {
+          // Check if invitation is required based on dynamic logic
+          if (inviteRequired) {
             let inviteCode: string | null = null;
             
             // Try to extract invitation code from cookies
@@ -158,8 +174,10 @@ export const auth = betterAuth({
           return { data: user };
         },
         after: async (user, context) => {
-          // For invite-only mode, claim the invitation after user creation
-          if (SIGNUP_TYPE === 'invite-only') {
+          // Check if invitation was used (and claim it if so)
+          const inviteRequired = await checkInviteRequirement();
+          
+          if (inviteRequired) {
             let inviteCode: string | null = null;
             
             // Read the invitation code from cookies again
