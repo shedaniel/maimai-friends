@@ -17,8 +17,11 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { AboutDialog } from "@/components/about-dialog";
 import { InvitesDialog } from "@/components/invites-dialog";
+import { DiscordIcon } from "@/components/ui/discord-icon";
+import { toast } from "sonner";
 
 const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled';
+const APPLICATION_ID = process.env.NEXT_PUBLIC_DISCORD_APPLICATION_ID;
 
 interface UserHeaderProps {
   user: User;
@@ -33,11 +36,22 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
   const [aboutOpen, setAboutOpen] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false);
   
+  const handleDiscordInvite = async () => {
+    try {
+      const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${APPLICATION_ID}&scope=applications.commands`;
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Copied Discord Bot Invite Link");
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      toast.error("Failed to copy invite link");
+    }
+  };
+  
   return (
     <>
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-3">
-          <div className="whitespace-nowrap">
+        <div className="flex items-center space-x-1">
+          <div className="whitespace-nowrap pr-2">
             <h1 className="text-lg leading-none font-semibold">tomomai ともマイ</h1>
             <p className="text-muted-foreground text-xs">by shedaniel</p>
           </div>
@@ -48,6 +62,14 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
             className="h-8 w-8 p-0 hover:bg-gray-200"
           >
             <Info className="h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={handleDiscordInvite} 
+            variant="ghost" 
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-gray-200"
+          >
+            <DiscordIcon className="h-4 w-4" />
           </Button>
         </div>
       
