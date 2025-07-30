@@ -18,7 +18,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>About maimai friends</DialogTitle>
+          <DialogTitle>About ともマイ</DialogTitle>
           <DialogDescription>
             A modern web application for tracking and analyzing your maimai DX scores with friends.
           </DialogDescription>

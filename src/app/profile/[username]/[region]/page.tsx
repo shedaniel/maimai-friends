@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: RegionProfilePageProps): Prom
   // Validate region
   if (!isValidRegion(region)) {
     return {
-      title: "Profile Not Found | maimai friends",
+      title: "Profile Not Found | tomomai ともマイ",
       description: "The profile you're looking for doesn't exist.",
     };
   }
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: RegionProfilePageProps): Prom
 
     const regionName = region === 'intl' ? 'International' : 'Japan';
     
-    const title = `${username} | maimai friends`;
+    const title = `${username} | tomomai ともマイ`;
     const description = `View ${username}'s maimai profile for ${regionName}. Track and analyze maimai scores with friends.`;
 
     const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: RegionProfilePageProps): Prom
         title,
         description,
         url: profileUrl,
-        siteName: 'maimai friends',
+        siteName: 'tomomai ともマイ',
         type: 'profile',
         images: [
           {
@@ -78,13 +78,13 @@ export async function generateMetadata({ params }: RegionProfilePageProps): Prom
   } catch (error) {
     if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
       return {
-        title: "Profile Not Found | maimai friends",
+        title: "Profile Not Found | tomomai ともマイ",
         description: "The profile you're looking for doesn't exist or is not publicly accessible.",
       };
     }
 
     return {
-      title: "Error | maimai friends",
+      title: "Error | tomomai ともマイ",
       description: "An error occurred while loading this profile.",
     };
   }

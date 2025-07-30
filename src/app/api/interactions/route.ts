@@ -41,7 +41,7 @@ function getStateFriendlyName(state: string): string {
 // Define the commands
 const INVITE_COMMAND = {
   name: 'invite',
-  description: 'Get an invite link to add maimai friends bot to your server',
+  description: 'Get an invite link to add tomomai ともマイ bot to your server',
 };
 
 const PROFILE_COMMAND = {
@@ -135,15 +135,15 @@ export async function POST(request: NextRequest) {
                 data: {
                   embeds: [{
                     title: '❌ Not Registered',
-                    description: `You haven't linked your Discord account to maimai friends yet!`,
+                    description: `You haven't linked your Discord account to tomomai yet!`,
                     color: 0xED4245, // Discord red
                     fields: [{
                       name: '🔗 Get Started',
-                      value: '[Visit maimai friends](https://maifriends.shedaniel.moe/) to sign in with Discord and start tracking your scores!',
+                      value: '[Visit tomomai ともマイ](https://tomomai.lol/) to sign in with Discord and start tracking your scores!',
                       inline: false,
                     }],
                     footer: {
-                      text: 'maimai friends • maimai DX score tracker',
+                      text: 'tomomai ともマイ • maimai DX score tracker',
                     },
                   }],
                   flags: InteractionResponseFlags.EPHEMERAL,
@@ -178,11 +178,11 @@ export async function POST(request: NextRequest) {
                     color: 0xFEE75C, // Discord yellow
                     fields: [{
                       name: '🎯 Import Your Scores',
-                      value: `[Visit maimai friends](https://maifriends.shedaniel.moe/) to import your ${regionName} maimai DX scores!`,
+                      value: `[Visit tomomai ともマイ](https://tomomai.lol/) to import your ${regionName} maimai DX scores!`,
                       inline: false,
                     }],
                     footer: {
-                      text: 'maimai friends • maimai DX score tracker',
+                      text: 'tomomai ともマイ • maimai DX score tracker',
                     },
                   }],
                   flags: InteractionResponseFlags.EPHEMERAL,
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
                     },
                   ],
                   footer: {
-                    text: 'maimai friends • maimai DX score tracker',
+                    text: 'tomomai ともマイ • maimai DX score tracker',
                   },
                   timestamp: new Date().toISOString(),
                 }],
@@ -280,15 +280,15 @@ export async function POST(request: NextRequest) {
                 data: {
                   embeds: [{
                     title: '❌ Not Registered',
-                    description: `You haven't linked your Discord account to maimai friends yet!`,
+                    description: `You haven't linked your Discord account to tomomai yet!`,
                     color: 0xED4245, // Discord red
                     fields: [{
                       name: '🔗 Get Started',
-                      value: '[Visit maimai friends](https://maifriends.shedaniel.moe/) to sign in with Discord and start tracking your scores!',
+                      value: '[Visit tomomai ともマイ](https://tomomai.lol/) to sign in with Discord and start tracking your scores!',
                       inline: false,
                     }],
                     footer: {
-                      text: 'maimai friends • maimai DX score tracker',
+                      text: 'tomomai ともマイ • maimai DX score tracker',
                     },
                   }],
                   flags: InteractionResponseFlags.EPHEMERAL,
@@ -333,7 +333,7 @@ export async function POST(request: NextRequest) {
                       inline: false,
                     }],
                     footer: {
-                      text: 'maimai friends • maimai DX score tracker',
+                      text: 'tomomai ともマイ • maimai DX score tracker',
                     },
                     timestamp: new Date().toISOString(),
                   }],
@@ -390,7 +390,7 @@ export async function POST(request: NextRequest) {
                                   inline: false,
                                 }],
                                 footer: {
-                                  text: 'maimai friends • maimai DX score tracker',
+                                  text: 'tomomai ともマイ • maimai DX score tracker',
                                 },
                                 timestamp: new Date().toISOString(),
                               }],
@@ -457,7 +457,7 @@ export async function POST(request: NextRequest) {
                                     },
                                   ],
                                   footer: {
-                                    text: 'maimai friends • maimai DX score tracker',
+                                    text: 'tomomai ともマイ • maimai DX score tracker',
                                   },
                                   timestamp: new Date().toISOString(),
                                 }, imageBuffer);
@@ -487,7 +487,7 @@ export async function POST(request: NextRequest) {
                                       },
                                     ],
                                     footer: {
-                                      text: 'maimai friends • maimai DX score tracker',
+                                      text: 'tomomai ともマイ • maimai DX score tracker',
                                     },
                                     timestamp: new Date().toISOString(),
                                   }],
@@ -519,7 +519,7 @@ export async function POST(request: NextRequest) {
                                     },
                                   ],
                                   footer: {
-                                    text: 'maimai friends • maimai DX score tracker',
+                                    text: 'tomomai ともマイ • maimai DX score tracker',
                                   },
                                   timestamp: new Date().toISOString(),
                                 }],
@@ -532,7 +532,7 @@ export async function POST(request: NextRequest) {
                                 description: `<@${discordUserId}> Data fetch completed successfully!`,
                                 color: 0x57F287, // Discord green
                                 footer: {
-                                  text: 'maimai friends • maimai DX score tracker',
+                                  text: 'tomomai ともマイ • maimai DX score tracker',
                                 },
                                 timestamp: new Date().toISOString(),
                               }],
@@ -546,7 +546,7 @@ export async function POST(request: NextRequest) {
                               description: `<@${discordUserId}> Failed to fetch ${fetchRegionName} data: ${status.errorMessage || 'Unknown error'}`,
                               color: 0xED4245, // Discord red
                               footer: {
-                                text: 'maimai friends • maimai DX score tracker',
+                                text: 'tomomai ともマイ • maimai DX score tracker',
                               },
                               timestamp: new Date().toISOString(),
                             }],
@@ -584,7 +584,7 @@ export async function POST(request: NextRequest) {
                                 inline: false,
                               }],
                               footer: {
-                                text: 'maimai friends • maimai DX score tracker',
+                                text: 'tomomai ともマイ • maimai DX score tracker',
                               },
                               timestamp: new Date().toISOString(),
                             }],
@@ -609,11 +609,11 @@ export async function POST(request: NextRequest) {
                       color: 0xFEE75C, // Discord yellow
                       fields: [{
                         name: '🌐 Check Status',
-                        value: '[Visit maimai friends](https://maifriends.shedaniel.moe/) to see your latest data!',
+                        value: '[Visit tomomai ともマイ](https://tomomai.lol/) to see your latest data!',
                         inline: false,
                       }],
                       footer: {
-                        text: 'maimai friends • maimai DX score tracker',
+                        text: 'tomomai ともマイ • maimai DX score tracker',
                       },
                       timestamp: new Date().toISOString(),
                     }],
@@ -637,7 +637,7 @@ export async function POST(request: NextRequest) {
                         description: `<@${discordUserId}> An error occurred while fetching your data: ${error instanceof Error ? error.message : 'Unknown error'}`,
                         color: 0xED4245, // Discord red
                         footer: {
-                          text: 'maimai friends • maimai DX score tracker',
+                          text: 'tomomai ともマイ • maimai DX score tracker',
                         },
                         timestamp: new Date().toISOString(),
                       }],
@@ -670,8 +670,8 @@ export async function POST(request: NextRequest) {
             data: {
               embeds: [
                 {
-                  title: '🎯 Invite maimai friends',
-                  description: 'Add maimai friends bot to your Discord server to track and share maimai DX scores!',
+                  title: '🎯 Invite tomomai ともマイ',
+                  description: 'Add tomomai ともマイ bot to your Discord server to track and share maimai DX scores!',
                   color: 0x5865F2, // Discord blurple
                   fields: [
                     {
@@ -686,12 +686,12 @@ export async function POST(request: NextRequest) {
                     },
                     {
                       name: '🌐 Website',
-                      value: 'https://maifriends.shedaniel.moe/',
+                      value: 'https://tomomai.lol/',
                       inline: false,
                     }
                   ],
                   footer: {
-                    text: 'maimai friends • maimai DX score tracker',
+                    text: 'tomomai ともマイ • maimai DX score tracker',
                   },
                   timestamp: new Date().toISOString(),
                 },

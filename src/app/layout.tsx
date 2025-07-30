@@ -63,7 +63,7 @@ function getLocaleFontClass(locale: string) {
 }
 
 export const metadata: Metadata = {
-  title: "maimai friends",
+  title: "tomomai ともマイ",
   description: "Track and analyze maimai scores with friends.",
 };
 

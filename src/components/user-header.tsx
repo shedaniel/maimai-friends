@@ -38,7 +38,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-3">
           <div className="whitespace-nowrap">
-            <h1 className="text-lg leading-none font-semibold">maimai friends</h1>
+            <h1 className="text-lg leading-none font-semibold">tomomai ともマイ</h1>
             <p className="text-muted-foreground text-xs">by shedaniel</p>
           </div>
           <Button 

@@ -25,7 +25,7 @@ export function PublicHeader({}: PublicHeaderProps) {
         <div className="flex items-center space-x-3">
           <div>
             <h1 className="text-lg leading-none font-semibold">
-              maimai friends
+              tomomai ともマイ
             </h1>
             <p className="text-muted-foreground text-xs">
               by shedaniel
