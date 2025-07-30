@@ -1009,7 +1009,7 @@ interface ScoreData {
   fs: "none" | "sync" | "fs" | "fs+" | "fdx" | "fdx+";
 }
 
-async function extractPlayerData(region: "intl" | "jp", html: string): Promise<PlayerData> {
+async function extractPlayerData(region: "intl" | "jp", html: string, cookies: string): Promise<PlayerData> {
   const $ = load(html);
   const block = $('.see_through_block');
   
@@ -1125,7 +1125,7 @@ async function extractPlayerData(region: "intl" | "jp", html: string): Promise<P
   
   return {
     iconUrl,
-    iconBase64: await fetchImageAsBase64(region, iconUrl),
+    iconBase64: await fetchImageAsBase64(region, iconUrl, cookies),
     displayName,
     rating,
     title,
@@ -1137,12 +1137,13 @@ async function extractPlayerData(region: "intl" | "jp", html: string): Promise<P
   };
 }
 
-async function fetchImageAsBase64(region: "intl" | "jp", imageUrl: string): Promise<string> {
+async function fetchImageAsBase64(region: "intl" | "jp", imageUrl: string, cookies: string): Promise<string> {
   console.log(`Fetching image for base64 encoding: ${imageUrl}`);
   
   const response = await fetch(imageUrl, {
     headers: {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "Cookie": cookies || "",
     },
     ...(region === "jp" ? { dispatcher: JP_AGENT } : {}),
   });
@@ -1328,7 +1329,7 @@ export async function fetchMaimaiData(
     console.log("Starting player data extraction and songs data fetch...");
     const [playerData, allSongsData] = await Promise.all([
       // Extract player data from HTML and track progress
-      extractPlayerData(region, playerDataHtml).then((data) => {
+      extractPlayerData(region, playerDataHtml, cookies).then((data) => {
         appendFetchState(sessionId, FETCH_STATES.PLAYER_DATA); // Fire and forget
         return data;
       }),
