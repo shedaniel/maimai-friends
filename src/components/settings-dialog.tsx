@@ -43,6 +43,7 @@ interface SettingsDialogProps {
   onTimezoneUpdate: (timezone: string | null) => Promise<void>;
   onLanguageUpdate: (language: string | null) => Promise<void>;
   onOpenTokenDialog: () => void;
+  onSaveSuccess: () => void;
 }
 
 // Common timezones
@@ -83,8 +84,9 @@ export function SettingsDialog({
   currentLanguage, 
   username,
   onTimezoneUpdate, 
-  onLanguageUpdate, 
-  onOpenTokenDialog 
+  onLanguageUpdate,
+  onOpenTokenDialog,
+  onSaveSuccess, 
 }: SettingsDialogProps) {
   const t = useTranslations();
   const { setLocale } = useLocale();
@@ -176,6 +178,7 @@ export function SettingsDialog({
       }
       
       toast.success(t('settings.saved'));
+      onSaveSuccess();
       onClose();
     } catch (error) {
       console.error("Failed to update settings:", error);

@@ -6,6 +6,7 @@ import { SnapshotWithSongs } from "@/lib/types";
 import { createSafeMaimaiImageUrl } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import Link from "next/link";
 
 function RatingImage({ rating }: { rating: number }) {
   return (
@@ -15,10 +16,12 @@ function RatingImage({ rating }: { rating: number }) {
 
 export function InfoCard({ 
   selectedSnapshotData, 
-  showPlayCounts = true 
+  showPlayCounts = true,
+  visitableProfileAt,
 }: { 
   selectedSnapshotData: SnapshotWithSongs; 
   showPlayCounts?: boolean;
+  visitableProfileAt: string | null;
 }) {
   const t = useTranslations();
 
@@ -27,6 +30,32 @@ export function InfoCard({
   return (
     <Card>
       <CardContent>
+        {/* Profile Visibility Banner */}
+        <div className="mb-6 p-4 rounded-md bg-muted ring-2 ring-offset-2 ring-offset-card ring-primary/20">
+          {visitableProfileAt ? (
+            <div>
+              <h3 className="font-medium mb-1 text-primary">Public Profile</h3>
+              <p className="text-sm text-muted-foreground">
+                Accessible by{" "}
+                <Link 
+                  href={`/profile/${visitableProfileAt}`} 
+                  className="text-primary hover:text-primary/80 underline"
+                >
+                  https://tomomai.lol/profile/{visitableProfileAt}
+                </Link>
+                ! You may change your privacy settings in top right Icon → Settings → Publish Profile.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <h3 className="font-medium mb-1 text-primary">Private Profile</h3>
+              <p className="text-sm text-muted-foreground">
+                Only accessible by you! You may change your privacy settings in top right Icon → Settings → Publish Profile.
+              </p>
+            </div>
+          )}
+        </div>
+        
         <div className="flex items-center gap-2 mb-4">
           <Image src={createSafeMaimaiImageUrl(snapshot.iconUrl)} alt={snapshot.title} width={80} height={80} />
           <div className="flex flex-col min-w-0 self-stretch my-1 space-y-0.5 items-stretch">

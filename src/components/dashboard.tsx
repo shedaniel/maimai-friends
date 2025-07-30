@@ -281,6 +281,7 @@ export function Dashboard({ user }: DashboardProps) {
         onTimezoneUpdate={handleTimezoneUpdate}
         onLanguageUpdate={handleLanguageUpdate}
         onOpenTokenDialog={handleOpenTokenDialog}
+        onSaveSuccess={() => refetchUsername()}
       />
 
       <UsernameSetupDialog

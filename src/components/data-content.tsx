@@ -169,6 +169,7 @@ export function DataContent({
           <InfoCard 
             selectedSnapshotData={selectedSnapshotData} 
             showPlayCounts={privacySettings.showPlayCounts}
+            visitableProfileAt={visitableProfileAt}
           />
         </TabsContent>
         <TabsContent value="songs" className="mt-0 flex-1 min-w-0">
