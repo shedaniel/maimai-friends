@@ -161,7 +161,7 @@ async function renderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithS
       { offset: 0, color: '#C0F4E2' },
       { offset: 1, color: '#BFCCF2' },
     ] : data.snapshot.gameVersion === 11 ? [
-      { offset: 0, color: '#EBBAF5' },
+      { offset: 0, color: '#F6D7FC' },
       { offset: 1, color: '#F5BAC8' },
     ] : [])
   });
@@ -355,8 +355,8 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
       y2: 0
     },
     colorStops: [
-      { offset: 1, color: '#00000020' },
-      { offset: 0, color: '#00000030' },
+      { offset: 1, color: '#00000015' },
+      { offset: 0, color: '#00000020' },
     ]
   });
 
