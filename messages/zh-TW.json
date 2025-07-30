@@ -38,7 +38,7 @@
     }
   },
   "dashboard": {
-    "title": "maimai friends",
+    "title": "tomomai ともマイ",
     "description": "與好友一起分享 maimai 遊玩成績",
     "timezoneUpdateSuccess": "時區更新成功！",
     "timezoneUpdateError": "時區更新失敗：{error}",
@@ -48,7 +48,7 @@
   },
   "settings": {
     "title": "設定",
-    "description": "更改 maimai friends 的設定。",
+    "description": "更改 tomomai ともマイ 的設定。",
     "language": {
       "label": "語言",
       "description": "選擇你偏好的介面語言。",
@@ -213,7 +213,7 @@
     "jp": "日本區"
   },
   "userHeader": {
-    "memberLabel": "maimai friends 成員"
+    "memberLabel": "ともマイ 成員"
   },
   "usernameSetup": {
     "title": "選擇你的使用者名稱",
@@ -283,12 +283,12 @@
     }
   },
   "acceptInvitation": {
-    "title": "maimai friends",
-    "subtitle": "你已被邀請加入 maimai friends 社群",
+    "title": "tomomai ともマイ",
+    "subtitle": "你已被邀請加入 tomomai ともマイ 社群",
     "validating": "驗證邀請中...",
     "redirecting": "重新導向至首頁...",
     "invited": "你已被邀請！",
-    "invitedBy": "{name} 邀請你加入 maimai friends",
+    "invitedBy": "{name} 邀請你加入 tomomai ともマイ",
     "expiresOn": "邀請於 {date} 過期",
     "acceptAndSignUp": "接受邀請並註冊",
     "backToHome": "返回首頁",

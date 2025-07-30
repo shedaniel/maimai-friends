@@ -38,7 +38,7 @@
     }
   },
   "dashboard": {
-    "title": "maimai friends",
+    "title": "ともマイ",
     "description": "フレンドと一緒にmaimaiのスコアを分析・共有！",
     "timezoneUpdateSuccess": "タイムゾーンの更新に成功しました！",
     "timezoneUpdateError": "タイムゾーンの更新に失敗しました: {error}",
@@ -48,7 +48,7 @@
   },
   "settings": {
     "title": "設定",
-    "description": "maimai friendsを自分好みにカスタマイズできます。",
+    "description": "ともマイを自分好みにカスタマイズできます。",
     "language": {
       "label": "言語",
       "description": "希望するインターフェース言語を選択してください。",
@@ -213,7 +213,7 @@
     "jp": "日本"
   },
   "userHeader": {
-    "memberLabel": "maimai friends メンバー"
+    "memberLabel": "ともマイのメンバー"
   },
   "usernameSetup": {
     "title": "ユーザー名を選択",
@@ -283,12 +283,12 @@
     }
   },
   "acceptInvitation": {
-    "title": "maimai friends",
-    "subtitle": "maimai friendsコミュニティへの招待を受けました",
+    "title": "ともマイ",
+    "subtitle": "ともマイコミュニティへの招待を受けました",
     "validating": "招待を検証中...",
     "redirecting": "ホームページにリダイレクト中...",
     "invited": "招待されました！",
-    "invitedBy": "{name}があなたをmaimai friendsに招待しました",
+    "invitedBy": "{name}があなたをともマイに招待しました",
     "expiresOn": "招待は{date}に期限切れになります",
     "acceptAndSignUp": "招待を受けてサインアップ",
     "backToHome": "ホームに戻る",

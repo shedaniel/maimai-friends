@@ -11,7 +11,7 @@ const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const commands = [
   {
     name: 'invite',
-    description: 'Get an invite link to add maimai friends bot to your server',
+    description: 'Get an invite link to add tomomai ともマイ bot to your server',
   },
   {
     name: 'profile',

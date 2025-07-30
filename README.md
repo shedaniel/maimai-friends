@@ -1,4 +1,4 @@
-# maimai friends
+# tomomai ともマイ
 
 A modern web application for tracking and analyzing your maimai DX scores with friends. Built with Next.js 15, TypeScript, and Tailwind CSS.
 
@@ -246,7 +246,7 @@ src/
 
 ## 🤖 Discord Bot Features
 
-The maimai friends Discord bot extends the web application's functionality directly into Discord servers:
+The ともマイ Discord bot extends the web application's functionality directly into Discord servers:
 
 ### Available Commands
 
