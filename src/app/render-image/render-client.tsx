@@ -1,16 +1,17 @@
 "use client";
 
-import { CANVAS_HEIGHT, CANVAS_WIDTH, renderImage } from "@/lib/render-image";
+import { CANVAS_HEIGHT, CANVAS_WIDTH, ImageCache, renderImage } from "@/lib/render-image";
 import { SnapshotWithSongs } from "@/lib/types";
 import { fabric } from "fabric";
 import { useEffect, useRef, useState } from "react";
 
 interface RenderImageClientProps {
   data: SnapshotWithSongs;
+  cache: ImageCache;
   visitableProfileAt: string | null;
 }
 
-export default function RenderImageClient({ data, visitableProfileAt }: RenderImageClientProps) {
+export default function RenderImageClient({ data, cache, visitableProfileAt }: RenderImageClientProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.StaticCanvas | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -48,7 +49,7 @@ export default function RenderImageClient({ data, visitableProfileAt }: RenderIm
         console.log('🎨 Starting image rendering...');
         const renderStartTime = Date.now();
         
-        await renderImage(fabricCanvasRef.current, data, visitableProfileAt);
+        await renderImage(fabricCanvasRef.current, data, cache, visitableProfileAt);
         
         const renderTime = Date.now() - renderStartTime;
         console.log(`✅ Image rendering completed in ${renderTime}ms`);

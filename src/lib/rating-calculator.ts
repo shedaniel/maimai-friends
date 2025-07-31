@@ -39,4 +39,22 @@ export function addRatingsAndSort(songs: SongWithScore[]): SongWithRating[] {
       ...song,
       rating: Math.floor(song.rating)
     }));
-} 
+}
+
+export function splitSongs(withScore: SongWithScore[], version: number) {
+  const songs = addRatingsAndSort(withScore);
+  const newSongs = songs.filter(song => song.addedVersion === version);
+  const oldSongs = songs.filter(song => song.addedVersion !== version);
+
+  const newSongsB15 = newSongs.slice(0, 15);
+  const oldSongsB35 = oldSongs.slice(0, 35);
+  const newSongsRemaining = newSongs.slice(15);
+  const oldSongsRemaining = oldSongs.slice(35);
+
+  return {
+    newSongsB15,
+    oldSongsB35,
+    newSongsRemaining,
+    oldSongsRemaining,
+  }
+}

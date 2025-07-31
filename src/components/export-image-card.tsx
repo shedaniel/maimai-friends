@@ -45,7 +45,7 @@ export function ExportImageCard({ selectedSnapshotData, visitableProfileAt }: Ex
       });
 
       // Initial render
-      renderImage(fabricCanvasRef.current, selectedSnapshotData, visitableProfileAt);
+      renderImage(fabricCanvasRef.current, selectedSnapshotData, {}, visitableProfileAt);
     }
 
     return () => {
@@ -129,7 +129,7 @@ export function ExportImageCard({ selectedSnapshotData, visitableProfileAt }: Ex
 
   const handleRefresh = () => {
     if (fabricCanvasRef.current) {
-      renderImage(fabricCanvasRef.current, selectedSnapshotData, visitableProfileAt);
+      renderImage(fabricCanvasRef.current, selectedSnapshotData, {}, visitableProfileAt);
     }
   };
 

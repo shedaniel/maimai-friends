@@ -1,7 +1,7 @@
-import { addRatingsAndSort, SongWithRating } from "./rating-calculator";
+import { fabric } from 'fabric';
+import { SongWithRating, splitSongs } from "./rating-calculator";
 import { SnapshotWithSongs } from "./types";
 import { createSafeMaimaiImageUrlAsync } from "./utils";
-import { fabric } from 'fabric';
 
 // Helper function to detect if we're on the server
 function isServer() {
@@ -17,6 +17,11 @@ const PADDING = 36;
 const FONT_FAMILY = 'Inter, Murecho, "Noto Sans JP"';
 const FONT_FAMILY_MONO = '"Geist Mono"';
 
+export type ImageCache = {
+  // path to base64 string
+  [key: string]: string;
+}
+
 // Helper function to check if a URL is a data URL (base64)
 function isDataUrl(url: string): boolean {
   return url.startsWith('data:');
@@ -24,9 +29,16 @@ function isDataUrl(url: string): boolean {
 
 // Relay method for FabricImage.fromURL that handles both client and server environments
 async function fabricImageFromURL(
+  cache: ImageCache,
   url: string, 
   fabricOptions: any = {}
 ): Promise<fabric.Image> {
+  if (!isDataUrl(url) && cache[url]) {
+    return new Promise((resolve) => {
+      fabric.Image.fromURL(cache[url], image => resolve(image), fabricOptions)!
+    });
+  }
+
   if (isServer() && !isDataUrl(url)) {
     // Use server-only module for Node.js-specific logic
     const { fabricImageFromURLServer } = await import('./render-image-server');
@@ -62,15 +74,15 @@ export function getRatingImageUrl(rating: number) {
   return `https://maimaidx.jp/maimai-mobile/img/rating_base_${variant}.png?ver=1.55`;
 }
 
-export async function renderImage(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, visitableProfileAt: string | null) {
+export async function renderImage(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, cache: ImageCache, visitableProfileAt: string | null) {
   canvas.clear();
 
   // Load fonts before rendering
   await loadFonts();
 
   await renderBackground(canvas, data);
-  const { overlayRect } = await renderHeader(canvas, data);
-  await renderContent(canvas, data, overlayRect);
+  const { overlayRect } = await renderHeader(canvas, data, cache);
+  await renderContent(canvas, data, cache, overlayRect);
   await renderFooter(canvas, data, visitableProfileAt);
 
   canvas.renderAll();
@@ -174,10 +186,11 @@ async function renderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithS
   canvas.add(backgroundRect);
 }
 
-async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, trophyBackground: fabric.Image) {
+async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, cache: ImageCache, trophyBackground: fabric.Image) {
   const INNER_PADDING = 30;
 
   const shineImg = await fabricImageFromURL(
+    cache,
     `/res/shine/${data.snapshot.gameVersion}.png`, {
     opacity: 0.3,
   });
@@ -185,6 +198,7 @@ async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: Snapsho
   canvas.insertAt(shineImg, 1, false);
 
   const cloudImg = await fabricImageFromURL(
+    cache,
     `/res/down/${data.snapshot.gameVersion}.png`, {
     opacity: 0.4,
   });
@@ -193,6 +207,7 @@ async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: Snapsho
   canvas.insertAt(cloudImg, 1, false);
 
   const characterImg = await fabricImageFromURL(
+    cache,
     `/res/character/${data.snapshot.gameVersion}.png`, data.snapshot.gameVersion === 10 ? {
     scaleX: 0.56,
     scaleY: 0.56,
@@ -217,6 +232,7 @@ async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: Snapsho
   canvas.insertAt(characterImg, 2, false);
 
   const logoImg = await fabricImageFromURL(
+    cache,
     `/res/logo/${data.snapshot.gameVersion}.png`, {
     shadow: new fabric.Shadow({
       color: '#FFFFFF50',
@@ -234,7 +250,7 @@ async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: Snapsho
   canvas.add(logoImg);
 }
 
-async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs): Promise<{
+async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, cache: ImageCache): Promise<{
   overlayRect: fabric.Rect,
 }> {
   const TROPHY_FONT_SIZE = 18, NAME_FONT_SIZE = 28;
@@ -242,6 +258,7 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
   const TROPHY_BOTTOM_MARGIN = 20;
 
   const profileImg = await fabricImageFromURL(
+    cache,
     data.snapshot.iconUrl,
     {
       left: PADDING,
@@ -253,6 +270,7 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
   canvas.add(profileImg);
 
   const trophyBackground = await fabricImageFromURL(
+    cache,
     '/res/trophy/normal.png', {
     scaleX: 1.6,
     scaleY: 1.6,
@@ -302,6 +320,7 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
   canvas.add(nameText);
 
   const ratingFrame = await fabricImageFromURL(
+    cache,
     getRatingImageUrl(data.snapshot.rating), {
     scaleX: 0.75,
     scaleY: 0.75,
@@ -325,6 +344,7 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
   }
 
   const classRankImg = await fabricImageFromURL(
+    cache,
     data.snapshot.classRankUrl, {
     scaleX: 0.7,
     scaleY: 0.7,
@@ -335,6 +355,7 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
   canvas.add(classRankImg);
 
   const courseRankImg = await fabricImageFromURL(
+    cache,
     data.snapshot.courseRankUrl, {
     scaleX: 0.6,
     scaleY: 0.6,
@@ -344,7 +365,7 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
   });
   canvas.add(courseRankImg);
 
-  await renderHeaderBackground(canvas, data, trophyBackground);
+  await renderHeaderBackground(canvas, data, cache, trophyBackground);
 
   const darkGradient = new fabric.Gradient({
     type: 'linear',
@@ -388,7 +409,7 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
 const SONG_OUTER_PADDING = 0
 const SONG_PADDING = 16
 
-async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect, song: SongWithRating, index: number, yOffset: number) {
+async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overlayRect: fabric.Rect, song: SongWithRating, index: number, yOffset: number) {
   const difficultyColor = song.difficulty === "basic" ? "green" :
   song.difficulty === "advanced" ? "yellow" :
     song.difficulty === "expert" ? "#d13b42" :
@@ -397,7 +418,7 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
           song.difficulty === "utage" ? "pink" :
             "white"
   
-  const img = await fabricImageFromURL(song.cover);
+  const img = await fabricImageFromURL(cache, song.cover);
 
   img.scaleToWidth((overlayRect.width! - SONG_OUTER_PADDING * 2 - SONG_PADDING * 4) / 5);
   const requiredHeight = img.getScaledWidth() / 16 * 11;
@@ -564,6 +585,7 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
   })
 
   const songTypeBadgeImg = await fabricImageFromURL(
+    cache,
     song.type === "dx"
       ? "https://maimaidx.jp/maimai-mobile/img/music_dx.png"
       : "https://maimaidx.jp/maimai-mobile/img/music_standard.png"
@@ -585,33 +607,28 @@ async function renderSong(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect,
   ]))
 }
 
-async function renderContent(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, overlayRect: fabric.Rect) {
-  const songs = addRatingsAndSort(data.songs);
-  const newSongs = songs.filter(song => song.addedVersion === data.snapshot.gameVersion);
-  const oldSongs = songs.filter(song => song.addedVersion !== data.snapshot.gameVersion);
-
-  const newSongsB15 = newSongs.slice(0, 15);
-  const oldSongsB35 = oldSongs.slice(0, 35);
-
+async function renderContent(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, cache: ImageCache, overlayRect: fabric.Rect) {
+  const { newSongsB15, oldSongsB35 } = splitSongs(data.songs, data.snapshot.gameVersion);
   const promises = [];
 
   // Use proper async iteration for server-side reliability
   for (let i = 0; i < newSongsB15.length; i++) {
-    promises.push(renderSong(canvas, overlayRect, newSongsB15[i], i, 60));
+    promises.push(renderSong(canvas, cache, overlayRect, newSongsB15[i], i, 60));
   }
 
   for (let i = 0; i < oldSongsB35.length; i++) {
-    promises.push(renderSong(canvas, overlayRect, oldSongsB35[i], i + 15, 110));
+    promises.push(renderSong(canvas, cache, overlayRect, oldSongsB35[i], i + 15, 110));
   }
 
   await Promise.all(promises);
 
-  await renderSongsLabel(canvas, overlayRect, true, 24);
-  await renderSongsLabel(canvas, overlayRect, false, 566);
+  await renderSongsLabel(canvas, cache, overlayRect, true, 24);
+  await renderSongsLabel(canvas, cache, overlayRect, false, 566);
 }
 
-async function renderSongsLabel(canvas: fabric.StaticCanvas, overlayRect: fabric.Rect, newSongs: boolean, yOffset: number) {
+async function renderSongsLabel(canvas: fabric.StaticCanvas, cache: ImageCache, overlayRect: fabric.Rect, newSongs: boolean, yOffset: number) {
   const label = await fabricImageFromURL(
+    cache,
     newSongs
       ? "/res/label/new.png"
       : "/res/label/old.png"
