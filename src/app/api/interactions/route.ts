@@ -14,7 +14,7 @@ import { waitUntil } from '@vercel/functions';
 
 // Discord bot configuration
 const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY!;
-const APPLICATION_ID = process.env.DISCORD_APPLICATION_ID!;
+const APPLICATION_ID = process.env.NEXT_PUBLIC_DISCORD_APPLICATION_ID!;
 
 // Helper function to get user-friendly labels for fetch states
 function getStateFriendlyName(state: string): string {

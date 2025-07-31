@@ -71,7 +71,7 @@ A modern web application for tracking and analyzing your maimai DX scores with f
    ADMIN_UPDATE_TOKEN=your-secure-admin-token
    
    # Discord Bot (required for Discord bot functionality)
-   DISCORD_APPLICATION_ID=your-discord-application-id
+   NEXT_PUBLIC_DISCORD_APPLICATION_ID=your-discord-application-id
    DISCORD_BOT_TOKEN=your-discord-bot-token
    DISCORD_PUBLIC_KEY=your-discord-public-key
    ```
@@ -227,7 +227,7 @@ src/
 
 2. **Get Application Credentials**
    - Go to "General Information" section
-   - Copy "Application ID" to your `.env.local` as `DISCORD_APPLICATION_ID`
+   - Copy "Application ID" to your `.env.local` as `NEXT_PUBLIC_DISCORD_APPLICATION_ID`
    - Copy "Public Key" to your `.env.local` as `DISCORD_PUBLIC_KEY`
 
 3. **Set Interactions Endpoint URL (for production)**

@@ -4,7 +4,7 @@ const { config } = require('dotenv');
 config({ path: ".env.local" });
 
 // Discord bot configuration
-const APPLICATION_ID = process.env.DISCORD_APPLICATION_ID;
+const APPLICATION_ID = process.env.NEXT_PUBLIC_DISCORD_APPLICATION_ID;
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
 // Define the commands to register
@@ -34,7 +34,7 @@ const commands = [
 async function registerCommands() {
   if (!APPLICATION_ID || !BOT_TOKEN) {
     console.error('❌ Missing Discord environment variables');
-    console.error('Please set DISCORD_APPLICATION_ID and DISCORD_BOT_TOKEN in your .env file');
+    console.error('Please set NEXT_PUBLIC_DISCORD_APPLICATION_ID and DISCORD_BOT_TOKEN in your .env file');
     process.exit(1);
   }
 
