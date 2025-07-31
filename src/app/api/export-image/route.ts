@@ -54,6 +54,52 @@ export async function POST(request: NextRequest) {
       console.error('❌ No snapshot ID provided');
       return NextResponse.json({ error: 'Snapshot ID is required' }, { status: 400 });
     }
+
+    // Construct the full render URL that the Python server should navigate to
+    let renderUrl: string;
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      renderUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/render-image?snapshotId=${snapshotId}`;
+    } else {
+      renderUrl = `http://localhost:3000/render-image?snapshotId=${snapshotId}`;
+    }
+
+    // Check if external render server is configured
+    const renderServerUrl = process.env.RENDER_IMAGE_SERVER_URL;
+    if (renderServerUrl) {
+      console.log('🔄 Redirecting to external render server:', renderServerUrl);
+      
+      // Construct the API endpoint URL for the Python server
+      const apiUrl = new URL('/export-image', renderServerUrl);
+      
+      // Forward the request to the external server with the full render URL
+      const response = await fetch(apiUrl.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ renderUrl }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`External render server responded with ${response.status}: ${response.statusText}`);
+      }
+      
+      // Get the image data and forward it
+      const imageBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(imageBuffer);
+      
+      // Use snapshot ID for filename
+      const sanitizedName = `snapshot-${snapshotId}`;
+      
+      return new Response(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/png',
+          'Content-Disposition': `attachment; filename="maimai-profile-${sanitizedName}.png"`,
+          'Content-Length': buffer.length.toString(),
+        },
+      });
+    }
     
     // Launch Puppeteer browser following Vercel's recommended pattern
     // console.log('🌐 Launching Puppeteer browser...');
@@ -87,14 +133,6 @@ export async function POST(request: NextRequest) {
       page.on('requestfailed', (req: any) => {
         console.error('🚫 Request failed:', req.url(), req.failure()?.errorText);
       });
-
-      // Construct the URL for our rendering page
-      let renderUrl: string;
-      if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-        renderUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/render-image?snapshotId=${snapshotId}`;
-      } else {
-        renderUrl = `http://localhost:3000/render-image?snapshotId=${snapshotId}`;
-      }
 
       // console.log('🔗 Render URL:', renderUrl);
 
