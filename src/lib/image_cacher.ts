@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { SAFE_MAIMAI_IMAGE_URLS } from './utils';
 
 // Helper function to detect if we're on the server
 function isServer() {
@@ -40,7 +41,7 @@ function generateUrlHash(url: string): string {
 function isMaimaidxDomain(url: string): boolean {
   try {
     const urlObj = new URL(url);
-    return urlObj.hostname.includes('maimaidx.jp') || urlObj.hostname.includes('maimai.sega.jp') || urlObj.hostname.includes('cdn.gamerch.com') || urlObj.hostname.includes('maimaidx-eng.com');
+    return SAFE_MAIMAI_IMAGE_URLS.some(domain => urlObj.hostname.includes(domain))
   } catch {
     return false;
   }

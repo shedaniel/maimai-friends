@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Agent } from 'undici';
 import { getCachedImageBuffer, getCachedImagePath } from '@/lib/image_cacher';
+import { SAFE_MAIMAI_IMAGE_URLS } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Validate that this is a maimaidx domain for security
-  if (!imageUrl.includes('maimaidx.jp') && !imageUrl.includes('maimaidx-eng.com')) {
+  if (!SAFE_MAIMAI_IMAGE_URLS.some(domain => imageUrl.includes(domain))) {
     return new NextResponse('Unauthorized domain', { status: 403 });
   }
 

@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
         hostname: 'maimaidx-eng.com',
         port: '',
         pathname: '/maimai-mobile/img/Music/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'info-maimai.sega.jp',
+        port: '',
+        pathname: '/**',
       }
     ],
   },

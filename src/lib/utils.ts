@@ -1,4 +1,12 @@
 import { clsx, type ClassValue } from "clsx"
+
+export const SAFE_MAIMAI_IMAGE_URLS = [
+  'maimaidx.jp',
+  'maimaidx-eng.com',
+  'cdn.gamerch.com',
+  'maimai.sega.jp',
+]
+
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -9,7 +17,7 @@ export function cn(...inputs: ClassValue[]) {
 // Sync version for client-side React components
 export function createSafeMaimaiImageUrl(originalUrl: string): string {
   // Check if it's a maimaidx domain
-  if (originalUrl.includes('maimaidx.jp') || originalUrl.includes('maimaidx-eng.com')) {
+  if (SAFE_MAIMAI_IMAGE_URLS.some(domain => originalUrl.includes(domain))) {
     // On client side, always use proxy (cache check would require server-side APIs)
     const encodedUrl = encodeURIComponent(originalUrl);
     return `/api/image-proxy?url=${encodedUrl}`;
@@ -22,7 +30,7 @@ export function createSafeMaimaiImageUrl(originalUrl: string): string {
 // Async version for server-side with cache checking
 export async function createSafeMaimaiImageUrlAsync(originalUrl: string): Promise<string> {
   // Check if it's a maimaidx domain
-  if (originalUrl.includes('maimaidx.jp') || originalUrl.includes('maimaidx-eng.com')) {
+  if (SAFE_MAIMAI_IMAGE_URLS.some(domain => originalUrl.includes(domain))) {
     // Check if we're on the server and can access filesystem
     if (typeof window === 'undefined') {
       try {
