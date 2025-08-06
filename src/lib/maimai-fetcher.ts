@@ -684,7 +684,7 @@ function parseScoreData(html: string, difficulty: number): ScoreData[] {
         console.warn(`No music name block found for score block ${index}`);
         return;
       }
-      const songName = nameElement.text().trim();
+      const songName = nameElement.text().trim().normalize("NFKC");
 
       // Extract level
       const levelElement = block.find('.music_lv_block');
@@ -907,7 +907,7 @@ async function fetchHiddenSongsData(cookies: string, allSongsData: { [difficulty
           console.warn(`No music name block found for ${difficulty} score block ${index}`);
           return;
         }
-        const songName = nameElement.text().trim();
+        const songName = nameElement.text().trim().normalize("NFKC");
 
         // Extract music type (dx/std) from icon image
         const iconElement = block.find('img.music_kind_icon');

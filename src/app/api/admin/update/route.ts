@@ -4,7 +4,7 @@ import { getCurrentVersion, getVersionInfo } from "@/lib/metadata";
 import { songs } from "@/lib/schema";
 import { load } from "cheerio";
 import { randomUUID } from "crypto";
-import { sql } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import { join } from "path";
@@ -59,7 +59,7 @@ function getInternalLevelFromDxData(
   dxData: any
 ): number | null {
   // Find the song by title
-  const song = dxData.songs.find((s: any) => s.title === songTitle);
+  const song = dxData.songs.find((s: any) => s.title.normalize("NFKC") === songTitle);
   if (!song) {
     return null;
   }
@@ -248,7 +248,7 @@ function parseSongData(html: string, difficulty: number, version: number): any[]
         console.warn(`No music name block found for block ${index}`);
         return; // Skip this block
       }
-      const songName = nameElement.text().trim();
+      const songName = nameElement.text().trim().normalize("NFKC");
 
       // Extract level
       const levelElement = block.find('.music_lv_block');
@@ -527,12 +527,13 @@ function addFallbackSongs(allRecords: any[], fallbackRecords: any[]): number {
   let addedCount = 0;
   
   for (const fallbackRecord of fallbackRecords) {
-    if (!songRecordExists(allRecords, fallbackRecord.songName, fallbackRecord.difficulty, fallbackRecord.type)) {
+    const fallbackSongName = fallbackRecord.songName.normalize("NFKC");
+    if (!songRecordExists(allRecords, fallbackSongName, fallbackRecord.difficulty, fallbackRecord.type)) {
       allRecords.push(fallbackRecord);
       addedCount++;
-      console.log(`Added fallback song: ${fallbackRecord.songName} (${fallbackRecord.difficulty}, ${fallbackRecord.type})`);
+      console.log(`Added fallback song: ${fallbackSongName} (${fallbackRecord.difficulty}, ${fallbackRecord.type})`);
     } else {
-      console.log(`Skipped duplicate fallback song: ${fallbackRecord.songName} (${fallbackRecord.difficulty}, ${fallbackRecord.type})`);
+      console.log(`Skipped duplicate fallback song: ${fallbackSongName} (${fallbackRecord.difficulty}, ${fallbackRecord.type})`);
     }
   }
   
@@ -635,16 +636,19 @@ export async function GET(request: NextRequest) {
       console.log(`Fetching ${range.description} (versions ${range.start}-${range.end})...`);
       
       for (let version = range.start; version <= range.end; version++) {
+        const promises: Promise<any[]>[] = [];
         for (let difficulty = 0; difficulty <= 4; difficulty++) {
           console.log(`Fetching songs for version ${version}, difficulty ${difficulty}...`);
           try {
-            const difficultyData = await fetchSongDataForDifficulty(region, cookies, difficulty, version);
-            allSongData.push(...difficultyData);
+            promises.push(fetchSongDataForDifficulty(region, cookies, difficulty, version));
           } catch (error) {
             console.warn(`Failed to fetch data for version ${version}, difficulty ${difficulty}:`, error);
             // Continue with other combinations even if one fails
           }
         }
+        const difficultyData = await Promise.all(promises);
+        allSongData.push(...difficultyData.flat());
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
@@ -672,7 +676,7 @@ export async function GET(request: NextRequest) {
     // Step 5: Create a map of songs by title for quick lookup
     const songsJsonMap = new Map<string, any>();
     songsJsonData.forEach((song: any) => {
-      songsJsonMap.set(song.title, song);
+      songsJsonMap.set(song.title.normalize("NFKC"), song);
     });
 
     // Step 6: Process songs using scraped data and JSON metadata
@@ -780,6 +784,14 @@ export async function GET(request: NextRequest) {
       console.log(`No fallback songs found for ${region}-${currentVersionForRegion}.json`);
     }
 
+    const prevSongsLength = await db.select({ count: count() }).from(songs)
+      .where(
+        and(
+          eq(songs.region, region),
+          eq(songs.gameVersion, currentVersionForRegion),
+        )
+      );
+
     // Step 8: Batch upsert all records
     if (allRecordsToInsert.length > 0) {
       console.log(`Step 8: Performing batch upsert of ${allRecordsToInsert.length} records...`);
@@ -787,7 +799,7 @@ export async function GET(request: NextRequest) {
       try {
         // Split into batches of 1000 records to avoid SQL limits
         const batchSize = 1000;
-        let totalInserted = 0;
+        let totalUpserted = 0;
         
         for (let i = 0; i < allRecordsToInsert.length; i += batchSize) {
           const batch = allRecordsToInsert.slice(i, i + batchSize);
@@ -805,15 +817,23 @@ export async function GET(request: NextRequest) {
             },
           });
           
-          totalInserted += batch.length;
+          totalUpserted += batch.length;
         }
         
-        console.log(`Successfully upserted ${totalInserted} records to database`);
+        console.log(`Successfully upserted ${totalUpserted} records to database`);
       } catch (error) {
         console.error("Error during batch upsert:", error);
         throw new Error(`Database upsert failed: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     }
+
+    const newSongsLength = await db.select({ count: count() }).from(songs)
+      .where(
+        and(
+          eq(songs.region, region),
+          eq(songs.gameVersion, currentVersionForRegion),
+        )
+      );
 
     const totalProcessed = processedFromJson + processedFromFetch;
     console.log(`Successfully processed ${totalProcessed} songs total (${processedFromJson} from JSON, ${processedFromFetch} from individual fetch, ${fallbackSongsAdded} fallback songs added)`);
@@ -827,6 +847,9 @@ export async function GET(request: NextRequest) {
         fromFetch: processedFromFetch,
         fallbackSongsAdded,
         totalRecords: allRecordsToInsert.length,
+        prevSongsLength: prevSongsLength[0].count,
+        newSongsLength: newSongsLength[0].count,
+        addedSongs: newSongsLength[0].count - prevSongsLength[0].count,
         region,
         gameVersion: getCurrentVersion(region),
         timestamp: new Date().toISOString(),
