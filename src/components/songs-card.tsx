@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { addRatingsAndSort, SongWithRating } from "@/lib/rating-calculator";
+import { SongWithRating, splitSongs } from "@/lib/rating-calculator";
 import { SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
 import { LayoutGrid, LayoutList, Menu, Plus, TrendingUp } from "lucide-react";
@@ -587,19 +587,7 @@ export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: Snap
   const { songs, snapshot } = selectedSnapshotData;
 
   // Calculate ratings and sort by highest rating first
-  const songsWithRating: SongWithRating[] = addRatingsAndSort(songs);
-
-  // Separate songs by new/old
-  const newSongs = songsWithRating.filter(song => song.addedVersion === snapshot.gameVersion);
-  const oldSongs = songsWithRating.filter(song => song.addedVersion !== snapshot.gameVersion);
-
-  // Get top songs for B15/B35
-  const newSongsB15 = newSongs.slice(0, 15);
-  const oldSongsB35 = oldSongs.slice(0, 35);
-
-  // Get remaining songs
-  const remainingNewSongs = newSongs.slice(15);
-  const remainingOldSongs = oldSongs.slice(35);
+  const { newSongsB15, oldSongsB35, newSongsRemaining, oldSongsRemaining } = splitSongs(songs, snapshot.gameVersion);
 
   // Calculate sum and average for B15 and B35
   const b15Sum = newSongsB15.reduce((sum, song) => sum + song.rating, 0);
@@ -660,8 +648,8 @@ export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: Snap
             <SongsGrid
               newSongsB15={newSongsB15}
               oldSongsB35={oldSongsB35}
-              remainingNewSongs={remainingNewSongs}
-              remainingOldSongs={remainingOldSongs}
+              remainingNewSongs={newSongsRemaining}
+              remainingOldSongs={oldSongsRemaining}
               t={t}
               b15Sum={b15Sum}
               b15Average={b15Average}
@@ -672,8 +660,8 @@ export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: Snap
             <SongsList
               newSongsB15={newSongsB15}
               oldSongsB35={oldSongsB35}
-              remainingNewSongs={remainingNewSongs}
-              remainingOldSongs={remainingOldSongs}
+              remainingNewSongs={newSongsRemaining}
+              remainingOldSongs={oldSongsRemaining}
               t={t}
               displayMode={displayMode}
               b15Sum={b15Sum}

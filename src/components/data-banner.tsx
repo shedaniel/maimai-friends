@@ -191,13 +191,13 @@ function CopySnapshotButton({
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             {isLoadingVersions ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              <DropdownMenuItem disabled>
                 Loading versions...
-              </div>
+              </DropdownMenuItem>
             ) : availableVersions.length === 0 ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              <DropdownMenuItem disabled>
                 No other versions available
-              </div>
+              </DropdownMenuItem>
             ) : (
               availableVersions.map((version) => (
                 <DropdownMenuItem

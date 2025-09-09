@@ -92,6 +92,13 @@ export const VERSIONS: VersionInfo[] = [
     shortName: "PRiSM PLUS",
     intlReleaseDate: "2025/07/24",
     jpReleaseDate: "2025/03/13"
+  },
+  {
+    id: 12,
+    name: "maimai DX CiRCLE",
+    shortName: "CiRCLE",
+    intlReleaseDate: null,
+    jpReleaseDate: "2025/09/18"
   }
 ];
 

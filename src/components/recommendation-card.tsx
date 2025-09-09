@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { addRatingsAndSort, getRatingFactor, SongWithRating } from "@/lib/rating-calculator";
+import { addRatingsAndSort, getRatingFactor, SongWithRating, splitSongs } from "@/lib/rating-calculator";
 import { SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
 import { Heart, Target, Zap } from "lucide-react";
@@ -33,22 +33,19 @@ const ACCURACY_VALUES = [
 ]
 
 function generateRecommendations(songsWithRating: SongWithRating[], version: number): RecommendationData[] {
-  // Separate songs by new/old
-  const newSongs = songsWithRating.filter(song => song.addedVersion === version);
-  const oldSongs = songsWithRating.filter(song => song.addedVersion !== version);
-
   // Get B15/B35 and minimum required ratings
-  const newSongsB15 = newSongs.slice(0, 15);
-  const oldSongsB35 = oldSongs.slice(0, 35);
+  const { newSongsB15, oldSongsB35 } = splitSongs(songsWithRating, version);
   
   const minNewRating = newSongsB15.length > 0 ? Math.min(...newSongsB15.map(s => s.rating)) : 0;
   const minOldRating = oldSongsB35.length > 0 ? Math.min(...oldSongsB35.map(s => s.rating)) : 0;
 
   const recommendations: RecommendationData[] = [];
 
+  const newSongsB15Tuple = newSongsB15.map(song => ({song, isNew: true}));
+  const oldSongsB35Tuple = oldSongsB35.map(song => ({song, isNew: false}));
+
   // Check each song for recommendation potential
-  [...newSongs, ...oldSongs].forEach(song => {
-    const isNew = song.addedVersion === version;
+  [...newSongsB15Tuple, ...oldSongsB35Tuple].forEach(({song, isNew}) => {
     const isInB15 = isNew && newSongsB15.some(s => s.songId === song.songId && s.difficulty === song.difficulty);
     const isInB35 = !isNew && oldSongsB35.some(s => s.songId === song.songId && s.difficulty === song.difficulty);
     const isInBest = isInB15 || isInB35;

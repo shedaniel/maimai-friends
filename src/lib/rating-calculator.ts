@@ -43,8 +43,10 @@ export function addRatingsAndSort(songs: SongWithScore[]): SongWithRating[] {
 
 export function splitSongs(withScore: SongWithScore[], version: number) {
   const songs = addRatingsAndSort(withScore);
-  const newSongs = songs.filter(song => song.addedVersion === version);
-  const oldSongs = songs.filter(song => song.addedVersion !== version);
+  // Since version 12, we incorporate songs from the previous version into the new version
+  const versionAboveIsNew = version >= 12 ? version - 1 : version;
+  const newSongs = songs.filter(song => song.addedVersion >= versionAboveIsNew);
+  const oldSongs = songs.filter(song => song.addedVersion < versionAboveIsNew);
 
   const newSongsB15 = newSongs.slice(0, 15);
   const oldSongsB35 = oldSongs.slice(0, 35);

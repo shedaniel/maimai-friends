@@ -17,6 +17,48 @@ const PADDING = 36;
 const FONT_FAMILY = 'Inter, Murecho, "Noto Sans JP"';
 const FONT_FAMILY_MONO = '"Geist Mono"';
 
+const VERSION_SETTINGS = {
+  10: {
+    backgroundGradient: [
+      { offset: 1, color: '#BFCCF2' },
+      { offset: 0, color: '#C0F4E2' },
+    ],
+    character: {
+      scaleX: 0.56,
+      scaleY: 0.56,
+      left: CANVAS_WIDTH - 580,
+      top: -100,
+      opacity: 0.9,
+    },
+  },
+  11: {
+    backgroundGradient: [
+      { offset: 1, color: '#F5BAC8' },
+      { offset: 0, color: '#F6D7FC' },
+    ],
+    character: {
+      scaleX: 0.7,
+      scaleY: 0.7,
+      left: CANVAS_WIDTH - 520,
+      top: -100,
+      opacity: 0.9,
+    },
+  },
+  12: {
+    backgroundGradient: [
+      { offset: 1, color: '#fbdffe' },
+      { offset: 0, color: '#fdb2e0' },
+    ],
+    character: {
+      scaleX: 0.7,
+      scaleY: 0.7,
+      left: CANVAS_WIDTH - 520,
+      top: -140,
+      opacity: 0.9,
+    },
+  },
+}
+
 export type ImageCache = {
   // path to base64 string
   [key: string]: string;
@@ -169,13 +211,7 @@ async function renderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithS
       x2: 0,
       y2: 0               // End at top
     },
-    colorStops: (data.snapshot.gameVersion === 10 ? [
-      { offset: 0, color: '#C0F4E2' },
-      { offset: 1, color: '#BFCCF2' },
-    ] : data.snapshot.gameVersion === 11 ? [
-      { offset: 0, color: '#F6D7FC' },
-      { offset: 1, color: '#F5BAC8' },
-    ] : [])
+    colorStops: (VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.backgroundGradient || [])
   });
 
   const backgroundRect = new fabric.Rect({
@@ -208,19 +244,14 @@ async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: Snapsho
 
   const characterImg = await fabricImageFromURL(
     cache,
-    `/res/character/${data.snapshot.gameVersion}.png`, data.snapshot.gameVersion === 10 ? {
-    scaleX: 0.56,
-    scaleY: 0.56,
-    left: CANVAS_WIDTH - 580,
-    top: -100,
-    opacity: 0.9,
-  } : data.snapshot.gameVersion === 11 ? {
-    scaleX: 0.7,
-    scaleY: 0.7,
-    left: CANVAS_WIDTH - 520,
-    top: -100,
-    opacity: 0.9,
-  } : {});
+    `/res/character/${data.snapshot.gameVersion}.png`, VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.character || {
+      scaleX: 0.56,
+      scaleY: 0.56,
+      left: CANVAS_WIDTH - 580,
+      top: -100,
+      opacity: 0.9,
+    }
+  );
   characterImg.clipPath = new fabric.Rect({
     top: 0,
     left: 0,
@@ -376,8 +407,8 @@ async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs
       y2: 0
     },
     colorStops: [
-      { offset: 1, color: '#00000015' },
-      { offset: 0, color: '#00000020' },
+      { offset: 1, color: '#00000010' },
+      { offset: 0, color: '#00000010' },
     ]
   });
 
@@ -412,8 +443,8 @@ const SONG_PADDING = 16
 async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overlayRect: fabric.Rect, song: SongWithRating, index: number, yOffset: number) {
   const difficultyColor = song.difficulty === "basic" ? "green" :
   song.difficulty === "advanced" ? "yellow" :
-    song.difficulty === "expert" ? "#d13b42" :
-      song.difficulty === "master" ? "#8729cf" :
+    song.difficulty === "expert" ? "#ed5e65" :
+      song.difficulty === "master" ? "#af5eed" :
         song.difficulty === "remaster" ? "#E8D4FF" :
           song.difficulty === "utage" ? "pink" :
             "white"
@@ -455,9 +486,9 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
       y2: 0,
     },
     colorStops: [
-      { offset: 0, color: '#000000AC' },
-      { offset: 0.5, color: '#00000069' },
-      { offset: 1, color: '#0000005C' },
+      { offset: 0, color: '#0000003C' },
+      { offset: 0.5, color: '#00000029' },
+      { offset: 1, color: '#0000001C' },
     ]
   });
 
@@ -472,7 +503,7 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
     stroke: difficultyColor,
     strokeWidth: 4,
     shadow: new fabric.Shadow({
-      color: '#00000016',
+      color: '#00000026',
       blur: 10,
       offsetX: 2,
       offsetY: 2,
@@ -481,7 +512,7 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
 
   const ratingText = new fabric.Text(song.rating.toString(), {
     fontSize: 20,
-    fill: '#dcdcdc',
+    fill: '#f5f5f5',
     fontWeight: '600',
     fontFamily: FONT_FAMILY_MONO,
     left: realBounds.left + realBounds.width - 8,
@@ -489,8 +520,8 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
     originX: 'right',
     originY: 'bottom',
     shadow: new fabric.Shadow({
-      color: '#000000AA',
-      blur: 10,
+      color: '#000000',
+      blur: 16,
       offsetX: 2,
       offsetY: 2,
     }),
@@ -498,7 +529,7 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
 
   const achievementText = new fabric.Text((song.achievement / 10000).toFixed(4) + '%', {
     fontSize: 12,
-    fill: '#dcdcdc',
+    fill: '#f5f5f5',
     fontWeight: '400',
     fontFamily: FONT_FAMILY_MONO,
     left: realBounds.left + 14,
@@ -506,8 +537,8 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
     originX: 'left',
     originY: 'bottom',
     shadow: new fabric.Shadow({
-      color: '#000000AA',
-      blur: 10,
+      color: '#000000',
+      blur: 16,
       offsetX: 2,
       offsetY: 2,
     }),
@@ -515,7 +546,7 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
 
   const songNameText = new fabric.Text(song.songName, {
     fontSize: 16,
-    fill: '#dcdcdc',
+    fill: '#f5f5f5',
     fontWeight: '600',
     fontFamily: FONT_FAMILY,
     charSpacing: 24,
@@ -532,8 +563,8 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
       absolutePositioned: true,
     }),
     shadow: new fabric.Shadow({
-      color: '#000000AA',
-      blur: 10,
+      color: '#000000',
+      blur: 16,
       offsetX: 2,
       offsetY: 2,
     }),
@@ -541,7 +572,7 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
 
   const songDifficultyText = new fabric.Text((song.levelPrecise / 10).toFixed(1), {
     fontSize: 14,
-    fill: song.difficulty === "remaster" ? "#591a8b" : "#dcdcdc",
+    fill: song.difficulty === "remaster" ? "#591a8b" : "#f2f2f2",
     fontWeight: '500',
     fontFamily: FONT_FAMILY_MONO,
     left: realBounds.left + realBounds.width - 10,

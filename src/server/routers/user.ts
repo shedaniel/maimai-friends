@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { getFetchStatusServer, Region, startFetchServer } from '@/lib/maimai-server-actions';
 import { getAvailableVersions } from '@/lib/metadata';
-import { addRatingsAndSort } from '@/lib/rating-calculator';
+import { splitSongs } from '@/lib/rating-calculator';
 import { invites, songs, user, userScores, userSnapshots, userTokens } from '@/lib/schema';
 import { protectedProcedure, publicProcedure, router } from '@/lib/trpc';
 import { SongWithScore } from '@/lib/types';
@@ -811,20 +811,10 @@ export const userRouter = router({
       let filteredSongs = songsWithScores;
 
       if (!userData.profileShowAllScores) {
-        // Show only top 50 songs (top 15 new + top 35 old) based on rating
-        // Calculate ratings and sort by rating
-        const songsWithRating = addRatingsAndSort(songsForCalculation);
-
-        // Separate new and old songs
-        const newSongs = songsWithRating.filter(song => song.addedVersion === snapshot[0].gameVersion);
-        const oldSongs = songsWithRating.filter(song => song.addedVersion !== snapshot[0].gameVersion);
-
-        // Take top 15 new and top 35 old
-        const top15New = newSongs.slice(0, 15);
-        const top35Old = oldSongs.slice(0, 35);
+        const { newSongsB15, oldSongsB35 } = splitSongs(songsForCalculation, snapshot[0].gameVersion);
 
         // Combine and convert back to original format
-        const bestSongs = [...top15New, ...top35Old];
+        const bestSongs = [...newSongsB15, ...oldSongsB35];
         const bestSongIds = new Set(bestSongs.map(song => song.songId));
 
         filteredSongs = songsWithScores.filter(song => bestSongIds.has(song.songId));
@@ -1403,19 +1393,11 @@ export const userRouter = router({
           fs: song.fs as any, // Cast to match enum
         }));
 
-        // Calculate ratings for all songs and sort by rating
-        const songsWithRating = addRatingsAndSort(songsForCalculation);
-
-        // Separate new and old songs based on target game version
-        const newSongs = songsWithRating.filter(song => song.addedVersion === input.targetVersion);
-        const oldSongs = songsWithRating.filter(song => song.addedVersion !== input.targetVersion);
-
-        // Take top 15 new and top 35 old songs
-        const top15New = newSongs.slice(0, 15);
-        const top35Old = oldSongs.slice(0, 35);
+        // Calculate ratings for all songs and sort by rating 
+        const { newSongsB15, oldSongsB35 } = splitSongs(songsForCalculation, input.targetVersion);
 
         // Calculate total rating (sum of all rating contributing songs)
-        const ratingContributingSongs = [...top15New, ...top35Old];
+        const ratingContributingSongs = [...newSongsB15, ...oldSongsB35];
         newRating = ratingContributingSongs.reduce((sum, song) => sum + song.rating, 0);
       }
 
