@@ -464,11 +464,12 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
     height: requiredHeight,
   }
 
-  img.top -= (img.getScaledHeight() - requiredHeight) / 2;
+  const imgOriginalTop = img.top;
+  img.top -= (img.getScaledHeight() - requiredHeight) * 0.75;
   img.clipPath = new fabric.Rect({
-    top: img.top + (img.getScaledHeight() - requiredHeight) / 2,
-    left: img.left,
-    width: img.getScaledWidth(),
+    top: imgOriginalTop,
+    left: img.left + 4,
+    width: img.getScaledWidth() - 4,
     height: requiredHeight,
     absolutePositioned: true,
     rx: 10,
@@ -508,6 +509,28 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
       offsetX: 2,
       offsetY: 2,
     }),
+  })
+
+  const infoBackground = new fabric.Rect({
+    width: realBounds.width,
+    height: 70,
+    fill: new fabric.Gradient({
+      type: 'linear',
+      coords: {
+        x1: 0,
+        y1: 70,
+        x2: 0,
+        y2: 0,
+      },
+      colorStops: [
+        { offset: 0, color: '#00000060' },
+        { offset: 1, color: '#00000000' },
+      ],
+    }),
+    opacity: 0.3,
+    left: realBounds.left,
+    top: realBounds.top + realBounds.height - 70,
+    clipPath: img.clipPath,
   })
 
   const ratingText = new fabric.Text(song.rating.toString(), {
@@ -629,6 +652,7 @@ async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overla
 
   canvas.add(new fabric.Group([
     cover,
+    infoBackground,
     ratingText,
     achievementText,
     songNameText,
