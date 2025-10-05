@@ -38,7 +38,7 @@ export async function startFetchServer(userId: string, region: Region, token?: s
       .limit(1);
 
     if (savedToken.length === 0) {
-      throw new Error('No token provided and no saved token found');
+      throw new Error('No user token found! (Maybe it has expired?) Please add your authentication tokens on the website first!');
     }
 
     tokenToUse = savedToken[0].token;

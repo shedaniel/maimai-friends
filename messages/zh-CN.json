@@ -20,7 +20,9 @@
     "stars": "星星数",
     "plays": "游玩次数",
     "total": "总计",
-    "invitations": "邀请"
+    "invitations": "邀请",
+    "discord": "Discord",
+    "about": "关于"
   },
   "auth": {
     "loginWithDiscord": "以 Discord 继续",
@@ -210,7 +212,11 @@
   },
   "regions": {
     "intl": "国际服",
-    "jp": "日本服"
+    "jp": "日本服",
+    "short": {
+      "intl": "亚",
+      "jp": "日"
+    }
   },
   "userHeader": {
     "memberLabel": "ともマイ 成员"

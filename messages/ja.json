@@ -20,7 +20,9 @@
     "stars": "スター数",
     "plays": "プレイ数",
     "total": "合計",
-    "invitations": "招待"
+    "invitations": "招待",
+    "discord": "Discord",
+    "about": "ともマイについて"
   },
   "auth": {
     "loginWithDiscord": "Discordで続行",
@@ -210,7 +212,11 @@
   },
   "regions": {
     "intl": "インターナショナル",
-    "jp": "日本"
+    "jp": "日本",
+    "short": {
+      "intl": "INTL",
+      "jp": "JP"
+    }
   },
   "userHeader": {
     "memberLabel": "ともマイのメンバー"

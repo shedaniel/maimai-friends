@@ -20,7 +20,9 @@
     "stars": "Stars",
     "plays": "Plays",
     "total": "Total",
-    "invitations": "Invitations"
+    "invitations": "Invitations",
+    "discord": "Discord",
+    "about": "About"
   },
   "auth": {
     "loginWithDiscord": "Continue with Discord",
@@ -210,7 +212,11 @@
   },
   "regions": {
     "intl": "International",
-    "jp": "Japan"
+    "jp": "Japan",
+    "short": {
+      "intl": "Asia",
+      "jp": "Japan"
+    }
   },
   "userHeader": {
     "memberLabel": "ともマイ member"

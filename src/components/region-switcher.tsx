@@ -29,12 +29,22 @@ export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
     }
   };
 
+  const getRegionCodeShort = (region: Region) => {
+    switch (region) {
+      case "intl":
+        return t('regions.short.intl');
+      case "jp":
+        return t('regions.short.jp');
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 bg-white">
           <Globe className="h-4 w-4" />
-          {getRegionCode(value)}
+          <span className="sm:hidden">{getRegionCodeShort(value)}</span>
+          <span className="max-sm:hidden">{getRegionCode(value)}</span>
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>

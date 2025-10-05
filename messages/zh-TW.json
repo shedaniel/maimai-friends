@@ -20,7 +20,9 @@
     "stars": "星星數",
     "plays": "遊玩次數",
     "total": "總計",
-    "invitations": "邀請"
+    "invitations": "邀請",
+    "discord": "Discord",
+    "about": "關於"
   },
   "auth": {
     "loginWithDiscord": "以 Discord 繼續",
@@ -210,7 +212,11 @@
   },
   "regions": {
     "intl": "國際區",
-    "jp": "日本區"
+    "jp": "日本區",
+    "short": {
+      "intl": "亞",
+      "jp": "日"
+    }
   },
   "userHeader": {
     "memberLabel": "ともマイ 成員"

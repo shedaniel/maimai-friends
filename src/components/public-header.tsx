@@ -7,6 +7,7 @@ import { useState } from "react";
 import { AboutDialog } from "@/components/about-dialog";
 import { DiscordIcon } from "@/components/ui/discord-icon";
 import { toast } from "sonner";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const APPLICATION_ID = process.env.NEXT_PUBLIC_DISCORD_APPLICATION_ID;
 
@@ -17,6 +18,7 @@ interface PublicHeaderProps {
 export function PublicHeader({}: PublicHeaderProps) {
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 640px)');
   
   const handleLogin = () => {
     // Redirect to login page
@@ -46,22 +48,26 @@ export function PublicHeader({}: PublicHeaderProps) {
               by shedaniel
             </p>
           </div>
-          <Button 
-            onClick={() => setAboutOpen(true)} 
-            variant="ghost" 
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-200"
-          >
-            <Info className="h-4 w-4" />
-          </Button>
-          <Button 
-            onClick={handleDiscordInvite} 
-            variant="ghost" 
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-200"
-          >
-            <DiscordIcon className="h-4 w-4" />
-          </Button>
+          {!isMobile && (
+            <>
+              <Button
+                onClick={() => setAboutOpen(true)}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 hover:bg-gray-200"
+              >
+                <Info className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={handleDiscordInvite}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 hover:bg-gray-200"
+              >
+                <DiscordIcon className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
         
         <div className="flex items-center space-x-4">

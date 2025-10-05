@@ -18,6 +18,7 @@ import { useState } from "react";
 import { AboutDialog } from "@/components/about-dialog";
 import { InvitesDialog } from "@/components/invites-dialog";
 import { DiscordIcon } from "@/components/ui/discord-icon";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 
 const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled';
@@ -35,6 +36,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 640px)');
   
   const handleDiscordInvite = async () => {
     try {
@@ -55,22 +57,26 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
             <h1 className="text-lg leading-none font-semibold">tomomai ともマイ</h1>
             <p className="text-muted-foreground text-xs">by shedaniel</p>
           </div>
-          <Button 
-            onClick={() => setAboutOpen(true)} 
-            variant="ghost" 
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-200"
-          >
-            <Info className="h-4 w-4" />
-          </Button>
-          <Button 
-            onClick={handleDiscordInvite} 
-            variant="ghost" 
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-200"
-          >
-            <DiscordIcon className="h-4 w-4" />
-          </Button>
+          {!isMobile && (
+            <>
+              <Button
+                onClick={() => setAboutOpen(true)}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 hover:bg-gray-200"
+              >
+                <Info className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={handleDiscordInvite}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 hover:bg-gray-200"
+              >
+                <DiscordIcon className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       
       <div className="flex items-center space-x-4">
@@ -107,6 +113,19 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
               <DropdownMenuItem onClick={() => setInvitesOpen(true)}>
                 <Users className="mr-2 h-4 w-4" />
                 <span>{t('common.invitations')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+          {isMobile && (
+            <>
+              <DropdownMenuItem onClick={() => setAboutOpen(true)}>
+                <Info className="mr-2 h-4 w-4" />
+                <span>{t('common.about')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDiscordInvite}>
+                <DiscordIcon className="mr-2 h-4 w-4" />
+                <span>{t('common.discord')}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
