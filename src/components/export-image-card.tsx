@@ -154,7 +154,7 @@ export function ExportImageCard({ selectedSnapshotData, visitableProfileAt }: Ex
             <Button 
               onClick={handleServerDownload} 
               disabled={isServerGenerating}
-              variant="secondary" 
+              variant="outline" 
               className="flex items-center gap-2"
             >
               {isServerGenerating ? (

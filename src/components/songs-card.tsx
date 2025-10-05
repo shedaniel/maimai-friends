@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SongWithRating, splitSongs } from "@/lib/rating-calculator";
 import { SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
@@ -11,6 +10,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Fragment, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select-friendly";
 
 // Helper function to group songs by individual rating values and difficulty
 function groupSongsByRating(songs: SongWithRating[]) {

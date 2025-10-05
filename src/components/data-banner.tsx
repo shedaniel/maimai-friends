@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select-friendly";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -83,7 +83,7 @@ function SnapshotSelector({
 
   return (
     <Select value={selectedSnapshot || undefined} onValueChange={onSnapshotChange}>
-      <SelectTrigger className="w-80 max-md:w-60 min-w-0">
+      <SelectTrigger className="grow max-md:w-60 min-w-0">
         <SelectValue placeholder={t('dataBanner.selectSnapshot')}>
           {selectedSnapshotData ? (
             <div className="flex flex-col items-start min-w-0 truncate text-xs">
@@ -333,7 +333,7 @@ export function DataBanner({
   return (
     <Card className="w-full">
       <CardContent>
-        <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 sm:space-x-4">
+        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 md:space-x-4">
           {/* Left side - Snapshot selector */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">

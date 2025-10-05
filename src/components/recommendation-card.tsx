@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addRatingsAndSort, getRatingFactor, SongWithRating, splitSongs } from "@/lib/rating-calculator";
 import { SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
@@ -9,6 +8,7 @@ import { Heart, Target, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useState } from "react";
+import { Select, SelectContent, SelectTrigger, SelectItem, SelectValue } from "./ui/select-friendly";
 
 interface RecommendationData {
   song: SongWithRating;
@@ -34,7 +34,7 @@ const ACCURACY_VALUES = [
 
 function generateRecommendations(songsWithRating: SongWithRating[], version: number): RecommendationData[] {
   // Get B15/B35 and minimum required ratings
-  const { newSongsB15, oldSongsB35 } = splitSongs(songsWithRating, version);
+  const { newSongsB15, oldSongsB35, newSongsRemaining, oldSongsRemaining } = splitSongs(songsWithRating, version);
   
   const minNewRating = newSongsB15.length > 0 ? Math.min(...newSongsB15.map(s => s.rating)) : 0;
   const minOldRating = oldSongsB35.length > 0 ? Math.min(...oldSongsB35.map(s => s.rating)) : 0;
@@ -43,9 +43,11 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
 
   const newSongsB15Tuple = newSongsB15.map(song => ({song, isNew: true}));
   const oldSongsB35Tuple = oldSongsB35.map(song => ({song, isNew: false}));
+  const newSongsRemainingTuple = newSongsRemaining.map(song => ({song, isNew: true}));
+  const oldSongsRemainingTuple = oldSongsRemaining.map(song => ({song, isNew: false}));
 
   // Check each song for recommendation potential
-  [...newSongsB15Tuple, ...oldSongsB35Tuple].forEach(({song, isNew}) => {
+  [...newSongsB15Tuple, ...oldSongsB35Tuple, ...newSongsRemainingTuple, ...oldSongsRemainingTuple].forEach(({song, isNew}) => {
     const isInB15 = isNew && newSongsB15.some(s => s.songId === song.songId && s.difficulty === song.difficulty);
     const isInB35 = !isNew && oldSongsB35.some(s => s.songId === song.songId && s.difficulty === song.difficulty);
     const isInBest = isInB15 || isInB35;
@@ -107,7 +109,7 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
 }
 
 function RecommendationRow({ recommendation }: { recommendation: RecommendationData }) {
-  const { song, currentAccuracy, targetAccuracy, currentRating, targetRating, accuracyDiff, ratingGain, category } = recommendation;
+  const { song, currentAccuracy, targetAccuracy, currentRating, targetRating, accuracyDiff, ratingGain, isInBest, category } = recommendation;
 
   return (
     <div className="flex xs:justify-between xs:items-center text-sm h-16 max-xs:h-30 max-xs:flex-col max-xs:justify-start max-xs:gap-y-2">
@@ -135,10 +137,20 @@ function RecommendationRow({ recommendation }: { recommendation: RecommendationD
             <div className="truncate font-medium">{song.songName}</div>
             <div className={cn(
               "px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap",
-              category === "new" ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"
+              category === "new" ? "bg-lime-100 text-lime-800" : "bg-orange-100 text-orange-800"
             )}>
               {category === "new" ? "New" : "Old"}
             </div>
+            {category === "new" && isInBest && (
+              <div className="px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap bg-green-100 text-green-800">
+                B15
+              </div>
+            )}
+            {category === "old" && isInBest && (
+              <div className="px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap bg-red-100 text-red-800">
+                B35
+              </div>
+            )}
           </div>
           <div className="text-muted-foreground text-xs truncate">
             {song.type.toUpperCase()} • {song.difficulty.slice(0, 3).toUpperCase()} {(song.levelPrecise / 10).toFixed(1)} • {song.artist}
@@ -193,7 +205,7 @@ export function RecommendationCard({ selectedSnapshotData }: { selectedSnapshotD
       default:
         return true;
     }
-  }).slice(0, 50);
+  }).slice(0, 150);
 
   if (recommendations.length === 0) {
     return (
