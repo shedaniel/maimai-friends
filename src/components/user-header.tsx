@@ -37,7 +37,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
   const [aboutOpen, setAboutOpen] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 640px)');
-  
+
   const handleDiscordInvite = async () => {
     try {
       const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${APPLICATION_ID}&scope=applications.commands`;
@@ -48,7 +48,7 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
       toast.error("Failed to copy invite link");
     }
   };
-  
+
   return (
     <>
       <div className="flex items-center justify-between mb-8">
@@ -78,73 +78,73 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
             </>
           )}
         </div>
-      
-      <div className="flex items-center space-x-4">
-        <RegionSwitcher value={selectedRegion} onChange={onRegionChange} />
-        
-        <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 focus:ring-offset-background data-[state=open]:ring-2 data-[state=open]:ring-gray-300 data-[state=open]:ring-offset-2 data-[state=open]:ring-offset-background">
-            {user.image ? (
-              <Image 
-                src={user.image} 
-                alt="Profile"
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded-full"
-              />
-            ) : (
-                              <UserIcon className="h-5 w-5" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.name}</p>
-              <p className="text-xs leading-none text-muted-foreground">
-                {t('userHeader.memberLabel')}
-              </p>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {SIGNUP_TYPE === 'invite-only' && (
-            <>
-              <DropdownMenuItem onClick={() => setInvitesOpen(true)}>
-                <Users className="mr-2 h-4 w-4" />
-                <span>{t('common.invitations')}</span>
-              </DropdownMenuItem>
+
+        <div className="flex items-center space-x-4">
+          <RegionSwitcher value={selectedRegion} onChange={onRegionChange} />
+
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 focus:ring-offset-background data-[state=open]:ring-2 data-[state=open]:ring-gray-300 data-[state=open]:ring-offset-2 data-[state=open]:ring-offset-background">
+                {user.image ? (
+                  <Image
+                    src={user.image}
+                    alt="Profile"
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 rounded-full"
+                  />
+                ) : (
+                  <UserIcon className="h-5 w-5" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {t('userHeader.memberLabel')}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-            </>
-          )}
-          {isMobile && (
-            <>
-              <DropdownMenuItem onClick={() => setAboutOpen(true)}>
-                <Info className="mr-2 h-4 w-4" />
-                <span>{t('common.about')}</span>
+              {SIGNUP_TYPE === 'invite-only' && (
+                <>
+                  <DropdownMenuItem onClick={() => setInvitesOpen(true)}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>{t('common.invitations')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {isMobile && (
+                <>
+                  <DropdownMenuItem onClick={() => setAboutOpen(true)}>
+                    <Info className="mr-2 h-4 w-4" />
+                    <span>{t('common.about')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDiscordInvite}>
+                    <DiscordIcon className="mr-2 h-4 w-4" />
+                    <span>{t('common.discord')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onClick={onSettings}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>{t('common.settings')}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDiscordInvite}>
-                <DiscordIcon className="mr-2 h-4 w-4" />
-                <span>{t('common.discord')}</span>
+              <DropdownMenuItem onClick={onLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>{t('common.logout')}</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
-          <DropdownMenuItem onClick={onSettings}>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>{t('common.settings')}</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>{t('common.logout')}</span>
-          </DropdownMenuItem>
-                 </DropdownMenuContent>
-       </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-    </div>
-    
-    <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
-    <InvitesDialog isOpen={invitesOpen} onClose={() => setInvitesOpen(false)} />
-  </>
+
+      <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
+      <InvitesDialog isOpen={invitesOpen} onClose={() => setInvitesOpen(false)} />
+    </>
   );
 } 

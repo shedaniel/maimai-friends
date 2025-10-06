@@ -171,7 +171,7 @@ function CopySnapshotButton({
   onCopyToVersion: (targetVersion: number) => void;
 }) {
   return (
-    <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+    <DropdownMenu modal={false} open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"

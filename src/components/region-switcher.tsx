@@ -39,7 +39,7 @@ export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 bg-white">
           <Globe className="h-4 w-4" />

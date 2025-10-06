@@ -486,7 +486,7 @@ export function SettingsDialog({
                   <div className="grid gap-2">
                     <Label>{t('settings.profile.url.label')}</Label>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 p-2 bg-gray-200/70 rounded-md text-sm font-mono text-muted-foreground">
+                      <div className="flex-1 p-2 bg-gray-200/70 rounded-md text-sm font-mono text-muted-foreground break-all">
                         {getProfileUrl()}
                       </div>
                       <Button
