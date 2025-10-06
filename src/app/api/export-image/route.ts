@@ -6,9 +6,26 @@ import { songs, user, userScores, userSnapshots } from '@/lib/schema';
 import type { SnapshotWithSongs } from '@/lib/types';
 import { eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
-import { Image, loadImage } from 'skia-canvas';
+import { FontLibrary, Image, loadImage } from 'skia-canvas';
+import path from 'path';
 
 export const dynamic = "force-dynamic";
+
+// Load fonts once at module initialization
+const fontsLoaded = (async () => {
+  try {
+    const fontsDir = path.join(process.cwd(), 'public', 'res', 'fonts');
+    
+    FontLibrary.use('Inter', [path.join(fontsDir, 'Inter-VariableFont_opsz,wght.woff2')]);
+    FontLibrary.use('Murecho', [path.join(fontsDir, 'Murecho-VariableFont_wght.woff2')]);
+    FontLibrary.use('Noto Sans JP', [path.join(fontsDir, 'NotoSansJP-VariableFont_wght.woff2')]);
+    FontLibrary.use('Geist Mono', [path.join(fontsDir, 'GeistMono-VariableFont_wght.woff2')]);
+    
+    console.log('✅ Fonts loaded successfully');
+  } catch (error) {
+    console.error('❌ Failed to load fonts:', error);
+  }
+})();
 
 async function prepareData(snapshotId: string): Promise<{
   type: "success",
@@ -97,6 +114,8 @@ async function prepareData(snapshotId: string): Promise<{
 export async function GET(request: NextRequest) {
   console.log('🚀 Starting skia-canvas export-image API request');
   try {
+    await fontsLoaded;
+    
     const snapshotId = request.nextUrl.searchParams.get('snapshotId');
     console.log('📋 Received snapshot ID:', snapshotId);
     
