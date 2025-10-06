@@ -211,8 +211,6 @@ function CompactSongSection({ title, songs, count, t, sum, average, visibleCount
   visibleCount: number;
   onLoadMore: () => void;
 }) {
-  if (songs.length === 0) return null;
-
   const hasMore = visibleCount < songs.length;
   const loadMore = useCallback(() => {
     if (hasMore) onLoadMore();
@@ -220,6 +218,8 @@ function CompactSongSection({ title, songs, count, t, sum, average, visibleCount
 
   const sentinelRef = useInfiniteScroll(loadMore, hasMore);
   const visibleSongs = songs.slice(0, visibleCount);
+
+  if (songs.length === 0) return null;
 
   return (
     <div className="space-y-2">
@@ -462,13 +462,6 @@ function SongSection({ title, songs, count, displayMode, t, sum, average, visibl
   visibleCount: number;
   onLoadMore: () => void;
 }) {
-  if (songs.length === 0) return null;
-
-  // Use dedicated compact section for compact mode
-  if (displayMode === "compact") {
-    return <CompactSongSection title={title} songs={songs} count={count} t={t} sum={sum} average={average} visibleCount={visibleCount} onLoadMore={onLoadMore} />;
-  }
-
   const hasMore = visibleCount < songs.length;
   const loadMore = useCallback(() => {
     if (hasMore) onLoadMore();
@@ -476,6 +469,13 @@ function SongSection({ title, songs, count, displayMode, t, sum, average, visibl
 
   const sentinelRef = useInfiniteScroll(loadMore, hasMore);
   const visibleSongs = songs.slice(0, visibleCount);
+
+  if (songs.length === 0) return null;
+
+  // Use dedicated compact section for compact mode
+  if (displayMode === "compact") {
+    return <CompactSongSection title={title} songs={songs} count={count} t={t} sum={sum} average={average} visibleCount={visibleCount} onLoadMore={onLoadMore} />;
+  }
 
   return (
     <div className="space-y-2">
@@ -679,8 +679,8 @@ export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: Snap
     }
 
     const query = searchQuery.toLowerCase().trim();
-    const filterSongs = (songList: SongWithRating[]) => 
-      songList.filter(song => 
+    const filterSongs = (songList: SongWithRating[]) =>
+      songList.filter(song =>
         song.songName.toLowerCase().includes(query) ||
         song.artist.toLowerCase().includes(query) ||
         song.difficulty.toLowerCase().includes(query) ||
@@ -751,7 +751,7 @@ export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: Snap
             <RatingChart songs={newSongsB15} title={t('dataContent.newSongsB15')} />
             <RatingChart songs={oldSongsB35} title={t('dataContent.oldSongsB35')} />
           </div>
-          
+
           {/* Search Field */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
