@@ -147,6 +147,7 @@
     "versionPlays": "現バージョンプレイ回数：{count}",
     "totalPlays": "累計プレイ回数：{count}",
     "songs": "楽曲（合計 {count} 曲）",
+    "searchPlaceholder": "楽曲名、アーティスト、難易度、またはタイプで楽曲を検索...",
     "newSongsB15": "新規曲 B15",
     "oldSongsB35": "過去曲 B35",
     "newSongs": "新規曲",

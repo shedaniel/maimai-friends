@@ -147,6 +147,7 @@
     "versionPlays": "Version Plays: {count}",
     "totalPlays": "Total Plays: {count}",
     "songs": "Songs ({count} total)",
+    "searchPlaceholder": "Search songs by name, artist, difficulty, or type...",
     "newSongsB15": "New Songs B15",
     "oldSongsB35": "Old Songs B35",
     "newSongs": "New Songs",

@@ -147,6 +147,7 @@
     "versionPlays": "本版本遊玩次數：{count}",
     "totalPlays": "總遊玩次數：{count}",
     "songs": "歌曲（共 {count} 首）",
+    "searchPlaceholder": "以歌曲名稱、藝人、難度或類型搜尋歌曲...",
     "newSongsB15": "新曲 B15",
     "oldSongsB35": "舊曲 B35",
     "newSongs": "新曲",

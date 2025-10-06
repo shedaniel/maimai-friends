@@ -147,6 +147,7 @@
     "versionPlays": "本版本游玩次数：{count}",
     "totalPlays": "总游玩次数：{count}",
     "songs": "歌曲（共 {count} 首）",
+    "searchPlaceholder": "以歌曲名称、艺术家、难度或类型搜索歌曲...",
     "newSongsB15": "新曲 B15",
     "oldSongsB35": "旧曲 B35",
     "newSongs": "新曲",
@@ -158,7 +159,7 @@
     },
     "tableHeaders": {
       "song": "歌曲",
-      "artist": "艺人",
+      "artist": "艺术家",
       "level": "等级",
       "achievement": "达成率",
       "fc": "FC",

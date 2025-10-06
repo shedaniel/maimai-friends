@@ -5,12 +5,13 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { SongWithRating, splitSongs } from "@/lib/rating-calculator";
 import { SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
-import { LayoutGrid, LayoutList, Menu, Plus, TrendingUp } from "lucide-react";
+import { LayoutGrid, LayoutList, Menu, Plus, Search, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select-friendly";
+import { Input } from "./ui/input";
 
 // Hook for infinite scroll detection
 function useInfiniteScroll(callback: () => void, enabled: boolean) {
@@ -664,17 +665,42 @@ function SongsGrid({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
 export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: SnapshotWithSongs }) {
   const t = useTranslations();
   const [displayMode, setDisplayMode] = useState<"list" | "grid" | "compact">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { songs, snapshot } = selectedSnapshotData;
 
   // Calculate ratings and sort by highest rating first
   const { newSongsB15, oldSongsB35, newSongsRemaining, oldSongsRemaining } = splitSongs(songs, snapshot.gameVersion);
 
-  // Calculate sum and average for B15 and B35
-  const b15Sum = newSongsB15.reduce((sum, song) => sum + song.rating, 0);
-  const b15Average = newSongsB15.length > 0 ? b15Sum / newSongsB15.length : 0;
-  const b35Sum = oldSongsB35.reduce((sum, song) => sum + song.rating, 0);
-  const b35Average = oldSongsB35.length > 0 ? b35Sum / oldSongsB35.length : 0;
+  // Filter songs based on search query
+  const filteredData = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return { newSongsB15, oldSongsB35, newSongsRemaining, oldSongsRemaining };
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    const filterSongs = (songList: SongWithRating[]) => 
+      songList.filter(song => 
+        song.songName.toLowerCase().includes(query) ||
+        song.artist.toLowerCase().includes(query) ||
+        song.difficulty.toLowerCase().includes(query) ||
+        (song.levelPrecise / 10).toFixed(1).toLowerCase().includes(query) ||
+        song.type.toLowerCase().includes(query)
+      );
+
+    return {
+      newSongsB15: filterSongs(newSongsB15),
+      oldSongsB35: filterSongs(oldSongsB35),
+      newSongsRemaining: filterSongs(newSongsRemaining),
+      oldSongsRemaining: filterSongs(oldSongsRemaining),
+    };
+  }, [searchQuery, newSongsB15, oldSongsB35, newSongsRemaining, oldSongsRemaining]);
+
+  // Calculate sum and average for B15 and B35 (use filtered data)
+  const b15Sum = filteredData.newSongsB15.reduce((sum, song) => sum + song.rating, 0);
+  const b15Average = filteredData.newSongsB15.length > 0 ? b15Sum / filteredData.newSongsB15.length : 0;
+  const b35Sum = filteredData.oldSongsB35.reduce((sum, song) => sum + song.rating, 0);
+  const b35Average = filteredData.oldSongsB35.length > 0 ? b35Sum / filteredData.oldSongsB35.length : 0;
 
   return (
     <Card>
@@ -725,12 +751,25 @@ export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: Snap
             <RatingChart songs={newSongsB15} title={t('dataContent.newSongsB15')} />
             <RatingChart songs={oldSongsB35} title={t('dataContent.oldSongsB35')} />
           </div>
+          
+          {/* Search Field */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder={t('dataContent.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           {displayMode === "grid" ? (
             <SongsGrid
-              newSongsB15={newSongsB15}
-              oldSongsB35={oldSongsB35}
-              remainingNewSongs={newSongsRemaining}
-              remainingOldSongs={oldSongsRemaining}
+              newSongsB15={filteredData.newSongsB15}
+              oldSongsB35={filteredData.oldSongsB35}
+              remainingNewSongs={filteredData.newSongsRemaining}
+              remainingOldSongs={filteredData.oldSongsRemaining}
               t={t}
               b15Sum={b15Sum}
               b15Average={b15Average}
@@ -739,10 +778,10 @@ export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: Snap
             />
           ) : (
             <SongsList
-              newSongsB15={newSongsB15}
-              oldSongsB35={oldSongsB35}
-              remainingNewSongs={newSongsRemaining}
-              remainingOldSongs={oldSongsRemaining}
+              newSongsB15={filteredData.newSongsB15}
+              oldSongsB35={filteredData.oldSongsB35}
+              remainingNewSongs={filteredData.newSongsRemaining}
+              remainingOldSongs={filteredData.oldSongsRemaining}
               t={t}
               displayMode={displayMode}
               b15Sum={b15Sum}
