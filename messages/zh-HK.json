@@ -16,14 +16,14 @@
     "cookies": "Cookies",
     "authentication": "驗證",
     "playerInfo": "玩家資訊",
-    "rating": "R 值",
+    "rating": "Rating",
     "stars": "星星數",
     "plays": "遊玩次數",
     "total": "總計",
     "invitations": "邀請",
     "discord": "Discord",
     "about": "關於",
-    "comingSoon": "敬請期待..."
+    "comingSoon": "敬請期待……"
   },
   "auth": {
     "loginWithDiscord": "以 Discord 繼續",
@@ -66,7 +66,7 @@
     },
     "timezone": {
       "label": "時區",
-      "description": "這會影響日期和時間的顯示方式。預設設定為日本時區，與 maimai 伺服器時間相符。",
+      "description": "這會影響日期和時間的顯示方式。預設為日本時區，以配合 maimai 伺服器時間。",
       "placeholder": "選擇時區"
     },
     "account": {
@@ -76,7 +76,7 @@
     },
     "profile": {
       "publishProfile": "公開個人檔案",
-      "publishDescription": "公開你的 maimai 個人檔案，讓他人可以查看你的分數和進度。",
+      "publishDescription": "公開你的 maimai 個人檔案，讓其他玩家可以查看你的分數和進度。",
       "mainRegion": {
         "label": "主要地區",
         "description": "選擇用於公開個人檔案的主要地區。",
@@ -84,7 +84,7 @@
         "jp": "日本區"
       },
       "privacy": {
-        "label": "隱私設定",
+        "label": "私隱設定",
         "showAllScores": {
           "label": "顯示所有分數",
           "description": "顯示所有分數，而不僅僅是最佳 50 首歌曲。"
@@ -112,7 +112,7 @@
       },
       "url": {
         "label": "個人檔案網址",
-        "description": "你可以與他人分享的公開個人檔案連結。",
+        "description": "你可以與他人分享的公開個人檔案鏈接。",
         "copied": "個人檔案網址已複製到剪貼簿！",
         "copyFailed": "複製網址到剪貼簿失敗"
       }
@@ -129,15 +129,15 @@
     "fetchNewData": "匯入新資料",
     "fetchingData": "匯入資料中...",
     "lastUpdate": "最後更新",
-    "noDataInstructions": "此區域沒有任何資料。點擊「匯入新資料」來匯入你的 maimai 成績。"
+    "noDataInstructions": "此區域沒有任何資料。點擊「匯入新資料」以匯入你的 maimai 成績。"
   },
   "profileVisibility": {
     "public": "公開個人檔案",
     "private": "私人個人檔案",
     "accessibleBy": "可透過 ",
     "accessibleByEnd": " 存取！",
-    "youMayChangePrivacySettings": "你可以在右上角圖示 → 設定 → 公開個人檔案 中變更隱私設定。",
-    "onlyAccessibleByYou": "只有你可以查看！你可以在右上角圖示 → 設定 → 公開個人檔案 中變更隱私設定。"
+    "youMayChangePrivacySettings": "你可以在右上角圖示 → 設定 → 公開個人檔案 中變更私隱設定。",
+    "onlyAccessibleByYou": "只有你可以查看！你可以在右上角圖示 → 設定 → 公開個人檔案 中變更私隱設定。"
   },
   "dataContent": {
     "loading": "載入資料中...",
@@ -152,7 +152,7 @@
       "exportImage": "匯出圖片"
     },
     "playerInfo": "玩家資料",
-    "rating": "R 值：{rating}",
+    "rating": "Rating：{rating}",
     "stars": "星星數：{stars}",
     "versionPlays": "本版本遊玩次數：{count}",
     "totalPlays": "總遊玩次數：{count}",
@@ -174,7 +174,7 @@
       "achievement": "達成率",
       "fc": "FC",
       "fs": "FS",
-      "rating": "R 值"
+      "rating": "Rating"
     },
     "statistics": {
       "sum": "總和",
@@ -186,8 +186,8 @@
   },
   "recommendations": {
     "noRecommendations": "無推薦歌曲",
-    "allOptimal": "沒有其他能夠提升 R 值的歌曲了。做得很好！",
-    "description": "根據你目前的成績推薦可提升 R 值的歌曲。",
+    "allOptimal": "沒有其他能提升 Rating 的歌曲！繼續加油！",
+    "description": "根據你目前的成績推薦可提升 Rating 的歌曲。",
     "filters": {
       "all": "全部",
       "best": "B15/B35 內",
@@ -199,7 +199,7 @@
     "title": "更新 maimai 驗證",
     "japanDescription": "輸入你的 SEGA 帳戶憑證。",
     "intlDescription": "選擇你的 maimai 登入驗證方式。",
-    "credentialsStored": "你的驗證方式將被儲存以供將來使用。",
+    "credentialsStored": "你的憑證將被儲存，以便日後使用。",
     "username": "使用者名稱",
     "usernamePlaceholder": "輸入你的 SEGA 帳戶使用者名稱",
     "password": "密碼",
@@ -209,9 +209,9 @@
     "tokenValidationError": "Cookies 必須以 \"clal=\" 開頭，後面跟著字母和數字",
     "authenticationNote": "驗證：",
     "segaCredentialsNote": "使用你的 SEGA 帳戶憑證來驗證 maimai DX NET。",
-    "credentialsSecureNote": "你的驗證方式將安全地儲存以供將來使用。",
-    "savingCredentials": "儲存驗證方式中...",
-    "saveCredentials": "儲存驗證方式",
+    "credentialsSecureNote": "你的憑證將被安全儲存，以供將來使用。",
+    "savingCredentials": "儲存憑證中...",
+    "saveCredentials": "儲存憑證",
     "tokenTab": "Cookies",
     "passwordTab": "密碼",
     "tokenInstructions": {
@@ -219,7 +219,7 @@
       "expiration": "Cookies 會在一段時間後失效，你或需要重新登入。"
     },
     "passwordInstructions": "直接使用你的 SEGA 帳戶使用者名稱和密碼",
-    "secureStorage": "你的驗證方式將安全地儲存以供將來使用。"
+    "secureStorage": "你的憑證將被安全地保存以供將來使用。"
   },
   "regions": {
     "intl": "國際區",
@@ -256,7 +256,7 @@
   },
   "invites": {
     "title": "管理邀請",
-    "description": "為新使用者建立和管理邀請連結。\n你可以在 3 天內邀請 3 位使用者。邀請連結在 7 天後過期。\n請僅邀請你信任或熟識的玩家，你可能需要為他們的行為負責。",
+    "description": "為新使用者建立和管理邀請鏈接。\n你可以在 3 天內邀請 3 位使用者。邀請鏈接在 7 天後過期。\n請只邀請你信任或認識的玩家，你可能需要為他們的行為負責。",
     "quota": "配額：",
     "quotaExplanation": {
       "available": "虛線圓圈 = 可用名額",
@@ -282,13 +282,13 @@
       "unknownStatus": "未知狀態"
     },
     "actions": {
-      "copyLink": "複製連結",
+      "copyLink": "複製鏈接",
       "revoke": "撤銷",
       "revoking": "撤銷中..."
     },
     "messages": {
       "created": "邀請建立成功！",
-      "linkCopied": "邀請連結已複製到剪貼簿！",
+      "linkCopied": "邀請鏈接已複製到剪貼簿！",
       "createFailed": "建立邀請失敗",
       "revoked": "邀請撤銷成功！",
       "revokeFailed": "撤銷邀請失敗",

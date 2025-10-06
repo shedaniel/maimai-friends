@@ -48,7 +48,9 @@
 
 /* Locale-specific font family overrides */
 body:has([lang="zh-TW"]),
-html[lang="zh-TW"] body {
+html[lang="zh-TW"] body,
+body:has([lang="zh-HK"]),
+html[lang="zh-HK"] body {
   --font-sans: var(--font-inter), var(--font-noto-sans-tc), system-ui, sans-serif;
 }
 

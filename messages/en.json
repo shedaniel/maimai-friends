@@ -22,7 +22,8 @@
     "total": "Total",
     "invitations": "Invitations",
     "discord": "Discord",
-    "about": "About"
+    "about": "About",
+    "comingSoon": "Coming soon..."
   },
   "auth": {
     "loginWithDiscord": "Continue with Discord",
@@ -59,7 +60,8 @@
       "en": "English (US)",
       "en-GB": "English (UK)",
       "ja": "日本語",
-      "zh-TW": "繁體中文",
+      "zh-TW": "繁體中文 (台灣)",
+      "zh-HK": "繁體中文 (香港)",
       "zh-CN": "简体中文"
     },
     "timezone": {
@@ -128,6 +130,14 @@
     "fetchingData": "Fetching data...",
     "lastUpdate": "Last updated",
     "noDataInstructions": "No data found for this region. Click \"Fetch New Data\" to import your maimai scores. You'll need your maimai token for this process."
+  },
+  "profileVisibility": {
+    "public": "Public Profile",
+    "private": "Private Profile",
+    "accessibleBy": "Accessible by ",
+    "accessibleByEnd": "!",
+    "youMayChangePrivacySettings": "You may change your privacy settings in top right Icon → Settings → Publish Profile.",
+    "onlyAccessibleByYou": "Only accessible by you! You may change your privacy settings in top right Icon → Settings → Publish Profile."
   },
   "dataContent": {
     "loading": "Loading data...",

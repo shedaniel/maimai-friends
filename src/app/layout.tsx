@@ -53,6 +53,7 @@ function getLocaleFontClass(locale: string) {
   
   switch (locale) {
     case 'zh-TW':
+    case 'zh-HK':
       return `${baseClasses} ${notoSansTC.variable} ${notoSansJP.variable}`;
     case 'zh-CN':
       return `${baseClasses} ${notoSansSC.variable} ${notoSansJP.variable}`;

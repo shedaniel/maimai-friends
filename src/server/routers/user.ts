@@ -464,13 +464,13 @@ export const userRouter = router({
   // Update user language
   updateLanguage: protectedProcedure
     .input(z.object({
-      language: z.enum(['en', 'en-GB', 'ja', 'zh-TW', 'zh-CN']).nullable(), // null = auto-detect
+      language: z.enum(['en', 'en-GB', 'ja', 'zh-TW', 'zh-HK', 'zh-CN']).nullable(), // null = auto-detect
     }))
     .mutation(async ({ ctx, input }) => {
       await db
         .update(user)
         .set({
-          language: input.language as "en" | "en-GB" | "ja" | "zh-TW" | "zh-CN" | null,
+          language: input.language as "en" | "en-GB" | "ja" | "zh-TW" | "zh-HK" | "zh-CN" | null,
           updatedAt: new Date(),
         })
         .where(eq(user.id, ctx.session.user.id));

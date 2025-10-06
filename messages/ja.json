@@ -22,59 +22,61 @@
     "total": "合計",
     "invitations": "招待",
     "discord": "Discord",
-    "about": "ともマイについて"
+    "about": "ともマイについて",
+    "comingSoon": "準備中..."
   },
   "auth": {
     "loginWithDiscord": "Discordで続行",
-    "loginDescription": "Discordでログインしてmaimaiのスコアを追跡しましょう",
+    "loginDescription": "Discordでログインして、maimaiのスコアを記録・管理しよう！",
     "noAccount": "アカウントをお持ちでないですか？",
     "signupWithDiscord": "Discordでサインアップ",
     "signupDisabled": "サインアップは現在無効です",
-    "signupDisabledMessage": "現在、新規登録を受け付けておりません。後でもう一度お試しください。",
+    "signupDisabledMessage": "現在、新規登録は一時停止中です。後でもう一度お試しください。",
     "features": {
       "title": "主な機能：",
-      "trackScores": "インターナショナル・日本両地域のスコア管理",
-      "viewHistory": "過去のデータスナップショットの閲覧",
+      "trackScores": "インターナショナル／日本どちらのスコアも追跡",
+      "viewHistory": "過去のスナップショットの閲覧",
       "importData": "maimai DX NETからデータ取り込み",
       "analyzeProgress": "プレイ進捗の分析"
     }
   },
   "dashboard": {
     "title": "ともマイ",
-    "description": "フレンドと一緒にmaimaiのスコアを分析・共有！",
+    "description": "フレンドと一緒にmaimaiのスコアを共有・分析しよう！",
     "timezoneUpdateSuccess": "タイムゾーンの更新に成功しました！",
     "timezoneUpdateError": "タイムゾーンの更新に失敗しました: {error}",
     "languageUpdateSuccess": "言語の更新に成功しました！",
     "languageUpdateError": "言語の更新に失敗しました: {error}",
-    "tokenUpdateSuccess": "トークンを保存しました！"
+    "tokenUpdateSuccess": "認証情報を保存しました！"
   },
   "settings": {
     "title": "設定",
-    "description": "ともマイを自分好みにカスタマイズできます。",
+    "description": "ともマイを自分好みにカスタマイズしよう。",
     "language": {
       "label": "言語",
-      "description": "希望するインターフェース言語を選択してください。",
+      "description": "希望する言語を選んでください。",
       "placeholder": "言語を選択",
       "auto": "自動検出",
       "en": "English (US)",
       "en-GB": "English (UK)",
       "ja": "日本語",
-      "zh-TW": "繁體中文",
+      "zh-TW": "繁體中文 (台灣)",
+      "zh-HK": "繁體中文 (香港)",
       "zh-CN": "简体中文"
     },
     "timezone": {
       "label": "タイムゾーン",
-      "description": "アプリ内の日付や時刻の表示方式に影響します。maimaiサーバー時刻に合わせて日本標準時がデフォルトです。",
+      "description": "サイト上の日付や時刻の表示に影響します。デフォルトはmaimaiサーバーと同じ日本時間です。",
       "placeholder": "タイムゾーンを選択"
     },
     "account": {
       "label": "アカウント認証",
-      "updateToken": "トークンを更新",
-      "description": "データ取得のためにmaimaiトークンを更新してください。プレイヤーデータの同期に必要です。"
+      "updateToken": "認証情報を更新",
+      "description": "データ取得とプレイヤー同期のために、認証情報（トークン）を更新します。"
     },
     "profile": {
       "publishProfile": "プロフィールを公開",
-      "publishDescription": "あなたのmaimaiプロフィールを一般公開し、他の人があなたのスコアと進歩を見ることができるようにします。",
+      "publishDescription": "maimaiプロフィールを公開して、他のプレイヤーにスコアや進捗を共有しよう。",
       "mainRegion": {
         "label": "メイン地域",
         "description": "公開するプロフィールの主要地域を選択してください。",
@@ -89,7 +91,7 @@
         },
         "showScoreDetails": {
           "label": "スコアの詳細を表示",
-          "description": "プレイ回数やタイミングを含む詳細なスコア情報を表示します。"
+          "description": "プレイ回数や判定タイミングなどの詳細データを表示します。"
         },
         "showPlates": {
           "label": "ネームプレートを表示",
@@ -110,7 +112,7 @@
       },
       "url": {
         "label": "プロフィールURL",
-        "description": "他の人と共有できる公開プロフィールリンクです。",
+        "description": "プロフィールの共有リンクです。",
         "copied": "プロフィールURLをクリップボードにコピーしました！",
         "copyFailed": "URLのクリップボードへのコピーに失敗しました"
       }
@@ -124,10 +126,18 @@
     "dataSnapshot": "データスナップショット：",
     "noDataAvailable": "データがありません",
     "selectSnapshot": "スナップショットを選択",
-    "fetchNewData": "新しいデータを取得",
+    "fetchNewData": "データ取得",
     "fetchingData": "データ取得中...",
     "lastUpdate": "最終更新",
-    "noDataInstructions": "この地域のデータが見つかりません。「新しいデータを取得」をクリックしてmaimaiスコアを取り込みましょう（トークンが必要です）。"
+    "noDataInstructions": "この地域のデータがまだありません。「新しいデータを取得」からmaimaiスコアを取り込みましょう（ログイン／トークンが必要です）。"
+  },
+  "profileVisibility": {
+    "public": "公開プロフィール",
+    "private": "非公開プロフィール",
+    "accessibleBy": "",
+    "accessibleByEnd": " から閲覧できます！",
+    "youMayChangePrivacySettings": "右上のアイコン → 設定 → プロフィールを公開 からプライバシー設定を変更できます。",
+    "onlyAccessibleByYou": "自分だけが閲覧できます！右上のアイコン → 設定 → プロフィールを公開 からプライバシー設定を変更できます。"
   },
   "dataContent": {
     "loading": "データの読み込み中...",
@@ -142,12 +152,12 @@
       "exportImage": "エクスポート"
     },
     "playerInfo": "プレイヤー情報",
-    "rating": "レーティング：{rating}",
-    "stars": "スター：{stars}",
+    "rating": "レート値：{rating}",
+    "stars": "スター数：{stars}",
     "versionPlays": "現バージョンプレイ回数：{count}",
     "totalPlays": "累計プレイ回数：{count}",
     "songs": "楽曲（合計 {count} 曲）",
-    "searchPlaceholder": "楽曲名、アーティスト、難易度、またはタイプで楽曲を検索...",
+    "searchPlaceholder": "楽曲名、アーティスト、難易度、タイプなどで検索...",
     "newSongsB15": "新規曲 B15",
     "oldSongsB35": "過去曲 B35",
     "newSongs": "新規曲",
@@ -155,7 +165,7 @@
     "displayModes": {
       "list": "リスト",
       "grid": "グリッド",
-      "compact": "テーブル"
+      "compact": "コンパクト表"
     },
     "tableHeaders": {
       "song": "楽曲",
@@ -164,20 +174,20 @@
       "achievement": "達成率",
       "fc": "FC",
       "fs": "FS",
-      "rating": "レーティング"
+      "rating": "レート値"
     },
     "statistics": {
       "sum": "合計",
       "average": "平均"
     },
-    "switchToListForAllSongs": "すべての楽曲を表示するには、リストまたはテーブル表示に切り替えてください",
+    "switchToListForAllSongs": "すべての楽曲を見るには、リストまたは表表示に切り替えてください。",
     "noDataAvailable": "データがありません",
     "getStartedInstructions": "上の取得ボタンからmaimaiデータを取得して使い始めましょう。"
   },
   "recommendations": {
     "noRecommendations": "おすすめがありません",
-    "allOptimal": "これ以上レーティングが上がる曲がない。",
-    "description": "現在のB15/B35スコアに基づいて、レーティング向上のためのおすすめ楽曲。",
+    "allOptimal": "レート値を伸ばせる曲はもうありません！",
+    "description": "現在のB15/B35スコアに基づき、レート値を伸ばしやすい楽曲をおすすめします。",
     "filters": {
       "all": "すべて",
       "best": "ベスト50内",
@@ -186,19 +196,19 @@
     }
   },
   "tokenDialog": {
-    "title": "maimai 認証を更新",
-    "japanDescription": "SEGAアカウント情報を入力してください。",
+    "title": "maimai 認証情報を更新",
+    "japanDescription": "SEGAアカウントでログインします。",
     "intlDescription": "認証方法を選択してください。",
-    "credentialsStored": "認証情報は今後の利用のため保存されます。",
+    "credentialsStored": "認証情報は今後の取得で使用されます。",
     "username": "ユーザー名",
     "usernamePlaceholder": "SEGAアカウントのユーザー名を入力",
     "password": "パスワード",
     "passwordPlaceholder": "SEGAアカウントのパスワードを入力",
     "cookies": "クッキー",
-    "tokenPlaceholder": "clal=あなたのトークン",
-    "tokenValidationError": "トークンは「clal=」で始まり、英数字のみが続きます",
+    "tokenPlaceholder": "clal=ここにCookie値を入力",
+    "tokenValidationError": "Cookieは「clal=」で始まり、英数字のみを含む必要があります。",
     "authenticationNote": "認証：",
-    "segaCredentialsNote": "SEGAアカウントを使い、maimai DX NETの認証を行います。",
+    "segaCredentialsNote": "SEGAアカウントのユーザー名とパスワードで直接認証します。",
     "credentialsSecureNote": "認証情報は安全に保存され、今後の同期時に使用されます。",
     "savingCredentials": "認証情報保存中...",
     "saveCredentials": "認証情報を保存",
@@ -224,7 +234,7 @@
   },
   "usernameSetup": {
     "title": "ユーザー名を選択",
-    "description": "このアプリを使用するにはユーザー名を設定する必要があります。これは公開プロフィールのURLに使用され、一意である必要があります。",
+    "description": "このサイトを利用するには、ユーザー名を設定する必要があります。これは公開プロフィールのURLに使用され、一意である必要があります。",
     "usernameLabel": "ユーザー名",
     "placeholder": "ユーザー名を入力",
     "checking": "利用可能性を確認中...",
@@ -246,8 +256,8 @@
   },
   "invites": {
     "title": "招待管理",
-    "description": "新規ユーザー向けの招待リンクを作成・管理します。\n3日間で3人まで招待できます。招待リンクは7日後に有効期限が切れます。\n信頼できる人や個人的に知っている人のみを招待してください。彼らの行動に責任を負う場合があります。",
-    "quota": "枠:",
+    "description": "新規ユーザー用の招待リンクを作成・管理します。\n3日間で3人まで招待でき、リンクは7日後に期限切れになります。\n信頼できる仲間だけを招待してください。",
+    "quota": "残り枠:",
     "quotaExplanation": {
       "available": "点線の丸 = 利用可能な枠",
       "active": "通常の枠線 = 有効な招待",
@@ -266,7 +276,7 @@
     },
     "statusDetails": {
       "activeUntil": "{date}まで有効",
-      "claimedBy": "{date}に{name}によって使用されました",
+      "claimedBy": "{name}が{date}に使用しました",
       "expiredOn": "{date}に期限切れ",
       "revoked": "取り消し済み",
       "unknownStatus": "不明なステータス"
@@ -291,12 +301,12 @@
   },
   "acceptInvitation": {
     "title": "ともマイ",
-    "subtitle": "ともマイコミュニティへの招待を受けました",
+    "subtitle": "ともマイコミュニティに招待されました！",
     "validating": "招待を検証中...",
     "redirecting": "ホームページにリダイレクト中...",
     "invited": "招待されました！",
     "invitedBy": "{name}があなたをともマイに招待しました",
-    "expiresOn": "招待は{date}に期限切れになります",
+    "expiresOn": "この招待は{date}まで有効です。",
     "acceptAndSignUp": "招待を受けてサインアップ",
     "backToHome": "ホームに戻る",
     "alreadyLoggedIn": "ようこそ！既にログインしています。",

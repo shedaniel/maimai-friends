@@ -34,23 +34,23 @@ export function InfoCard({
         <div className="mb-6 p-4 rounded-md bg-muted ring-2 ring-offset-2 ring-offset-card ring-primary/20">
           {visitableProfileAt ? (
             <div>
-              <h3 className="font-medium mb-1 text-primary">Public Profile</h3>
+              <h3 className="font-medium mb-1 text-primary">{t('profileVisibility.public')}</h3>
               <p className="text-sm text-muted-foreground">
-                Accessible by{" "}
+                {t('profileVisibility.accessibleBy')}
                 <Link 
                   href={`/profile/${visitableProfileAt}`} 
                   className="text-primary hover:text-primary/80 underline"
                 >
                   https://tomomai.lol/profile/{visitableProfileAt}
                 </Link>
-                ! You may change your privacy settings in top right Icon → Settings → Publish Profile.
+                {t('profileVisibility.accessibleByEnd')} {t('profileVisibility.youMayChangePrivacySettings')}
               </p>
             </div>
           ) : (
             <div>
-              <h3 className="font-medium mb-1 text-primary">Private Profile</h3>
+              <h3 className="font-medium mb-1 text-primary">{t('profileVisibility.private')}</h3>
               <p className="text-sm text-muted-foreground">
-                Only accessible by you! You may change your privacy settings in top right Icon → Settings → Publish Profile.
+                {t('profileVisibility.onlyAccessibleByYou')}
               </p>
             </div>
           )}

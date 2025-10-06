@@ -11,7 +11,7 @@ export const user = sqliteTable("user", {
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
   username: text("username").unique(), // New field for URL-friendly usernames, nullable initially
   timezone: text("timezone"), // nullable, null = Asia/Tokyo (JP default)
-  language: text("language", { enum: ["en", "en-GB", "ja", "zh-TW", "zh-CN"] }), // nullable, null = auto-detect
+  language: text("language", { enum: ["en", "en-GB", "ja", "zh-TW", "zh-HK", "zh-CN"] }), // nullable, null = auto-detect
   region: text("region", { enum: ["intl", "jp"] }), // nullable, null = intl (default)
   // Profile publishing settings
   publishProfile: integer("publishProfile", { mode: "boolean" }).notNull().default(false),

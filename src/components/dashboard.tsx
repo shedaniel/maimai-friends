@@ -198,7 +198,7 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   const handleLanguageUpdate = async (language: string | null) => {
-    await updateLanguageMutation.mutateAsync({ language: language as "en" | "en-GB" | "ja" | "zh-TW" | "zh-CN" | null });
+    await updateLanguageMutation.mutateAsync({ language: language as "en" | "en-GB" | "ja" | "zh-TW" | "zh-HK" | "zh-CN" | null });
   };
 
   const handleUsernameSetupComplete = () => {

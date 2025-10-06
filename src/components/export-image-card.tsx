@@ -71,9 +71,6 @@ export function ExportImageCard({ selectedSnapshotData, visitableProfileAt }: Ex
           <Download className="h-5 w-5" />
           {t('dataContent.tabs.exportImage')}
         </CardTitle>
-        <CardDescription>
-          Export your maimai profile as a high-quality image
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col items-center space-y-4">
