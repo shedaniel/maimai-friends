@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { getRatingImageUrl } from "@/lib/render-image";
+import { getRatingImageUrl } from "@/lib/rating-calculator";
 import { SnapshotWithSongs } from "@/lib/types";
 import { createSafeMaimaiImageUrl } from "@/lib/utils";
 import { useTranslations } from "next-intl";

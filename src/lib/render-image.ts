@@ -1,15 +1,8 @@
-import { fabric } from 'fabric';
-import { SongWithRating, splitSongs } from "./rating-calculator";
+import type { CanvasRenderingContext2D as SkiaContext } from 'skia-canvas';
+import { Canvas, Image, loadImage } from 'skia-canvas';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from './image-spec';
+import { getRatingImageUrl, SongWithRating, splitSongs } from "./rating-calculator";
 import { SnapshotWithSongs } from "./types";
-import { createSafeMaimaiImageUrlAsync } from "./utils";
-
-// Helper function to detect if we're on the server
-function isServer() {
-  return typeof window === 'undefined';
-}
-
-export const CANVAS_WIDTH = 1200;
-export const CANVAS_HEIGHT = 2100;
 
 const TARGET_HEIGHT = 204;
 const PADDING = 36;
@@ -28,7 +21,7 @@ const VERSION_SETTINGS = {
       scaleY: 0.56,
       left: CANVAS_WIDTH - 580,
       top: -100,
-      opacity: 0.9,
+      opacity: 1.0,
     },
   },
   11: {
@@ -41,7 +34,7 @@ const VERSION_SETTINGS = {
       scaleY: 0.7,
       left: CANVAS_WIDTH - 520,
       top: -100,
-      opacity: 0.9,
+      opacity: 1.0,
     },
   },
   12: {
@@ -50,691 +43,515 @@ const VERSION_SETTINGS = {
       { offset: 0, color: '#fdb2e0' },
     ],
     character: {
-      scaleX: 0.7,
-      scaleY: 0.7,
-      left: CANVAS_WIDTH - 520,
-      top: -140,
-      opacity: 0.9,
+      scaleX: 0.6,
+      scaleY: 0.6,
+      left: CANVAS_WIDTH - 540,
+      top: -30,
+      opacity: 1.0,
     },
   },
 }
 
 export type ImageCache = {
-  // path to base64 string
-  [key: string]: string;
+  // path to Image object
+  [key: string]: () => Promise<Image>;
 }
 
-// Helper function to check if a URL is a data URL (base64)
+// Helper to check if a URL is a data URL (base64)
 function isDataUrl(url: string): boolean {
   return url.startsWith('data:');
 }
 
-// Relay method for FabricImage.fromURL that handles both client and server environments
-async function fabricImageFromURL(
-  cache: ImageCache,
-  url: string, 
-  fabricOptions: any = {}
-): Promise<fabric.Image> {
-  if (!isDataUrl(url) && cache[url]) {
-    return new Promise((resolve) => {
-      fabric.Image.fromURL(cache[url], image => resolve(image), fabricOptions)!
-    });
+// Helper to convert relative URLs to absolute URLs (for server-side rendering)
+function toAbsoluteUrl(url: string): string {
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // Get base URL from environment or default to localhost
+  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
+  return `${baseUrl}${url}`;
+}
+
+// Helper to load images with caching
+async function loadImageWithCache(cache: ImageCache, url: string): Promise<Image> {
+  if (isDataUrl(url)) {
+    return loadImage(url);
+  }
+  // Use the original URL as the cache key, but load with absolute URL
+  if (cache[url]) {
+    return await cache[url]();
   }
 
-  if (isServer() && !isDataUrl(url)) {
-    // Use server-only module for Node.js-specific logic
-    const { fabricImageFromURLServer } = await import('./render-image-server');
-    return fabricImageFromURLServer(url, fabricOptions);
-  } else {
-    // On client: use FabricImage.fromURL directly
-    // Add crossOrigin: 'anonymous' if it's not a data URL and not already specified
-    const finalOptions = { ...fabricOptions };
-    if (!isDataUrl(url) && !finalOptions.crossOrigin) {
-      finalOptions.crossOrigin = 'anonymous';
-    }
-    
-    const safeUrl = await createSafeMaimaiImageUrlAsync(url);
-    return new Promise((resolve) => {
-      fabric.Image.fromURL(safeUrl, image => resolve(image), finalOptions)!
-    });
-  }
+  console.log("🔍 Loading image from URL:", url);
+  
+  const absoluteUrl = toAbsoluteUrl(url);
+  const img = await loadImage(absoluteUrl);
+  cache[url] = () => Promise.resolve(img);
+  return img;
 }
 
-export function getRatingImageUrl(rating: number) {
-  const variant = rating >= 15000 ? "rainbow"
-    : rating >= 14500 ? "platinum"
-      : rating >= 14000 ? "gold"
-        : rating >= 13000 ? "silver"
-          : rating >= 12000 ? "bronze"
-            : rating >= 10000 ? "purple"
-              : rating >= 7000 ? "red"
-                : rating >= 4000 ? "yellow"
-                  : rating >= 2000 ? "green"
-                    : rating >= 1 ? "blue"
-                      : "white";
+export async function renderImage(data: SnapshotWithSongs, cache: ImageCache, visitableProfileAt: string | null): Promise<Canvas> {
+  const canvas = new Canvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+  const ctx = canvas.getContext('2d') as SkiaContext;
 
-  return `https://maimaidx.jp/maimai-mobile/img/rating_base_${variant}.png?ver=1.55`;
+  await renderBackground(ctx, data);
+  const overlayRect = await renderHeader(ctx, data, cache);
+  await renderContent(ctx, data, cache, overlayRect);
+  await renderFooter(ctx, data, visitableProfileAt);
+
+  return canvas;
 }
 
-export async function renderImage(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, cache: ImageCache, visitableProfileAt: string | null) {
-  canvas.clear();
-
-  // Load fonts before rendering
-  await loadFonts();
-
-  await renderBackground(canvas, data);
-  const { overlayRect } = await renderHeader(canvas, data, cache);
-  await renderContent(canvas, data, cache, overlayRect);
-  await renderFooter(canvas, data, visitableProfileAt);
-
-  canvas.renderAll();
-}
-
-async function loadFonts() {
-  // Skip font loading on server side
-  if (isServer()) {
-    return;
+async function renderBackground(ctx: SkiaContext, data: SnapshotWithSongs) {
+  const gradientStops = VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.backgroundGradient || [];
+  const gradient = ctx.createLinearGradient(0, CANVAS_HEIGHT, 0, 0);
+  
+  for (const stop of gradientStops) {
+    gradient.addColorStop(stop.offset, stop.color);
   }
 
-  try {
-    // Get base URL for font loading
-    const baseUrl = typeof window !== 'undefined' && window.location 
-      ? `${window.location.protocol}//${window.location.host}`
-      : 'http://localhost:3000';
-
-    // Font URL map
-    const urlMap = {
-      Inter: `url(${baseUrl}/res/fonts/Inter-VariableFont_opsz,wght.woff2)`,
-      Murecho: `url(${baseUrl}/res/fonts/Murecho-VariableFont_wght.woff2)`,
-      GeistMono: `url(${baseUrl}/res/fonts/GeistMono-VariableFont_wght.woff2)`,
-      NotoSansJP: `url(${baseUrl}/res/fonts/NotoSansJP-VariableFont_wght.woff2)`,
-    };
-
-    // Create FontFace instances
-    const fontInter = new FontFace('Inter', urlMap.Inter, {
-      style: 'normal',
-      weight: '100 900', // Variable font weight range
-    });
-
-    const fontMurecho = new FontFace('Murecho', urlMap.Murecho, {
-      style: 'normal',
-      weight: '100 900', // Variable font weight range
-    });
-
-    const fontGeistMono = new FontFace('Geist Mono', urlMap.GeistMono, {
-      style: 'normal',
-      weight: '100 900', // Variable font weight range
-    });
-
-    const fontNotoSansJP = new FontFace('Noto Sans JP', urlMap.NotoSansJP, {
-      style: 'normal',
-      weight: '100 900', // Variable font weight range
-    });
-
-    // Load all fonts
-    console.log('🔤 Loading fonts for canvas rendering...');
-    await Promise.all([
-      fontInter.load().then(font => {
-        document.fonts.add(font);
-        console.log('✅ Inter font loaded');
-      }),
-      fontMurecho.load().then(font => {
-        document.fonts.add(font);
-        console.log('✅ Murecho font loaded');
-      }),
-      fontGeistMono.load().then(font => {
-        document.fonts.add(font);
-        console.log('✅ Geist Mono font loaded');
-      }),
-      fontNotoSansJP.load().then(font => {
-        document.fonts.add(font);
-        console.log('✅ Noto Sans JP font loaded');
-      }),
-    ]);
-
-    console.log('✅ All fonts loaded successfully for canvas rendering');
-    
-    // Small delay to ensure fonts are available to fabric.js
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-  } catch (error) {
-    console.warn('⚠️ Font loading failed, continuing with fallback fonts:', error);
-  }
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 }
 
-async function renderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithSongs) {
-  const backgroundGradient = new fabric.Gradient({
-    type: 'linear',
-    coords: {
-      x1: 0,
-      y1: CANVAS_HEIGHT,  // Start from bottom (0deg = vertical)
-      x2: 0,
-      y2: 0               // End at top
-    },
-    colorStops: (VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.backgroundGradient || [])
-  });
-
-  const backgroundRect = new fabric.Rect({
-    width: CANVAS_WIDTH,
-    height: CANVAS_HEIGHT,
-    fill: backgroundGradient,
-  });
-  canvas.add(backgroundRect);
-}
-
-async function renderHeaderBackground(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, cache: ImageCache, trophyBackground: fabric.Image) {
+async function renderHeaderBackground(
+  ctx: SkiaContext, 
+  data: SnapshotWithSongs, 
+  cache: ImageCache, 
+) {
   const INNER_PADDING = 30;
 
-  const shineImg = await fabricImageFromURL(
-    cache,
-    `/res/shine/${data.snapshot.gameVersion}.png`, {
-    opacity: 0.3,
-  });
-  shineImg.scaleToWidth(CANVAS_WIDTH);
-  canvas.insertAt(shineImg, 1, false);
+  // Render shine image
+  const shineImg = await loadImageWithCache(cache, `/res/shine/${data.snapshot.gameVersion}.png`);
+  const shineScale = CANVAS_WIDTH / shineImg.width;
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  ctx.drawImage(shineImg as any, 0, 0, CANVAS_WIDTH, shineImg.height * shineScale);
+  ctx.restore();
 
-  const cloudImg = await fabricImageFromURL(
-    cache,
-    `/res/down/${data.snapshot.gameVersion}.png`, {
-    opacity: 0.4,
-  });
-  cloudImg.scaleToWidth(CANVAS_WIDTH);
-  cloudImg.top = CANVAS_HEIGHT - cloudImg.getScaledHeight() - PADDING;
-  canvas.insertAt(cloudImg, 1, false);
+  // Render cloud image
+  const cloudImg = await loadImageWithCache(cache, `/res/down/${data.snapshot.gameVersion}.png`);
+  const cloudScale = CANVAS_WIDTH / cloudImg.width;
+  const cloudHeight = cloudImg.height * cloudScale;
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  ctx.drawImage(cloudImg as any, 0, CANVAS_HEIGHT - cloudHeight, CANVAS_WIDTH, cloudHeight);
+  ctx.restore();
 
-  const characterImg = await fabricImageFromURL(
-    cache,
-    `/res/character/${data.snapshot.gameVersion}.png`, VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.character || {
-      scaleX: 0.56,
-      scaleY: 0.56,
-      left: CANVAS_WIDTH - 580,
-      top: -100,
-      opacity: 0.9,
-    }
+  // Render character with clipping
+  const characterSettings = VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.character || {
+    scaleX: 0.56,
+    scaleY: 0.56,
+    left: CANVAS_WIDTH - 580,
+    top: -100,
+    opacity: 0.9,
+  };
+  const characterImg = await loadImageWithCache(cache, `/res/character/${data.snapshot.gameVersion}.png`);
+  
+  ctx.save();
+  ctx.globalAlpha = characterSettings.opacity;
+  ctx.beginPath();
+  ctx.rect(0, 0, CANVAS_WIDTH, TARGET_HEIGHT + PADDING * 2);
+  ctx.clip();
+  ctx.drawImage(
+    characterImg as any,
+    characterSettings.left,
+    characterSettings.top,
+    characterImg.width * characterSettings.scaleX,
+    characterImg.height * characterSettings.scaleY
   );
-  characterImg.clipPath = new fabric.Rect({
-    top: 0,
-    left: 0,
-    width: CANVAS_WIDTH,
-    height: TARGET_HEIGHT + PADDING * 2,
-    absolutePositioned: true,
-  });
+  ctx.restore();
 
-  canvas.insertAt(characterImg, 2, false);
-
-  const logoImg = await fabricImageFromURL(
-    cache,
-    `/res/logo/${data.snapshot.gameVersion}.png`, {
-    shadow: new fabric.Shadow({
-      color: '#FFFFFF50',
-      blur: 32,
-      offsetX: 0,
-      offsetY: 0,
-    }),
-  });
-
-  logoImg.scaleX = logoImg.scaleY = (TARGET_HEIGHT - INNER_PADDING * 2) / logoImg.height!;
-  logoImg.top = TARGET_HEIGHT - logoImg.getScaledHeight() / 2;
-  // logoImg.left = canvas.width - (logoImg.width * logoImg.scaleX + PADDING + INNER_PADDING / 2);
-  logoImg.left = CANVAS_WIDTH - (CANVAS_WIDTH - trophyBackground.left! - trophyBackground.getScaledWidth()) / 2 - logoImg.getScaledWidth() / 2;
-  logoImg.left = characterImg.left! + characterImg.getScaledWidth()! / 2 - logoImg.getScaledWidth() / 2;
-  canvas.add(logoImg);
+  // Render logo with shadow
+  const logoImg = await loadImageWithCache(cache, `/res/logo/${data.snapshot.gameVersion}.png`);
+  const logoScale = (TARGET_HEIGHT - INNER_PADDING * 2) / logoImg.height;
+  const logoWidth = logoImg.width * logoScale;
+  const logoHeight = logoImg.height * logoScale;
+  const characterLeft = characterSettings.left;
+  const characterWidth = characterImg.width * characterSettings.scaleX;
+  const logoLeft = characterLeft + characterWidth / 2 - logoWidth / 2;
+  const logoTop = TARGET_HEIGHT - logoHeight / 2;
+  
+  ctx.save();
+  ctx.shadowColor = '#FFFFFF50';
+  ctx.shadowBlur = 32;
+  ctx.drawImage(logoImg as any, logoLeft, logoTop, logoWidth, logoHeight);
+  ctx.restore();
 }
 
-async function renderHeader(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, cache: ImageCache): Promise<{
-  overlayRect: fabric.Rect,
-}> {
+// Helper to measure text width
+function measureTextWidth(ctx: SkiaContext, text: string): number {
+  return ctx.measureText(text).width;
+}
+
+// Helper to draw rounded rectangle
+function roundRect(ctx: SkiaContext, x: number, y: number, width: number, height: number, radius: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+type OverlayRect = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+async function renderHeader(ctx: SkiaContext, data: SnapshotWithSongs, cache: ImageCache): Promise<OverlayRect> {
   const TROPHY_FONT_SIZE = 18, NAME_FONT_SIZE = 28;
   const PROFILE_IMG_RIGHT_MARGIN = 28;
   const TROPHY_BOTTOM_MARGIN = 20;
 
-  const profileImg = await fabricImageFromURL(
-    cache,
-    data.snapshot.iconUrl,
-    {
-      left: PADDING,
-      top: PADDING,
-    }
-  )
+  // Render header background elements
+  await renderHeaderBackground(ctx, data, cache);
 
-  profileImg.scaleX = profileImg.scaleY = TARGET_HEIGHT / profileImg.height!;
-  canvas.add(profileImg);
+  // Render profile image
+  const profileImg = await loadImageWithCache(cache, data.snapshot.iconUrl);
+  const profileScale = TARGET_HEIGHT / profileImg.height;
+  const profileWidth = profileImg.width * profileScale;
+  ctx.drawImage(profileImg as any, PADDING, PADDING, profileWidth, TARGET_HEIGHT);
 
-  const trophyBackground = await fabricImageFromURL(
-    cache,
-    '/res/trophy/normal.png', {
-    scaleX: 1.6,
-    scaleY: 1.6,
-    left: PADDING + PROFILE_IMG_RIGHT_MARGIN + profileImg.getScaledWidth(),
-    top: PADDING,
-  });
-  canvas.add(trophyBackground);
+  // Render trophy background
+  const trophyBackground = await loadImageWithCache(cache, '/res/trophy/normal.png');
+  const trophyScale = 1.6;
+  const trophyWidth = trophyBackground.width * trophyScale;
+  const trophyHeight = trophyBackground.height * trophyScale;
+  const trophyLeft = PADDING + PROFILE_IMG_RIGHT_MARGIN + profileWidth;
+  const trophyTop = PADDING;
+  ctx.drawImage(trophyBackground as any, trophyLeft, trophyTop, trophyWidth, trophyHeight);
 
-  const trophyText = new fabric.Text(data.snapshot.title, {
-    fontSize: TROPHY_FONT_SIZE,
-    fill: 'white',
-    stroke: '#111111',
-    strokeWidth: 4,
-    paintFirst: 'stroke',
-    fontWeight: '450',
-    fontFamily: FONT_FAMILY,
-    left: PADDING + PROFILE_IMG_RIGHT_MARGIN + profileImg.getScaledWidth(),
-    top: PADDING + trophyBackground.getScaledHeight() / 2 - TROPHY_FONT_SIZE / 2 - 2,
-    textAlign: 'center',
-  });
-  trophyText.left! += trophyBackground.getScaledWidth()! / 2 - trophyText.getLineWidth(0) / 2;
-  canvas.add(trophyText);
+  // Render trophy text with stroke
+  ctx.font = `450 ${TROPHY_FONT_SIZE}px ${FONT_FAMILY}`;
+  const trophyTextWidth = measureTextWidth(ctx, data.snapshot.title);
+  const trophyTextLeft = trophyLeft + trophyWidth / 2 - trophyTextWidth / 2;
+  const trophyTextTop = trophyTop + trophyHeight / 2 - TROPHY_FONT_SIZE / 2 - 2;
+  
+  ctx.strokeStyle = '#111111';
+  ctx.lineWidth = 4;
+  ctx.strokeText(data.snapshot.title, trophyTextLeft, trophyTextTop + TROPHY_FONT_SIZE);
+  ctx.fillStyle = 'white';
+  ctx.fillText(data.snapshot.title, trophyTextLeft, trophyTextTop + TROPHY_FONT_SIZE);
 
-  const nameRect = new fabric.Rect({
-    width: trophyBackground.getScaledWidth(),
-    height: trophyBackground.getScaledHeight() + NAME_FONT_SIZE,
-    fill: 'black',
-    opacity: 0.2,
-    left: PADDING + PROFILE_IMG_RIGHT_MARGIN + profileImg.getScaledWidth(),
-    top: PADDING + trophyBackground.getScaledHeight() + TROPHY_BOTTOM_MARGIN,
-    rx: 10,
-    ry: 10,
-  });
+  // Render name rect
+  const nameRectWidth = trophyWidth;
+  const nameRectHeight = trophyHeight + NAME_FONT_SIZE;
+  const nameRectLeft = trophyLeft;
+  const nameRectTop = trophyTop + trophyHeight + TROPHY_BOTTOM_MARGIN;
+  
+  ctx.save();
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = 'black';
+  roundRect(ctx, nameRectLeft, nameRectTop, nameRectWidth, nameRectHeight, 10);
+  ctx.fill();
+  ctx.restore();
 
-  canvas.add(nameRect);
+  // Render name text
+  ctx.font = `700 ${NAME_FONT_SIZE}px ${FONT_FAMILY}`;
+  const nameTextWidth = measureTextWidth(ctx, data.snapshot.displayName);
+  const nameTextLeft = nameRectLeft + trophyWidth / 2 - nameTextWidth / 2;
+  const nameTextTop = nameRectTop + nameRectHeight / 2 - NAME_FONT_SIZE / 2;
+  
+  ctx.fillStyle = '#f9f0f4';
+  ctx.fillText(data.snapshot.displayName, nameTextLeft, nameTextTop + NAME_FONT_SIZE / 2 + 10);
 
-  const nameText = new fabric.Text(data.snapshot.displayName, {
-    fontSize: NAME_FONT_SIZE,
-    fill: '#f9f0f4',
-    fontWeight: 600,
-    fontFamily: FONT_FAMILY,
-    left: nameRect.left!,
-    top: nameRect.top! + nameRect.getScaledHeight() / 2 - NAME_FONT_SIZE / 2,
-    textAlign: 'center',
-  });
-  nameText.left! += trophyBackground.getScaledWidth()! / 2 - nameText.getLineWidth(0)! / 2;
-  canvas.add(nameText);
+  // Render rating frame
+  const ratingFrame = await loadImageWithCache(cache, getRatingImageUrl(data.snapshot.rating));
+  const ratingScale = 0.75;
+  const ratingWidth = ratingFrame.width * ratingScale;
+  const ratingHeight = ratingFrame.height * ratingScale;
+  const ratingLeft = nameRectLeft - 2;
+  const ratingTop = nameRectTop + nameRectHeight + TROPHY_BOTTOM_MARGIN - 2;
+  ctx.drawImage(ratingFrame as any, ratingLeft, ratingTop, ratingWidth, ratingHeight);
 
-  const ratingFrame = await fabricImageFromURL(
-    cache,
-    getRatingImageUrl(data.snapshot.rating), {
-    scaleX: 0.75,
-    scaleY: 0.75,
-    left: nameRect.left! - 2,
-    top: nameRect.top! + nameRect.getScaledHeight() + TROPHY_BOTTOM_MARGIN - 2,
-  });
-
-  canvas.add(ratingFrame);
-
-  let left = ratingFrame.left! + ratingFrame.getScaledWidth() * 0.43;
+  // Render rating digits
+  ctx.font = `600 ${ratingHeight * 0.53}px ${FONT_FAMILY_MONO}`;
+  ctx.fillStyle = '#f9f0f4';
+  let digitLeft = ratingLeft + ratingWidth * 0.43;
   for (const char of data.snapshot.rating.toString()) {
-    canvas.add(new fabric.Text(char, {
-      fontSize: ratingFrame.getScaledHeight() * 0.53,
-      fill: '#f9f0f4',
-      fontWeight: '600',
-      fontFamily: FONT_FAMILY_MONO,
-      left: left,
-      top: ratingFrame.top! + ratingFrame.getScaledHeight()! * 0.225,
-    }));
-    left += 23;
+    ctx.fillText(char, digitLeft, ratingTop + ratingHeight * 0.19 + ratingHeight * 0.53);
+    digitLeft += 23;
   }
 
-  const classRankImg = await fabricImageFromURL(
-    cache,
-    data.snapshot.classRankUrl, {
-    scaleX: 0.7,
-    scaleY: 0.7,
-    left: ratingFrame.left! + ratingFrame.getScaledWidth()! + 10,
-    top: ratingFrame.top! + ratingFrame.getScaledHeight()! / 2,
-    originY: 'center',
-  })
-  canvas.add(classRankImg);
+  // Render class rank
+  const classRankImg = await loadImageWithCache(cache, data.snapshot.classRankUrl);
+  const classRankScale = 0.7;
+  const classRankWidth = classRankImg.width * classRankScale;
+  const classRankHeight = classRankImg.height * classRankScale;
+  const classRankLeft = ratingLeft + ratingWidth + 10;
+  const classRankTop = ratingTop + ratingHeight / 2 - classRankHeight / 2;
+  ctx.drawImage(classRankImg as any, classRankLeft, classRankTop, classRankWidth, classRankHeight);
 
-  const courseRankImg = await fabricImageFromURL(
-    cache,
-    data.snapshot.courseRankUrl, {
-    scaleX: 0.6,
-    scaleY: 0.6,
-    left: classRankImg.left! + classRankImg.getScaledWidth()! + 10,
-    top: ratingFrame.top! + ratingFrame.getScaledHeight()! / 2,
-    originY: 'center',
-  });
-  canvas.add(courseRankImg);
+  // Render course rank
+  const courseRankImg = await loadImageWithCache(cache, data.snapshot.courseRankUrl);
+  const courseRankScale = 0.6;
+  const courseRankWidth = courseRankImg.width * courseRankScale;
+  const courseRankHeight = courseRankImg.height * courseRankScale;
+  const courseRankLeft = classRankLeft + classRankWidth + 10;
+  const courseRankTop = ratingTop + ratingHeight / 2 - courseRankHeight / 2;
+  ctx.drawImage(courseRankImg as any, courseRankLeft, courseRankTop, courseRankWidth, courseRankHeight);
 
-  await renderHeaderBackground(canvas, data, cache, trophyBackground);
-
-  const darkGradient = new fabric.Gradient({
-    type: 'linear',
-    coords: {
-      x1: 0,
-      y1: CANVAS_HEIGHT,
-      x2: 0,
-      y2: 0
-    },
-    colorStops: [
-      { offset: 1, color: '#00000010' },
-      { offset: 0, color: '#00000010' },
-    ]
-  });
-
-  const overlayRect = new fabric.Rect({
-    width: CANVAS_WIDTH - PADDING * 2,
-    height: CANVAS_HEIGHT - TARGET_HEIGHT - PADDING * 3,
-    fill: darkGradient,
-    left: PADDING,
-    top: TARGET_HEIGHT + PADDING * 2,
-    rx: 10 + 24 - 4,
-    ry: 10 + 24 - 4,
-  });
-
-  // canvas.add(overlayRect);
-
-  canvas.add(new fabric.Rect({
-    width: CANVAS_WIDTH,
-    height: CANVAS_HEIGHT - overlayRect.top!,
-    fill: darkGradient,
-    left: 0,
-    top: overlayRect.top!,
-  }));
+  // Render dark overlay
+  const overlayTop = TARGET_HEIGHT + PADDING * 2;
+  const gradient = ctx.createLinearGradient(0, CANVAS_HEIGHT, 0, 0);
+  gradient.addColorStop(1, '#00000010');
+  gradient.addColorStop(0, '#00000010');
+  
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, overlayTop, CANVAS_WIDTH, CANVAS_HEIGHT - overlayTop);
 
   return {
-    overlayRect,
-  }
+    left: PADDING,
+    top: overlayTop,
+    width: CANVAS_WIDTH - PADDING * 2,
+    height: CANVAS_HEIGHT - TARGET_HEIGHT - PADDING * 3,
+  };
 }
 
 const SONG_OUTER_PADDING = 0
 const SONG_PADDING = 16
 
-async function renderSong(canvas: fabric.StaticCanvas, cache: ImageCache, overlayRect: fabric.Rect, song: SongWithRating, index: number, yOffset: number) {
+async function renderSong(
+  ctx: SkiaContext, 
+  cache: ImageCache, 
+  overlayRect: OverlayRect, 
+  song: SongWithRating, 
+  index: number, 
+  yOffset: number
+) {
   const difficultyColor = song.difficulty === "basic" ? "green" :
   song.difficulty === "advanced" ? "yellow" :
     song.difficulty === "expert" ? "#ed5e65" :
       song.difficulty === "master" ? "#af5eed" :
         song.difficulty === "remaster" ? "#E8D4FF" :
           song.difficulty === "utage" ? "pink" :
-            "white"
+              "white";
   
-  const img = await fabricImageFromURL(cache, song.cover);
+  const img = await loadImageWithCache(cache, song.cover);
 
-  img.scaleToWidth((overlayRect.width! - SONG_OUTER_PADDING * 2 - SONG_PADDING * 4) / 5);
-  const requiredHeight = img.getScaledWidth() / 16 * 11;
+  const imgWidth = (overlayRect.width - SONG_OUTER_PADDING * 2 - SONG_PADDING * 4) / 5;
+  const requiredHeight = imgWidth / 16 * 11;
+  const imgScale = imgWidth / img.width;
 
-  img.top = overlayRect.top! + SONG_OUTER_PADDING + yOffset + Math.floor(index / 5) * (requiredHeight + 2 + SONG_PADDING);
-  img.left = overlayRect.left! + SONG_OUTER_PADDING + (index % 5) * (img.getScaledWidth() + SONG_PADDING);
+  const imgTop = overlayRect.top + SONG_OUTER_PADDING + yOffset + Math.floor(index / 5) * (requiredHeight + 2 + SONG_PADDING);
+  const imgLeft = overlayRect.left + SONG_OUTER_PADDING + (index % 5) * (imgWidth + SONG_PADDING);
   
   const realBounds = {
-    top: img.top,
-    left: img.left,
-    width: img.getScaledWidth(),
+    top: imgTop,
+    left: imgLeft,
+    width: imgWidth,
     height: requiredHeight,
-  }
+  };
 
-  const imgOriginalTop = img.top;
-  img.top -= (img.getScaledHeight() - requiredHeight) * 0.75;
-  img.clipPath = new fabric.Rect({
-    top: imgOriginalTop,
-    left: img.left + 4,
-    width: img.getScaledWidth() - 4,
-    height: requiredHeight,
-    absolutePositioned: true,
-    rx: 10,
-    ry: 10,
-  });
+  const imgHeight = img.height * imgScale;
+  const imgDrawTop = imgTop - (imgHeight - requiredHeight) * 0.75;
 
-  canvas.add(img);
+  // Draw image with clipping
+  ctx.save();
+  roundRect(ctx, imgLeft, imgTop, imgWidth, requiredHeight, 10);
+  ctx.clip();
+  ctx.drawImage(img as any, imgLeft - 4, imgDrawTop - 4, imgWidth + 8, imgHeight + 8);
+  ctx.restore();
 
-  const coverGradient = new fabric.Gradient({
-    type: 'linear',
-    coords: {
-      x1: 0,
-      y1: realBounds.height,
-      x2: 0,
-      y2: 0,
-    },
-    colorStops: [
-      { offset: 0, color: '#0000003C' },
-      { offset: 0.5, color: '#00000029' },
-      { offset: 1, color: '#0000001C' },
-    ]
-  });
+  // Draw cover gradient with stroke and shadow
+  ctx.save();
+  ctx.shadowColor = '#00000026';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+  
+  const coverGradient = ctx.createLinearGradient(0, realBounds.top + realBounds.height, 0, realBounds.top);
+  coverGradient.addColorStop(0, '#0000003C');
+  coverGradient.addColorStop(0.5, '#00000029');
+  coverGradient.addColorStop(1, '#0000001C');
+  
+  ctx.fillStyle = coverGradient;
+  ctx.strokeStyle = difficultyColor;
+  ctx.lineWidth = 4;
+  roundRect(ctx, realBounds.left, realBounds.top, realBounds.width, realBounds.height, 10);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 
-  const cover = new fabric.Rect({
-    width: realBounds.width,
-    height: realBounds.height,
-    fill: coverGradient,
-    left: realBounds.left,
-    top: realBounds.top,
-    rx: 10,
-    ry: 10,
-    stroke: difficultyColor,
-    strokeWidth: 4,
-    shadow: new fabric.Shadow({
-      color: '#00000026',
-      blur: 10,
-      offsetX: 2,
-      offsetY: 2,
-    }),
-  })
+  // Draw info background gradient
+  const infoHeight = 70;
+  const infoGradient = ctx.createLinearGradient(0, realBounds.top + realBounds.height, 0, realBounds.top + realBounds.height - infoHeight);
+  infoGradient.addColorStop(0, '#00000060');
+  infoGradient.addColorStop(1, '#00000000');
+  
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  roundRect(ctx, realBounds.left, realBounds.top, realBounds.width, realBounds.height, 10);
+  ctx.clip();
+  ctx.fillStyle = infoGradient;
+  ctx.fillRect(realBounds.left, realBounds.top + realBounds.height - infoHeight, realBounds.width, infoHeight);
+  ctx.restore();
 
-  const infoBackground = new fabric.Rect({
-    width: realBounds.width,
-    height: 70,
-    fill: new fabric.Gradient({
-      type: 'linear',
-      coords: {
-        x1: 0,
-        y1: 70,
-        x2: 0,
-        y2: 0,
-      },
-      colorStops: [
-        { offset: 0, color: '#00000060' },
-        { offset: 1, color: '#00000000' },
-      ],
-    }),
-    opacity: 0.3,
-    left: realBounds.left,
-    top: realBounds.top + realBounds.height - 70,
-    clipPath: img.clipPath,
-  })
+  // Draw rating text with shadow
+  ctx.save();
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+  ctx.font = `600 20px ${FONT_FAMILY_MONO}`;
+  ctx.fillStyle = '#f5f5f5';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(song.rating.toString(), realBounds.left + realBounds.width - 8, realBounds.top + realBounds.height - 10);
+  ctx.restore();
 
-  const ratingText = new fabric.Text(song.rating.toString(), {
-    fontSize: 20,
-    fill: '#f5f5f5',
-    fontWeight: '600',
-    fontFamily: FONT_FAMILY_MONO,
-    left: realBounds.left + realBounds.width - 8,
-    top: realBounds.top + realBounds.height - 10,
-    originX: 'right',
-    originY: 'bottom',
-    shadow: new fabric.Shadow({
-      color: '#000000',
-      blur: 16,
-      offsetX: 2,
-      offsetY: 2,
-    }),
-  })
+  // Draw achievement text with shadow
+  ctx.save();
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+  ctx.font = `400 12px ${FONT_FAMILY_MONO}`;
+  ctx.fillStyle = '#f5f5f5';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  const achievementText = (song.achievement / 10000).toFixed(4) + '%';
+  ctx.fillText(achievementText, realBounds.left + 14, realBounds.top + realBounds.height - 14);
+  ctx.restore();
 
-  const achievementText = new fabric.Text((song.achievement / 10000).toFixed(4) + '%', {
-    fontSize: 12,
-    fill: '#f5f5f5',
-    fontWeight: '400',
-    fontFamily: FONT_FAMILY_MONO,
-    left: realBounds.left + 14,
-    top: realBounds.top + realBounds.height - 14,
-    originX: 'left',
-    originY: 'bottom',
-    shadow: new fabric.Shadow({
-      color: '#000000',
-      blur: 16,
-      offsetX: 2,
-      offsetY: 2,
-    }),
-  })
+  // Draw song name with shadow and clipping
+  ctx.save();
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+  ctx.font = `600 16px ${FONT_FAMILY}`;
+  ctx.fillStyle = '#f5f5f5';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  roundRect(ctx, realBounds.left + 14, realBounds.top + 14, realBounds.width - 28, realBounds.height - 28, 0);
+  ctx.clip();
+  ctx.fillText(song.songName, realBounds.left + 14, realBounds.top + realBounds.height - 14 - 16 - 8);
+  ctx.restore();
 
-  const songNameText = new fabric.Text(song.songName, {
-    fontSize: 16,
-    fill: '#f5f5f5',
-    fontWeight: '600',
-    fontFamily: FONT_FAMILY,
-    charSpacing: 24,
-    left: realBounds.left + 14,
-    top: achievementText.top! - achievementText.getScaledHeight() - 8,
-    width: realBounds.width - 28,
-    originX: 'left',
-    originY: 'bottom',
-    clipPath: new fabric.Rect({
-      top: realBounds.top + 14,
-      left: realBounds.left + 14,
-      width: realBounds.width - 28,
-      height: realBounds.height - 28,
-      absolutePositioned: true,
-    }),
-    shadow: new fabric.Shadow({
-      color: '#000000',
-      blur: 16,
-      offsetX: 2,
-      offsetY: 2,
-    }),
-  })
+  // Draw difficulty badge background
+  ctx.save();
+  ctx.font = `500 14px ${FONT_FAMILY_MONO}`;
+  const diffText = (song.levelPrecise / 10).toFixed(1);
+  const diffTextWidth = ctx.measureText(diffText).width;
+  
+  ctx.fillStyle = difficultyColor;
+  roundRect(ctx, realBounds.left, realBounds.top, realBounds.width, realBounds.height, 10);
+  ctx.clip();
+  roundRect(ctx, realBounds.left + realBounds.width - diffTextWidth - 20, realBounds.top - 10, diffTextWidth + 20 + 10, 24 + 10, 10);
+  ctx.fill();
+  ctx.restore();
 
-  const songDifficultyText = new fabric.Text((song.levelPrecise / 10).toFixed(1), {
-    fontSize: 14,
-    fill: song.difficulty === "remaster" ? "#591a8b" : "#f2f2f2",
-    fontWeight: '500',
-    fontFamily: FONT_FAMILY_MONO,
-    left: realBounds.left + realBounds.width - 10,
-    top: realBounds.top + 6,
-    originX: 'right',
-    originY: 'top',
-    charSpacing: -10,
-  })
+  // Draw difficulty text
+  ctx.save();
+  ctx.font = `500 14px ${FONT_FAMILY_MONO}`;
+  ctx.fillStyle = song.difficulty === "remaster" ? "#591a8b" : "#f2f2f2";
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  ctx.fillText(diffText, realBounds.left + realBounds.width - 10, realBounds.top + 3);
+  ctx.restore();
 
-  const songDifficultyTextBg = new fabric.Rect({
-    width: songDifficultyText.getScaledWidth() + 23,
-    height: songDifficultyText.getScaledHeight() + 10,
-    fill: difficultyColor,
-    left: realBounds.left + realBounds.width - songDifficultyText.getScaledWidth() - 22,
-    top: realBounds.top,
-  })
-
-  songDifficultyTextBg.clipPath = new fabric.Group([
-    new fabric.Rect({
-      top: songDifficultyTextBg.top,
-      left: songDifficultyTextBg.left,
-      width: songDifficultyTextBg.getScaledWidth(),
-      height: songDifficultyTextBg.getScaledHeight(),
-      rx: 16,
-      ry: 16,
-    }),
-    new fabric.Rect({
-      top: songDifficultyTextBg.top,
-      left: songDifficultyTextBg.left,
-      width: 16,
-      height: 16,
-    }),
-    new fabric.Rect({
-      top: songDifficultyTextBg.top! + songDifficultyTextBg.getScaledHeight() - 16,
-      left: songDifficultyTextBg.left! + songDifficultyTextBg.getScaledWidth() - 16,
-      width: 16,
-      height: 16,
-    })
-  ], {
-    absolutePositioned: true,
-  })
-
-  const songTypeBadgeImg = await fabricImageFromURL(
-    cache,
-    song.type === "dx"
-      ? "https://maimaidx.jp/maimai-mobile/img/music_dx.png"
-      : "https://maimaidx.jp/maimai-mobile/img/music_standard.png"
-    , {
-    scaleX: 0.4,
-    scaleY: 0.4,
-    left: realBounds.left + 14,
-    top: realBounds.top + 14,
-  })
-
-  canvas.add(new fabric.Group([
-    cover,
-    infoBackground,
-    ratingText,
-    achievementText,
-    songNameText,
-    songDifficultyTextBg,
-    songDifficultyText,
-    songTypeBadgeImg,
-  ]))
+  // Draw song type badge
+  const songTypeBadgeUrl = song.type === "dx"
+    ? "https://maimaidx.jp/maimai-mobile/img/music_dx.png"
+    : "https://maimaidx.jp/maimai-mobile/img/music_standard.png";
+  const songTypeBadge = await loadImageWithCache(cache, songTypeBadgeUrl);
+  const badgeScale = 0.4;
+  ctx.drawImage(
+    songTypeBadge as any, 
+    realBounds.left + 14, 
+    realBounds.top + 14, 
+    songTypeBadge.width * badgeScale, 
+    songTypeBadge.height * badgeScale
+  );
 }
 
-async function renderContent(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, cache: ImageCache, overlayRect: fabric.Rect) {
+async function renderContent(
+  ctx: SkiaContext, 
+  data: SnapshotWithSongs, 
+  cache: ImageCache, 
+  overlayRect: OverlayRect
+) {
   const { newSongsB15, oldSongsB35 } = splitSongs(data.songs, data.snapshot.gameVersion);
-  const promises = [];
 
-  // Use proper async iteration for server-side reliability
+  // Render new songs (B15)
   for (let i = 0; i < newSongsB15.length; i++) {
-    promises.push(renderSong(canvas, cache, overlayRect, newSongsB15[i], i, 60));
+    await renderSong(ctx, cache, overlayRect, newSongsB15[i], i, 60);
   }
 
+  // Render old songs (B35)
   for (let i = 0; i < oldSongsB35.length; i++) {
-    promises.push(renderSong(canvas, cache, overlayRect, oldSongsB35[i], i + 15, 110));
+    await renderSong(ctx, cache, overlayRect, oldSongsB35[i], i + 15, 110);
   }
 
-  await Promise.all(promises);
-
-  await renderSongsLabel(canvas, cache, overlayRect, true, 24);
-  await renderSongsLabel(canvas, cache, overlayRect, false, 566);
+  await renderSongsLabel(ctx, cache, overlayRect, true, 24);
+  await renderSongsLabel(ctx, cache, overlayRect, false, 566);
 }
 
-async function renderSongsLabel(canvas: fabric.StaticCanvas, cache: ImageCache, overlayRect: fabric.Rect, newSongs: boolean, yOffset: number) {
-  const label = await fabricImageFromURL(
-    cache,
-    newSongs
-      ? "/res/label/new.png"
-      : "/res/label/old.png"
-    , {
-    scaleX: 0.26,
-    scaleY: 0.26,
-    top: overlayRect.top! + yOffset,
-    left: overlayRect.left! + 2,
-    opacity: 0.98,
-    shadow: new fabric.Shadow({
-      color: '#00000010',
-      blur: 30,
-      offsetX: 0,
-      offsetY: 0,
-    }),
-  });
-
-  canvas.add(label);
+async function renderSongsLabel(
+  ctx: SkiaContext, 
+  cache: ImageCache, 
+  overlayRect: OverlayRect, 
+  newSongs: boolean, 
+  yOffset: number
+) {
+  const labelUrl = newSongs ? "/res/label/new.png" : "/res/label/old.png";
+  const label = await loadImageWithCache(cache, labelUrl);
+  const labelScale = 0.26;
+  const labelWidth = label.width * labelScale;
+  const labelHeight = label.height * labelScale;
+  
+  ctx.save();
+  ctx.globalAlpha = 0.98;
+  ctx.shadowColor = '#00000010';
+  ctx.shadowBlur = 30;
+  ctx.drawImage(label as any, overlayRect.left + 2, overlayRect.top + yOffset, labelWidth, labelHeight);
+  ctx.restore();
 }
 
-async function renderFooter(canvas: fabric.StaticCanvas, data: SnapshotWithSongs, visitableProfileAt: string | null) {
-  const rect = new fabric.Rect({
-    width: CANVAS_WIDTH,
-    height: 50,
-    fill: '#00000020',
-    left: 0,
-    top: CANVAS_HEIGHT - 50,
-  });
+async function renderFooter(ctx: SkiaContext, data: SnapshotWithSongs, visitableProfileAt: string | null) {
+  const footerHeight = 50;
+  const footerTop = CANVAS_HEIGHT - footerHeight;
+  
+  // Draw footer background
+  ctx.fillStyle = '#00000020';
+  ctx.fillRect(0, footerTop, CANVAS_WIDTH, footerHeight);
 
-  const text = new fabric.Text(visitableProfileAt ? `Visit my profile at https://tomomai.lol/profile/${visitableProfileAt}/` : "Generated with https://tomomai.lol/", {
-    fontSize: 16,
-    fill: '#f9f0f4',
-    fontWeight: 500,
-    fontFamily: FONT_FAMILY,
-    left: 15,
-    top: rect.top! + 15,
-    charSpacing: 40,
-    opacity: 0.86,
-  });
+  // Draw footer text
+  const footerText = visitableProfileAt 
+    ? `Visit my profile at https://tomomai.lol/profile/${visitableProfileAt}/` 
+    : "Generated with https://tomomai.lol/";
+  
+  ctx.save();
+  ctx.globalAlpha = 0.86;
+  ctx.font = `500 16px ${FONT_FAMILY}`;
+  ctx.fillStyle = '#f9f0f4';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(footerText, 15, footerTop + 15);
+  ctx.restore();
 
-  const dateText = new fabric.Text("at " + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), {
-    fontSize: 16,
-    fill: '#f9f0f4',
-    fontWeight: 400,
-    fontFamily: FONT_FAMILY,
-    left: CANVAS_WIDTH - 15,
-    top: rect.top! + 15,
-    charSpacing: 40,
-    opacity: 0.86,
-    originX: 'right',
-  });
-
-  canvas.add(new fabric.Group([rect, text, dateText]));
+  // Draw date text
+  const dateText = "at " + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  
+  ctx.save();
+  ctx.globalAlpha = 0.86;
+  ctx.font = `400 16px ${FONT_FAMILY}`;
+  ctx.fillStyle = '#f9f0f4';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  ctx.fillText(dateText, CANVAS_WIDTH - 15, footerTop + 15);
+  ctx.restore();
 }

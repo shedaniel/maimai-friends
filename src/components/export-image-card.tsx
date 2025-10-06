@@ -2,12 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CANVAS_HEIGHT, CANVAS_WIDTH, renderImage } from "@/lib/render-image";
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/lib/image-spec";
 import { SnapshotWithSongs } from "@/lib/types";
-import { fabric } from "fabric";
-import { Download, Loader2, RefreshCw, Server } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 interface ExportImageCardProps {
   selectedSnapshotData: SnapshotWithSongs;
@@ -16,93 +15,20 @@ interface ExportImageCardProps {
 
 export function ExportImageCard({ selectedSnapshotData, visitableProfileAt }: ExportImageCardProps) {
   const t = useTranslations();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<fabric.StaticCanvas | null>(null);
+  const [imageUrl, setImageUrl] = useState<string>(`/api/export-image?snapshotId=${selectedSnapshotData.snapshot.id}`);
+  const [imageKey, setImageKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isServerGenerating, setIsServerGenerating] = useState(false);
 
-  // Canvas dimensions - actual size for rendering
-  const updateCanvasScale = () => {
-    if (canvasRef.current && containerRef.current) {
-      const containerWidth = containerRef.current.offsetWidth;
-      const scale = containerWidth / CANVAS_WIDTH;
-      
-      canvasRef.current.style.transform = `scale(${scale})`;
-      canvasRef.current.style.transformOrigin = 'top left';
-    }
-  };
-
-  useEffect(() => {
-    if (canvasRef.current && !fabricCanvasRef.current) {
-      // Set canvas element dimensions to actual size
-      canvasRef.current.width = CANVAS_WIDTH;
-      canvasRef.current.height = CANVAS_HEIGHT;
-
-      // Initialize Fabric.js canvas with actual rendering dimensions
-      fabricCanvasRef.current = new fabric.StaticCanvas(canvasRef.current, {
-        width: CANVAS_WIDTH,
-        height: CANVAS_HEIGHT,
-      });
-
-      // Initial render
-      renderImage(fabricCanvasRef.current, selectedSnapshotData, {}, visitableProfileAt);
-    }
-
-    return () => {
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.dispose();
-        fabricCanvasRef.current = null;
-      }
-    };
-  }, [selectedSnapshotData, visitableProfileAt]);
-
-  useEffect(() => {
-    // Small delay to ensure container is properly sized
-    const timer = setTimeout(() => {
-      updateCanvasScale();
-    }, 100);
-    
-    const handleResize = () => updateCanvasScale();
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [containerRef.current]);
-
-  const handleExport = () => {
-    if (fabricCanvasRef.current) {
-      // Export the canvas at full resolution
-      const dataURL = fabricCanvasRef.current.toDataURL({
-        format: 'png',
-        quality: 1,
-        multiplier: 2, // Keep original size (CANVAS_WIDTHxCANVAS_HEIGHT)
-      });
-
-      // Create download link
-      const link = document.createElement('a');
-      link.download = `maimai-profile-${selectedSnapshotData.snapshot.displayName || 'export'}.png`;
-      link.href = dataURL;
-      link.click();
-    }
-  };
-
-  const handleServerDownload = async () => {
+  const handleDownload = async () => {
     try {
-      setIsServerGenerating(true);
-      
-      // Call the API to generate the image
-      const response = await fetch('/api/export-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ snapshotId: selectedSnapshotData.snapshot.id }),
-      });
+      setIsDownloading(true);
 
+      // Fetch the image
+      const response = await fetch(imageUrl);
       if (!response.ok) {
-        throw new Error('Failed to generate image');
+        throw new Error('Failed to fetch image');
       }
 
       // Get the image blob and trigger download
@@ -120,21 +46,26 @@ export function ExportImageCard({ selectedSnapshotData, visitableProfileAt }: Ex
       window.URL.revokeObjectURL(url);
       
     } catch (error) {
-      console.error('Failed to export image:', error);
-      alert('Failed to generate image. Please try again.');
+      console.error('Failed to download image:', error);
+      alert('Failed to download image. Please try again.');
     } finally {
-      setIsServerGenerating(false);
+      setIsDownloading(false);
     }
   };
 
   const handleRefresh = () => {
-    if (fabricCanvasRef.current) {
-      renderImage(fabricCanvasRef.current, selectedSnapshotData, {}, visitableProfileAt);
-    }
+    // Force image reload by changing the key
+    setIsLoading(true);
+    setImageKey(prev => prev + 1);
+    setImageUrl(`/api/export-image?snapshotId=${selectedSnapshotData.snapshot.id}&t=${Date.now()}`);
+  };
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className="w-full mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Download className="h-5 w-5" />
@@ -147,51 +78,45 @@ export function ExportImageCard({ selectedSnapshotData, visitableProfileAt }: Ex
       <CardContent className="space-y-6">
         <div className="flex flex-col items-center space-y-4">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <Button onClick={handleExport} className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
+            <Button onClick={handleDownload} disabled={isDownloading} className="flex items-center gap-2">
+              {isDownloading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
               Download
             </Button>
-            <Button 
-              onClick={handleServerDownload} 
-              disabled={isServerGenerating}
-              variant="outline" 
-              className="flex items-center gap-2"
-            >
-              {isServerGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Server className="h-4 w-4" />
-                  Download (Server)
-                </>
-              )}
+            <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
             </Button>
-            {process.env.NODE_ENV === 'development' && (
-              <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </Button>
-            )}
           </div>
-          {/* <div className="text-center text-sm text-muted-foreground space-y-1">
-            <p><strong>Client:</strong> Fast, direct canvas export</p>
-            <p><strong>Server:</strong> High-quality server-rendered image with better font support</p>
-          </div> */}
           <div
             ref={containerRef}
-            className="border rounded-xl overflow-hidden shadow-sm w-full"
+            className="border rounded-xl overflow-hidden shadow-sm w-full relative"
             style={{
               aspectRatio: `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}`,
             }}
           >
-            <canvas
-              ref={canvasRef}
+            {isLoading && (
+              <div className="absolute inset-0 bg-muted animate-pulse">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted-foreground/30 to-transparent animate-shimmer" 
+                     style={{
+                       backgroundSize: '200% 100%',
+                       animation: 'shimmer 5s infinite',
+                     }} 
+                />
+              </div>
+            )}
+            <img
+              key={imageKey + selectedSnapshotData.snapshot.id}
+              src={imageUrl}
+              alt="Maimai Profile"
+              onLoad={handleImageLoad}
+              className={isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-600'}
               style={{
-                width: `${CANVAS_WIDTH}px`,
-                height: `${CANVAS_HEIGHT}px`,
+                width: '100%',
+                height: 'auto',
               }}
             />
           </div>

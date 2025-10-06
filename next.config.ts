@@ -4,7 +4,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+  serverExternalPackages: ["skia-canvas"],
   images: {
     minimumCacheTTL: 2678400, // 31 days
     remotePatterns: [
@@ -41,6 +41,11 @@ const nextConfig: NextConfig = {
         ...config.resolve.alias,
         './render-image-server': false,
       };
+    } else {
+      config.externals = [
+        ...config.externals,
+        {'skia-canvas': 'commonjs skia-canvas'},
+      ]
     }
     return config;
   },

@@ -147,6 +147,7 @@ export const userScores = sqliteTable("user_scores", {
   fs: text("fs", { enum: ["none", "sync", "fs", "fs+", "fdx", "fdx+"] }).notNull(),
 }, (table) => ({
   snapshotIdIndex: index("user_scores_snapshotid_idx").on(table.snapshotId),
+  snapshotIdSongIdIndex: index("user_scores_snapshotid_songid_idx").on(table.snapshotId, table.songId),
 }));
 
 export const detailedScores = sqliteTable("detailed_scores", {

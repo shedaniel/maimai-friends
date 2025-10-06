@@ -1,234 +1,184 @@
+import { db } from '@/lib/db';
+import { getRatingImageUrl, splitSongs } from '@/lib/rating-calculator';
+import { ImageCache, renderImage } from '@/lib/render-image';
+import { fetchImageForServer } from '@/lib/render-image-server';
+import { songs, user, userScores, userSnapshots } from '@/lib/schema';
+import type { SnapshotWithSongs } from '@/lib/types';
+import { eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
-import type { Browser } from 'puppeteer-core';
-
-const CHROMIUM_PATH =
-  "https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.x64.tar"
+import { Image, loadImage } from 'skia-canvas';
 
 export const dynamic = "force-dynamic";
 
-async function getBrowser(): Promise<Browser> {
-  if (process.env.VERCEL_ENV === "production") {
-    const chromium = await import("@sparticuz/chromium-min").then(
-      (mod) => mod.default
-    );
+async function prepareData(snapshotId: string): Promise<{
+  type: "success",
+  data: SnapshotWithSongs,
+  visitableProfileAt: string | null,
+} | {
+  type: "error",
+  error: string,
+}> {
+  // Fetch snapshot data from database
+  console.log('🔍 Fetching snapshot from database...');
+  let startTime = Date.now();
+  const snapshot = await db
+    .select()
+    .from(userSnapshots)
+    .where(eq(userSnapshots.id, snapshotId))
+    .limit(1);
 
-    const puppeteerCore = await import("puppeteer-core").then(
-      (mod) => mod.default
-    );
-
-    const executablePath = await chromium.executablePath(CHROMIUM_PATH);
-
-    const browser = await puppeteerCore.launch({
-      executablePath,
-      headless: true,
-      args: [
-        '--enable-font-antialiasing',
-        ...chromium.args,
-      ],
-    });
-    return browser;
-  } else {
-    const puppeteer = await import("puppeteer").then((mod) => mod.default);
-
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--enable-font-antialiasing',
-      ],
-    });
-    return browser as unknown as Browser;
+  if (snapshot.length === 0) {
+    console.error('❌ Snapshot not found');
+    return {
+      type: "error",
+      error: 'Snapshot not found',
+    };
   }
+  console.log(`✅ Snapshot fetched in ${Date.now() - startTime}ms`);
+
+  // Get user privacy settings
+  console.log('🔍 Fetching user privacy settings and songs with scores...');
+  startTime = Date.now();
+  const publishProfilePromise = db
+    .select({ username: user.username, publishProfile: user.publishProfile })
+    .from(user)
+    .where(eq(user.id, snapshot[0].userId))
+    .limit(1);
+  const songsWithScoresPromise = db
+    .select({
+      songId: songs.id,
+      songName: songs.songName,
+      artist: songs.artist,
+      cover: songs.cover,
+      difficulty: songs.difficulty,
+      level: songs.level,
+      levelPrecise: songs.levelPrecise,
+      type: songs.type,
+      genre: songs.genre,
+      addedVersion: songs.addedVersion,
+      achievement: userScores.achievement,
+      dxScore: userScores.dxScore,
+      fc: userScores.fc,
+      fs: userScores.fs,
+    })
+    .from(userScores)
+    .innerJoin(songs, eq(userScores.songId, songs.id))
+    .where(eq(userScores.snapshotId, snapshotId))
+    .orderBy(songs.songName, songs.difficulty);
+  
+  const [publishProfile, songsWithScores] = await Promise.all([publishProfilePromise, songsWithScoresPromise]);
+
+  if (publishProfile.length === 0) {
+    console.error('❌ User not found');
+    return {
+      type: "error",
+      error: 'User not found',
+    };
+  }
+  console.log(`✅ User privacy settings and ${songsWithScores.length} songs with scores fetched in ${Date.now() - startTime}ms`);
+
+  // Determine visitable profile URL
+  const visitableProfileAt = publishProfile[0].publishProfile && publishProfile[0].username
+    ? publishProfile[0].username
+    : null;
+
+  const data: SnapshotWithSongs = {
+    snapshot: snapshot[0],
+    songs: songsWithScores,
+  };
+
+  return {
+    type: "success",
+    data,
+    visitableProfileAt,
+  };
 }
 
-export async function POST(request: NextRequest) {
-  // console.log('🚀 Starting export-image API request');
+export async function GET(request: NextRequest) {
+  console.log('🚀 Starting skia-canvas export-image API request');
   try {
-    const { snapshotId } = await request.json();
-    // console.log('📋 Received snapshot ID:', snapshotId);
+    const snapshotId = request.nextUrl.searchParams.get('snapshotId');
+    console.log('📋 Received snapshot ID:', snapshotId);
     
     if (!snapshotId) {
       console.error('❌ No snapshot ID provided');
       return NextResponse.json({ error: 'Snapshot ID is required' }, { status: 400 });
     }
 
-    // Construct the full render URL that the Python server should navigate to
-    let renderUrl: string;
-    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-      renderUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/render-image?snapshotId=${snapshotId}`;
-    } else {
-      renderUrl = `http://localhost:3000/render-image?snapshotId=${snapshotId}`;
+    const prepareDataResult = await prepareData(snapshotId);
+    if (prepareDataResult.type === "error") {
+      return NextResponse.json({ error: prepareDataResult.error }, { status: 404 });
     }
 
-    // Check if external render server is configured
-    const renderServerUrl = process.env.RENDER_IMAGE_SERVER_URL;
-    if (renderServerUrl) {
-      console.log('🔄 Redirecting to external render server:', renderServerUrl);
-      
-      // Construct the API endpoint URL for the Python server
-      const apiUrl = new URL('/export-image', renderServerUrl);
-      
-      // Forward the request to the external server with the full render URL
-      const response = await fetch(apiUrl.toString(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ renderUrl }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`External render server responded with ${response.status}: ${response.statusText}`);
-      }
-      
-      // Get the image data and forward it
-      const imageBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(imageBuffer);
-      
-      // Use snapshot ID for filename
-      const sanitizedName = `snapshot-${snapshotId}`;
-      
-      return new Response(buffer, {
-        status: 200,
-        headers: {
-          'Content-Type': 'image/png',
-          'Content-Disposition': `attachment; filename="maimai-profile-${sanitizedName}.png"`,
-          'Content-Length': buffer.length.toString(),
-        },
-      });
-    }
+    const { data, visitableProfileAt } = prepareDataResult;
+
+    // Pre-cache images
+    console.log('🖼️ Pre-caching images...');
+    let startTime = Date.now();
+    const { newSongsB15, oldSongsB35 } = splitSongs(data.songs, data.snapshot.gameVersion);
     
-    // Launch Puppeteer browser following Vercel's recommended pattern
-    // console.log('🌐 Launching Puppeteer browser...');
-    const browserStartTime = Date.now();
-    const browser = await getBrowser();
-    // console.log(`✅ Browser launched in ${Date.now() - browserStartTime}ms`);
+    const imagesToCache = [
+      "https://maimaidx.jp/maimai-mobile/img/music_dx.png",
+      "https://maimaidx.jp/maimai-mobile/img/music_standard.png",
+      getRatingImageUrl(data.snapshot.rating),
+      data.snapshot.iconUrl,
+      data.snapshot.classRankUrl,
+      data.snapshot.courseRankUrl,
+      `/res/trophy/normal.png`,
+      `/res/shine/${data.snapshot.gameVersion}.png`,
+      `/res/down/${data.snapshot.gameVersion}.png`,
+      `/res/character/${data.snapshot.gameVersion}.png`,
+      `/res/logo/${data.snapshot.gameVersion}.png`,
+      `/res/label/new.png`,
+      `/res/label/old.png`,
+      ...newSongsB15.map(s => s.cover),
+      ...oldSongsB35.map(s => s.cover),
+    ];
 
-    try {
-      // console.log('📄 Creating new page...');
-      const page = await browser.newPage();
+    const cache: ImageCache = {};
+    await Promise.all(
+      imagesToCache.map(async (url) => {
+        try {
+          if (url.startsWith('data:')) return;
+          return fetchImageForServer(url).then(async img => {
+            let memo: Image | null = null;
+            cache[url] = async () => memo || (memo = await loadImage(img));
+          });
+        } catch (error) {
+          console.warn(`⚠️ Failed to cache image: ${url}`, error);
+        }
+      })
+    );
+    console.log(`✅ Cached ${Object.keys(cache).length} images in ${Date.now() - startTime}ms`);
 
-      // Set viewport to ensure consistent rendering
-      // console.log('📐 Setting viewport...');
-      await page.setViewport({
-        width: 1400,
-        height: 2200,
-        deviceScaleFactor: 2,
-      });
-      
-      // Enable console logging from the page
-      page.on('console', (msg: any) => {
-        // console.log('🖥️ Browser console:', msg.type(), msg.text());
-      });
-      
-      // Log page errors
-      page.on('pageerror', (err: Error) => {
-        console.error('❌ Page error:', err.message);
-      });
-      
-      // Log failed requests
-      page.on('requestfailed', (req: any) => {
-        console.error('🚫 Request failed:', req.url(), req.failure()?.errorText);
-      });
+    // Render the image using skia-canvas
+    console.log('🎨 Rendering image with skia-canvas...');
+    startTime = Date.now();
+    const canvas = await renderImage(data, cache, visitableProfileAt);
+    console.log(`✅ Image rendered in ${Date.now() - startTime}ms`);
 
-      // console.log('🔗 Render URL:', renderUrl);
+    // Convert canvas to JPEG buffer
+    console.log('💾 Converting to JPEG buffer...');
+    startTime = Date.now();
+    const buffer = await canvas.toBuffer('jpeg', {
+      density: 2,
+      quality: 0.7,
+    });
+    console.log(`✅ Buffer created, size: ${buffer.length} bytes in ${Date.now() - startTime}ms`);
 
-      // Navigate to the rendering page
-      // console.log('🧭 Navigating to render page...');
-      const navStartTime = Date.now();
-      await page.goto(renderUrl, { 
-        waitUntil: 'networkidle0',
-        timeout: 60000 // Increase navigation timeout
-      });
-      // console.log(`✅ Navigation completed in ${Date.now() - navStartTime}ms`);
+    // Use snapshot ID for filename
+    const sanitizedName = `snapshot-${snapshotId}`;
 
-      // Check if page loaded successfully
-      const title = await page.title();
-      // console.log('📋 Page title:', title);
-
-      // Wait for rendering to complete
-      // console.log('⏳ Waiting for rendering to complete...');
-      const renderStartTime = Date.now();
-      
-      try {
-        await page.waitForFunction(() => (window as any).renderComplete === true, { 
-          timeout: 45000, // Increase render timeout
-          polling: 1000   // Check every second
-        });
-        // console.log(`✅ Rendering completed in ${Date.now() - renderStartTime}ms`);
-      } catch (timeoutError) {
-        console.error('⏰ Rendering timeout after 45s');
-        
-        // Try to get more info about the current state
-        const renderStatus = await page.evaluate(() => {
-          return {
-            renderComplete: (window as any).renderComplete,
-            canvasPresent: !!document.querySelector('canvas'),
-            fabricLoaded: !!(window as any).fabric,
-            anyErrors: (window as any).lastError,
-            readyState: document.readyState
-          };
-        });
-        // console.log('🔍 Current page state:', renderStatus);
-        
-        throw new Error(`Rendering timeout: ${JSON.stringify(renderStatus)}`);
-      }
-
-      // Wait a bit more for all images to load
-      // console.log('🖼️ Waiting for additional image loading...');
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Increase wait time
-
-      // Take a high-quality screenshot of the canvas
-      // console.log('📸 Taking canvas screenshot...');
-      const screenshotStartTime = Date.now();
-      
-      const canvasElement = await page.$('canvas');
-      if (!canvasElement) {
-        // Try to get more info about what's on the page
-        const pageContent = await page.evaluate(() => {
-          return {
-            bodyHTML: document.body.innerHTML.substring(0, 500),
-            canvasCount: document.querySelectorAll('canvas').length,
-            hasRenderStatus: !!document.querySelector('#render-status')
-          };
-        });
-        console.error('❌ Canvas element not found. Page content:', pageContent);
-        throw new Error('Canvas element not found');
-      }
-
-      const imageBuffer = await canvasElement.screenshot({ 
-        type: 'png',
-        omitBackground: false,
-      });
-      
-      // console.log(`✅ Screenshot taken in ${Date.now() - screenshotStartTime}ms, size: ${imageBuffer.length} bytes`);
-
-      // console.log('🔒 Closing browser...');
-      await browser.close();
-
-      // Use snapshot ID for filename
-      const sanitizedName = `snapshot-${snapshotId}`;
-
-      // Convert to proper Buffer for Response
-      const buffer = Buffer.from(imageBuffer);
-
-      // console.log('🎉 Export completed successfully!');
-      return new Response(buffer, {
-        status: 200,
-        headers: {
-          'Content-Type': 'image/png',
-          'Content-Disposition': `attachment; filename="maimai-profile-${sanitizedName}.png"`,
-          'Content-Length': buffer.length.toString(),
-        },
-      });
-
-    } finally {
-      // console.log('🧹 Cleaning up browser...');
-      await browser.close();
-    }
+    console.log('🎉 Export completed successfully!');
+    return new Response(new Uint8Array(buffer), {
+      status: 200,
+      headers: {
+        'Content-Type': 'image/jpeg',
+        'Content-Disposition': `attachment; filename="maimai-profile-${sanitizedName}.png"`,
+        'Content-Length': buffer.length.toString(),
+      },
+    });
+    
   } catch (error) {
     console.error('💥 Failed to generate image:', error);
     console.error('📍 Error stack:', error instanceof Error ? error.stack : 'No stack trace');

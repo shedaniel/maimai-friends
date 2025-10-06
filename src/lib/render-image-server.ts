@@ -1,5 +1,4 @@
 import { getCachedImagePath } from "./image_cacher";
-import { fabric } from 'fabric';
 
 // Helper function to check if a URL is a data URL (base64)
 function isDataUrl(url: string): boolean {
@@ -63,20 +62,3 @@ export async function fetchImageForServer(url: string): Promise<string> {
     throw error;
   }
 }
-
-// Server-only fabric image creation
-export async function fabricImageFromURLServer(
-  url: string, 
-  fabricOptions: any = {}
-): Promise<fabric.Image> {
-  if (isDataUrl(url)) {
-    return new Promise((resolve) => {
-      fabric.Image.fromURL(url, image => resolve(image), fabricOptions)!
-    });
-  }
-  
-  const base64Url = await fetchImageForServer(url);
-  return new Promise((resolve) => {
-    fabric.Image.fromURL(base64Url, image => resolve(image), fabricOptions)!
-  });
-} 

@@ -1,0 +1,1 @@
+CREATE INDEX `user_scores_snapshotid_songid_idx` ON `user_scores` (`snapshotId`,`songId`);
