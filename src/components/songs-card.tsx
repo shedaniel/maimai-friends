@@ -8,9 +8,33 @@ import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
 import { LayoutGrid, LayoutList, Menu, Plus, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Fragment, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select-friendly";
+
+// Hook for infinite scroll detection
+function useInfiniteScroll(callback: () => void, enabled: boolean) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!enabled || !sentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          callback();
+        }
+      },
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+
+    observer.observe(sentinelRef.current);
+
+    return () => observer.disconnect();
+  }, [callback, enabled]);
+
+  return sentinelRef;
+}
 
 // Helper function to group songs by individual rating values and difficulty
 function groupSongsByRating(songs: SongWithRating[]) {
@@ -176,15 +200,25 @@ function SongRow({ song }: { song: SongWithRating }) {
 }
 
 // Component for rendering compact song section as a single grid
-function CompactSongSection({ title, songs, count, t, sum, average }: {
+function CompactSongSection({ title, songs, count, t, sum, average, visibleCount, onLoadMore }: {
   title: string;
   songs: SongWithRating[];
   count?: string;
   t: any;
   sum?: number;
   average?: number;
+  visibleCount: number;
+  onLoadMore: () => void;
 }) {
   if (songs.length === 0) return null;
+
+  const hasMore = visibleCount < songs.length;
+  const loadMore = useCallback(() => {
+    if (hasMore) onLoadMore();
+  }, [hasMore, onLoadMore]);
+
+  const sentinelRef = useInfiniteScroll(loadMore, hasMore);
+  const visibleSongs = songs.slice(0, visibleCount);
 
   return (
     <div className="space-y-2">
@@ -234,15 +268,15 @@ function CompactSongSection({ title, songs, count, t, sum, average }: {
         </div>
 
         {/* Song Data */}
-        {songs.map(song => (
+        {visibleSongs.map(song => (
           <Fragment key={`${song.songId}-${song.difficulty}`}>
-            <div key={`${song.songId}-${song.difficulty}-name`} className="truncate font-medium py-1 px-2 border-b border-dashed border-gray-200">
+            <div className="truncate font-medium py-1 px-2 border-b border-dashed border-gray-200">
               {song.songName}
             </div>
-            <div key={`${song.songId}-${song.difficulty}-artist`} className="truncate text-muted-foreground py-1 px-2 border-b border-dashed border-gray-200">
+            <div className="truncate text-muted-foreground py-1 px-2 border-b border-dashed border-gray-200">
               {song.artist}
             </div>
-            <div key={`${song.songId}-${song.difficulty}-level`} className={cn("text-center border-b grid items-center font-medium border-dashed",
+            <div className={cn("text-center border-b grid items-center font-medium border-dashed",
               song.difficulty === "basic" && "bg-green-100 text-green-800 border-green-200",
               song.difficulty === "advanced" && "bg-yellow-100 text-yellow-800 border-yellow-200",
               song.difficulty === "expert" && "bg-red-100 text-red-800 border-red-200",
@@ -252,20 +286,25 @@ function CompactSongSection({ title, songs, count, t, sum, average }: {
             )}>
               {(song.levelPrecise / 10).toFixed(1)}
             </div>
-            <div key={`${song.songId}-${song.difficulty}-achievement`} className="text-right font-mono py-1 px-2 border-b border-dashed border-gray-200">
+            <div className="text-right font-mono py-1 px-2 border-b border-dashed border-gray-200">
               {(song.achievement / 10000).toFixed(4)}%
             </div>
-            <div key={`${song.songId}-${song.difficulty}-fc`} className="text-center text-muted-foreground py-1 px-2 border-b border-dashed border-gray-200">
+            <div className="text-center text-muted-foreground py-1 px-2 border-b border-dashed border-gray-200">
               {song.fc !== 'none' ? song.fc.toUpperCase() : ''}
             </div>
-            <div key={`${song.songId}-${song.difficulty}-fs`} className="text-center text-muted-foreground py-1 px-2 border-b border-dashed border-gray-200">
+            <div className="text-center text-muted-foreground py-1 px-2 border-b border-dashed border-gray-200">
               {song.fs !== 'none' ? song.fs.toUpperCase() : ''}
             </div>
-            <div key={`${song.songId}-${song.difficulty}-rating`} className="text-right font-mono font-semibold py-1 px-2 border-b border-dashed border-gray-200">
+            <div className="text-right font-mono font-semibold py-1 px-2 border-b border-dashed border-gray-200">
               {song.rating}
             </div>
           </Fragment>
         ))}
+
+        {/* Sentinel for infinite scroll - spans all columns */}
+        {hasMore && (
+          <div ref={sentinelRef} className="col-span-7 h-4" />
+        )}
       </div>
     </div>
   );
@@ -411,7 +450,7 @@ function SongGridCard({ song }: { song: SongWithRating }) {
 }
 
 // Component for rendering song sections
-function SongSection({ title, songs, count, displayMode, t, sum, average }: {
+function SongSection({ title, songs, count, displayMode, t, sum, average, visibleCount, onLoadMore }: {
   title: string;
   songs: SongWithRating[];
   count?: string;
@@ -419,13 +458,23 @@ function SongSection({ title, songs, count, displayMode, t, sum, average }: {
   t: any;
   sum?: number;
   average?: number;
+  visibleCount: number;
+  onLoadMore: () => void;
 }) {
   if (songs.length === 0) return null;
 
   // Use dedicated compact section for compact mode
   if (displayMode === "compact") {
-    return <CompactSongSection title={title} songs={songs} count={count} t={t} sum={sum} average={average} />;
+    return <CompactSongSection title={title} songs={songs} count={count} t={t} sum={sum} average={average} visibleCount={visibleCount} onLoadMore={onLoadMore} />;
   }
+
+  const hasMore = visibleCount < songs.length;
+  const loadMore = useCallback(() => {
+    if (hasMore) onLoadMore();
+  }, [hasMore, onLoadMore]);
+
+  const sentinelRef = useInfiniteScroll(loadMore, hasMore);
+  const visibleSongs = songs.slice(0, visibleCount);
 
   return (
     <div className="space-y-2">
@@ -451,9 +500,12 @@ function SongSection({ title, songs, count, displayMode, t, sum, average }: {
         )}
       </div>
       <div className="space-y-2">
-        {songs.map(song => (
+        {visibleSongs.map(song => (
           <SongRow key={`${song.songId}-${song.difficulty}`} song={song} />
         ))}
+        {hasMore && (
+          <div ref={sentinelRef} className="h-4" />
+        )}
       </div>
     </div>
   );
@@ -514,6 +566,27 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
   b35Sum?: number;
   b35Average?: number;
 }) {
+  const [visibleB15, setVisibleB15] = useState(Math.min(50, newSongsB15.length));
+  const [visibleB35, setVisibleB35] = useState(Math.min(50, oldSongsB35.length));
+  const [visibleNewRemaining, setVisibleNewRemaining] = useState(Math.min(50, remainingNewSongs.length));
+  const [visibleOldRemaining, setVisibleOldRemaining] = useState(Math.min(50, remainingOldSongs.length));
+
+  const loadMoreB15 = useCallback(() => {
+    setVisibleB15(prev => Math.min(prev + 50, newSongsB15.length));
+  }, [newSongsB15.length]);
+
+  const loadMoreB35 = useCallback(() => {
+    setVisibleB35(prev => Math.min(prev + 50, oldSongsB35.length));
+  }, [oldSongsB35.length]);
+
+  const loadMoreNewRemaining = useCallback(() => {
+    setVisibleNewRemaining(prev => Math.min(prev + 50, remainingNewSongs.length));
+  }, [remainingNewSongs.length]);
+
+  const loadMoreOldRemaining = useCallback(() => {
+    setVisibleOldRemaining(prev => Math.min(prev + 50, remainingOldSongs.length));
+  }, [remainingOldSongs.length]);
+
   return (
     <div className="space-y-6">
       <SongSection
@@ -524,6 +597,8 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
         t={t}
         sum={b15Sum}
         average={b15Average}
+        visibleCount={visibleB15}
+        onLoadMore={loadMoreB15}
       />
       <SongSection
         title={t('dataContent.oldSongsB35')}
@@ -533,6 +608,8 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
         t={t}
         sum={b35Sum}
         average={b35Average}
+        visibleCount={visibleB35}
+        onLoadMore={loadMoreB35}
       />
       <SongSection
         title={t('dataContent.newSongs')}
@@ -540,6 +617,8 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
         count={remainingNewSongs.length > 0 ? `${remainingNewSongs.length}` : undefined}
         displayMode={displayMode}
         t={t}
+        visibleCount={visibleNewRemaining}
+        onLoadMore={loadMoreNewRemaining}
       />
       <SongSection
         title={t('dataContent.oldSongs')}
@@ -547,6 +626,8 @@ function SongsList({ newSongsB15, oldSongsB35, remainingNewSongs, remainingOldSo
         count={remainingOldSongs.length > 0 ? `${remainingOldSongs.length}` : undefined}
         displayMode={displayMode}
         t={t}
+        visibleCount={visibleOldRemaining}
+        onLoadMore={loadMoreOldRemaining}
       />
     </div>
   );
