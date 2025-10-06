@@ -41,11 +41,10 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
   const handleDiscordInvite = async () => {
     try {
       const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${APPLICATION_ID}&scope=applications.commands`;
-      await navigator.clipboard.writeText(inviteUrl);
-      toast.success("Copied Discord Bot Invite Link");
+      window.open(inviteUrl, '_blank');
     } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
-      toast.error("Failed to copy invite link");
+      console.error('Failed to open invite link:', error);
+      toast.error("Failed to open invite link");
     }
   };
 
