@@ -1,10 +1,5 @@
 import { getCachedImagePath } from "./image_cacher";
 
-// Helper function to check if a URL is a data URL (base64)
-function isDataUrl(url: string): boolean {
-  return url.startsWith('data:');
-}
-
 // Server-only function for fetching images with Node.js modules
 export async function fetchImageForServer(url: string): Promise<string> {
   try {
@@ -18,7 +13,7 @@ export async function fetchImageForServer(url: string): Promise<string> {
     let buffer: Buffer;
     let contentType: string;
 
-    if (finalUrl.startsWith('/')) {
+    if (finalUrl.startsWith('/res')) {
       // Local file - read directly from filesystem
       const fs = await import('fs/promises');
       const path = await import('path');

@@ -49,6 +49,11 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  outputFileTracingIncludes: {
+    '/api/image-proxy': ['./public/res/**/*'],
+    '/api/export-image': ['./public/res/**/*'],
+    '/api/admin/cache_images': ['./public/res/**/*'],
+  },
 };
 
 export default withNextIntl(nextConfig);

@@ -70,18 +70,7 @@ export async function getCachedImagePath(url: string): Promise<string> {
     const urlHash = generateUrlHash(url);
     
     // Use different cache directory based on environment
-    let cacheDir: string;
-    let basePublicPath: string;
-    
-    if (isServerless()) {
-      // In serverless environments, skip caching and return original URL
-      return url;
-    } else {
-      // In normal environments, use public directory
-      cacheDir = path.join(process.cwd(), 'public', 'res', 'preloaded');
-      basePublicPath = `/res/preloaded/${urlHash}`;
-    }
-    
+    const cacheDir: string = path.join(process.cwd(), 'public', 'res', 'preloaded');
     await fs.mkdir(cacheDir, { recursive: true });
     
     // Try to determine extension from URL first
@@ -109,6 +98,9 @@ export async function getCachedImagePath(url: string): Promise<string> {
     
     // File doesn't exist, fetch it
     // console.log(`Caching image from: ${url}`);
+    if (isServerless()) {
+      return url;
+    }
     
     const { Agent } = await import('undici');
     const httpsAgent = new Agent({
