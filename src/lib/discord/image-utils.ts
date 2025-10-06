@@ -106,12 +106,8 @@ export async function generateAndSendProfileImage({
 
   try {
     // Generate the image
-    const imageResponse = await fetch(`${baseUrl}/api/export-image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ snapshotId: snapshot.id }),
+    const imageResponse = await fetch(`${baseUrl}/api/export-image?snapshotId=${snapshot.id}`, {
+      method: 'GET',
     });
 
     if (imageResponse.ok) {
@@ -197,12 +193,8 @@ export async function sendProfileImageResponse({
     const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL 
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` 
       : 'http://localhost:3000';
-    const imageResponse = await fetch(`${baseUrl}/api/export-image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ snapshotId: snapshot.id }),
+    const imageResponse = await fetch(`${baseUrl}/api/export-image?snapshotId=${snapshot.id}`, {
+      method: 'GET',
     });
 
     if (imageResponse.ok) {
