@@ -9,6 +9,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import { join } from "path";
 
+const DXDATA_URL = "https://raw.githubusercontent.com/gekichumai/dxrating/refs/heads/main/packages/dxdata/dxdata.json";
+const MAIMAI_SONGS_JSON_URL = "https://maimai.sega.jp/data/maimai_songs.json";
+const MAIMAI_SONGS_JSON_URL_INTL = "https://maimai.sega.com/assets/data/maimai_songs.json";
+
 // Helper function to convert level string to precise value (stored as 10x)
 function levelToPrecise(level: string): number {
   const trimmedLevel = level.trim();
@@ -35,7 +39,7 @@ function levelToPrecise(level: string): number {
 // Helper function to fetch dxdata.json
 async function fetchDxDataJson(): Promise<any> {
   console.log("Fetching dxdata.json...");
-  const dxDataResponse = await fetch("https://raw.githubusercontent.com/gekichumai/dxrating/refs/heads/main/packages/dxdata/dxdata.json", {
+  const dxDataResponse = await fetch(DXDATA_URL, {
     headers: {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     },
@@ -471,6 +475,28 @@ async function loadFallbackJsonData(region: "intl" | "jp", version: number): Pro
   }
 }
 
+// Helper function to load exclusion JSON data
+async function loadExclusionJsonData(region: "intl" | "jp", version: number): Promise<string[] | null> {
+  try {
+    const filePath = join(process.cwd(), "data", "exclusion", `${region}-${version}.json`);
+    console.log(`Checking for exclusion JSON file: ${filePath}`);
+
+    if (!(await fs.stat(filePath)).isFile()) {
+      console.log(`No exclusion JSON file found for ${region}-${version}`);
+      return null;
+    }
+
+    const fileContent = await fs.readFile(filePath, "utf-8");
+    const jsonData = JSON.parse(fileContent) as string[];
+
+    console.log(`Loaded ${jsonData.length} exclusion songs from ${region}-${version}.json`);
+    return jsonData;
+  } catch (error) {
+    console.log(`No exclusion JSON file found for ${region}-${version} or error reading it:`, error instanceof Error ? error.message : "Unknown error");
+    return null;
+  }
+}
+
 // Helper function to convert fallback JSON songs to database records
 function convertFallbackJsonToRecords(fallbackSongs: any[], region: "intl" | "jp", gameVersion: number): any[] {
   const records: any[] = [];
@@ -656,7 +682,7 @@ export async function GET(request: NextRequest) {
 
     // Step 4: Fetch maimai songs JSON data
     console.log("Step 4: Fetching maimai songs JSON data...");
-    const songsJsonResponse = await fetch("https://maimai.sega.jp/data/maimai_songs.json", {
+    const songsJsonResponse = await fetch(region === "intl" ? MAIMAI_SONGS_JSON_URL_INTL : MAIMAI_SONGS_JSON_URL, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
       },
@@ -728,9 +754,29 @@ export async function GET(request: NextRequest) {
     console.log(`Processed ${processedFromJson} songs from JSON`);
     console.log(`${songsNeedingFetch.length} songs need individual fetching`);
 
-    // Step 7: Fetch remaining songs individually (sequential with 500ms delay)
+    // Step 7: Check if any songs found in JSON were not found in pre-fetch
+    console.log("Step 7: Checking if any songs found in JSON were not found in pre-fetch...");
+    const currentVersionForRegion = getCurrentVersion(region);
+    const exclusionData = await loadExclusionJsonData(region, currentVersionForRegion) || [];
+    const songsNotFoundInPreFetch = Array.from(songsJsonMap.entries())
+      .flatMap(([key, song]) => {
+        const hasStd = "lev_adv" in song;
+        const hasDx = "lev_dx" in song;
+        const flat = []
+        if (hasStd) flat.push({ songName: key, musicType: "std" });
+        if (hasDx) flat.push({ songName: key, musicType: "dx" });
+        return flat;
+      })
+      .filter(song => !exclusionData.includes(`${song.songName}@${song.musicType}`))
+      .filter(song => !songsGrouped.has(`${song.songName}@${song.musicType}`));
+    console.log(`Found ${songsNotFoundInPreFetch.length} songs not found in pre-fetch`);
+    for (const song of songsNotFoundInPreFetch) {
+      console.log(` - ${song.songName} (${song.musicType})`);
+    }
+
+    // Step 8: Fetch remaining songs individually (sequential with 500ms delay)
     if (songsNeedingFetch.length > 0) {
-      console.log("Step 7: Fetching remaining songs individually...");
+      console.log("Step 8: Fetching remaining songs individually...");
 
       for (let i = 0; i < songsNeedingFetch.length; i++) {
         const song = songsNeedingFetch[i];
@@ -764,9 +810,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Step 7.5: Load and add fallback songs from JSON files if they exist
-    console.log("Step 7.5: Loading fallback songs from JSON files...");
-    const currentVersionForRegion = getCurrentVersion(region);
+    // Step 9: Load and add fallback songs from JSON files if they exist
+    console.log("Step 9: Loading fallback songs from JSON files...");
     const fallbackJsonData = await loadFallbackJsonData(region, currentVersionForRegion);
     
     let fallbackSongsAdded = 0;
@@ -792,9 +837,9 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    // Step 8: Batch upsert all records
+    // Step 10: Batch upsert all records
     if (allRecordsToInsert.length > 0) {
-      console.log(`Step 8: Performing batch upsert of ${allRecordsToInsert.length} records...`);
+      console.log(`Step 10: Performing batch upsert of ${allRecordsToInsert.length} records...`);
       
       try {
         // Split into batches of 1000 records to avoid SQL limits

@@ -92,6 +92,7 @@ export const fetchSessions = sqliteTable("fetch_sessions", {
   completedAt: integer("completedAt", { mode: "timestamp" }),
   errorMessage: text("errorMessage"),
   statusStates: text("statusStates"), // Comma-separated list of completed states
+  extraData: text("extraData"), // JSON string
 }, (table) => ({
   userIdRegionStartedAtIndex: index("fetch_sessions_userid_region_startedat_idx").on(table.userId, table.region, table.startedAt),
 }));

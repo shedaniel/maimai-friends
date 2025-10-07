@@ -397,6 +397,7 @@ export const userRouter = router({
             });
           }
         }
+        console.error('Failed to start fetch:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to start fetch',

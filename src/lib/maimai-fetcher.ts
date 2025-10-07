@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { userTokens, userSnapshots, songs, userScores } from "./schema";
+import { userTokens, userSnapshots, songs, userScores, fetchSessions } from "./schema";
 import { eq, and } from "drizzle-orm";
 import { load } from "cheerio";
 import { randomUUID } from "crypto";
@@ -1197,6 +1197,7 @@ async function createUserSnapshot(
 async function insertUserScores(
   snapshotId: string,
   region: "intl" | "jp",
+  sessionId: string,
   allScoreData: { [difficulty: number]: ScoreData[] }
 ): Promise<void> {
   const gameVersion = getCurrentVersion(region);
@@ -1243,7 +1244,8 @@ async function insertUserScores(
   console.log(`Created song lookup map with ${songLookup.size} entries`);
   
   // Process all scores using the lookup map
-  const scoreInserts: any[] = [];
+  const scoreInserts: typeof userScores.$inferInsert[] = [];
+  const notFoundScores: ScoreData[] = [];
   let foundCount = 0;
   let notFoundCount = 0;
   
@@ -1254,6 +1256,7 @@ async function insertUserScores(
 
       if (!songId) {
         console.warn(`Could not find song in database: ${scoreData.songName} (${scoreData.difficulty}, ${scoreData.musicType})`);
+        notFoundScores.push(scoreData);
         notFoundCount++;
         continue;
       }
@@ -1285,6 +1288,23 @@ async function insertUserScores(
     console.log(`Successfully inserted ${scoreInserts.length} user scores`);
   } else {
     console.warn("No valid scores to insert");
+  }
+
+  if (notFoundScores.length > 0) {
+    console.warn(`Found ${notFoundScores.length} scores not found in database:`);
+    for (const score of notFoundScores) {
+      console.warn(` - ${score.songName} (${score.difficulty}, ${score.musicType})`);
+    }
+    await db
+      .update(fetchSessions)
+      .set({
+        extraData: JSON.stringify(notFoundScores.map(score => ({
+          songName: score.songName,
+          difficulty: score.difficulty,
+          musicType: score.musicType,
+        }))),
+      })
+      .where(eq(fetchSessions.id, sessionId));
   }
 }
 
@@ -1365,7 +1385,7 @@ export async function fetchMaimaiData(
     
     // Insert user scores into database
     console.log("Starting user scores insertion...");
-    await insertUserScores(snapshotId, region, allSongsData);
+    await insertUserScores(snapshotId, region, sessionId, allSongsData);
     console.log("User scores insertion completed");
     
     console.log("Player data processed and snapshot created successfully");
