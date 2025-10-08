@@ -1,35 +1,16 @@
 import { createHash } from 'crypto';
 import { SAFE_MAIMAI_IMAGE_URLS } from './utils';
+import { gzip, gunzip } from 'zlib';
+import { promisify } from 'util';
+import path from 'path';
+import fs from 'fs/promises';
+
+const gzipAsync = promisify(gzip);
+const gunzipAsync = promisify(gunzip);
 
 // Helper function to detect if we're on the server
 function isServer() {
   return typeof window === 'undefined';
-}
-
-// Helper function to get file extension from content type
-function getExtensionFromContentType(contentType: string): string {
-  const typeMap: Record<string, string> = {
-    'image/png': 'png',
-    'image/jpeg': 'jpeg',
-    'image/jpg': 'jpg',
-    'image/gif': 'gif',
-    'image/webp': 'webp',
-    'image/svg+xml': 'svg',
-  };
-  
-  return typeMap[contentType.toLowerCase()] || 'png';
-}
-
-// Helper function to get file extension from URL
-function getExtensionFromUrl(url: string): string {
-  const urlObj = new URL(url);
-  const pathname = urlObj.pathname;
-  const lastDot = pathname.lastIndexOf('.');
-  
-  if (lastDot === -1) return 'png';
-  
-  const ext = pathname.substring(lastDot + 1).toLowerCase();
-  return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) ? ext : 'png';
 }
 
 // Generate a hash for the URL to use as filename
@@ -56,16 +37,13 @@ function isServerless(): boolean {
 }
 
 // Cache and return local path for maimaidx images
-export async function getCachedImagePath(url: string): Promise<string> {
+export async function cacheImage(url: string): Promise<void> {
   // Only cache on server and for maimaidx domains
-  if (!isServer() || !isMaimaidxDomain(url)) {
-    return url;
+  if (!isServer() || !isMaimaidxDomain(url) || isServerless()) {
+    return;
   }
 
   try {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    
     // Generate hash for filename
     const urlHash = generateUrlHash(url);
     
@@ -73,33 +51,12 @@ export async function getCachedImagePath(url: string): Promise<string> {
     const cacheDir: string = path.join(process.cwd(), 'public', 'res', 'preloaded');
     await fs.mkdir(cacheDir, { recursive: true });
     
-    // Try to determine extension from URL first
-    let extension = getExtensionFromUrl(url);
-    
-    // Check if file already exists with any common extension
-    const possibleExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
-    let existingFile: string | null = null;
-    
-    for (const ext of possibleExtensions) {
-      const testPath = path.join(cacheDir, `${urlHash}.${ext}`);
-      try {
-        await fs.access(testPath);
-        existingFile = `/res/preloaded/${urlHash}.${ext}`;
-        // console.log(`Using cached image: ${existingFile}`);
-        break;
-      } catch {
-        // File doesn't exist, continue
-      }
-    }
-    
-    if (existingFile) {
-      return existingFile;
-    }
-    
-    // File doesn't exist, fetch it
-    // console.log(`Caching image from: ${url}`);
-    if (isServerless()) {
-      return url;
+    // Check if file already exists
+    const filePath = path.join(cacheDir, `${urlHash}.gz`);
+    try {
+      await fs.access(filePath);
+      return;
+    } catch {
     }
     
     const { Agent } = await import('undici');
@@ -124,23 +81,14 @@ export async function getCachedImagePath(url: string): Promise<string> {
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    // Get proper extension from content type
-    const contentType = response.headers.get('content-type') || 'image/png';
-    extension = getExtensionFromContentType(contentType);
-    
     // Save to cache
-    const cachedFilePath = path.join(cacheDir, `${urlHash}.${extension}`);
-    await fs.writeFile(cachedFilePath, buffer);
-    
-    const publicPath = `/res/preloaded/${urlHash}.${extension}`;
-    // console.log(`Cached image saved: ${publicPath}`);
-    
-    return publicPath;
-    
+    const cachedFilePath = path.join(cacheDir, `${urlHash}.gz`);
+
+    const compressedBuffer = await gzipAsync(buffer);
+
+    await fs.writeFile(cachedFilePath, compressedBuffer);
   } catch (error) {
     console.error('Error caching image:', error);
-    // Fallback to original URL if caching fails
-    return url;
   }
 }
 
@@ -156,31 +104,31 @@ export async function getCachedImageBuffer(url: string): Promise<{ buffer: Buffe
   }
 
   try {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    
     const urlHash = generateUrlHash(url);
     const cacheDir = path.join(process.cwd(), 'public', 'res', 'preloaded');
     
-    // Check if cached file exists
-    const possibleExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
-    
-    for (const ext of possibleExtensions) {
-      const cachedFilePath = path.join(cacheDir, `${urlHash}.${ext}`);
-      try {
-        const buffer = await fs.readFile(cachedFilePath);
-        const contentType = ext === 'png' ? 'image/png'
-          : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
-          : ext === 'gif' ? 'image/gif'
-          : ext === 'webp' ? 'image/webp'
-          : ext === 'svg' ? 'image/svg+xml'
-          : 'image/png';
-        
-        // console.log(`Serving cached image buffer: ${urlHash}.${ext}`);
-        return { buffer, contentType };
-      } catch {
-        // File doesn't exist, continue
+    // Check if gzipped cached file exists
+    const cachedFilePath = path.join(cacheDir, `${urlHash}.gz`);
+    try {
+      const compressedBuffer = await fs.readFile(cachedFilePath);
+      const buffer = await gunzipAsync(compressedBuffer);
+      
+      // Check magic bytes for image type
+      let contentType = 'image/png';
+      if (buffer[0] === 0xFF && buffer[1] === 0xD8) {
+        contentType = 'image/jpeg';
+      } else if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) {
+        contentType = 'image/gif';
+      } else if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) {
+        contentType = 'image/webp';
+      } else if (buffer[0] === 0x3C && buffer[1] === 0x3F && buffer[2] === 0x78 && buffer[3] === 0x6D) {
+        contentType = 'image/svg+xml';
+      } else if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+        contentType = 'image/png';
       }
+      
+      return { buffer, contentType };
+    } catch {
     }
     
     return null;

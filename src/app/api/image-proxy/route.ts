@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Agent } from 'undici';
-import { getCachedImageBuffer, getCachedImagePath } from '@/lib/image_cacher';
+import { getCachedImageBuffer, cacheImage } from '@/lib/image_cacher';
 import { SAFE_MAIMAI_IMAGE_URLS } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // If not cached, cache it first (this will save to filesystem)
-    await getCachedImagePath(imageUrl);
+    await cacheImage(imageUrl);
     
     // Try to get the cached buffer again
     const newCachedResult = await getCachedImageBuffer(imageUrl);

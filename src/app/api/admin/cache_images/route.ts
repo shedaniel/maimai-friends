@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { songs } from "@/lib/schema";
-import { getCachedImagePath } from "@/lib/image_cacher";
+import { cacheImage } from "@/lib/image_cacher";
 import { sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -10,19 +10,18 @@ function isDataUrl(url: string): boolean {
 }
 
 // Helper function to process images in batches
-async function processBatch(urls: string[], batchNumber: number, totalBatches: number): Promise<{ url: string; cachedPath: string; error?: string }[]> {
+async function processBatch(urls: string[], batchNumber: number, totalBatches: number): Promise<{ url: string; error?: string }[]> {
   console.log(`Processing batch ${batchNumber}/${totalBatches} with ${urls.length} images...`);
   
   const results = await Promise.allSettled(
     urls.map(async (url) => {
       try {
-        const cachedPath = await getCachedImagePath(url);
-        return { url, cachedPath };
+        await cacheImage(url);
+        return { url };
       } catch (error) {
         console.error(`Failed to cache image ${url}:`, error);
         return { 
           url, 
-          cachedPath: url, // fallback to original URL
           error: error instanceof Error ? error.message : "Unknown error"
         };
       }
@@ -35,7 +34,6 @@ async function processBatch(urls: string[], batchNumber: number, totalBatches: n
     } else {
       return {
         url: urls[index],
-        cachedPath: urls[index],
         error: result.reason instanceof Error ? result.reason.message : "Promise rejected"
       };
     }
@@ -133,7 +131,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`Created ${batches.length} batches for processing`);
 
-    const allResults: { url: string; cachedPath: string; error?: string }[] = [];
+    const allResults: { url: string; error?: string }[] = [];
     let totalCached = 0;
     let totalErrors = 0;
 

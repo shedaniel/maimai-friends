@@ -1,4 +1,4 @@
-import { getCachedImagePath } from "./image_cacher";
+import { getCachedImageBuffer } from "./image_cacher";
 
 // Server-only function for fetching images with Node.js modules
 export async function fetchImageForServer(url: string): Promise<string> {
@@ -7,7 +7,10 @@ export async function fetchImageForServer(url: string): Promise<string> {
     
     // For maimaidx URLs, use caching system
     if (url.includes('maimaidx.jp') || url.includes('maimaidx-eng.com')) {
-      finalUrl = await getCachedImagePath(url);
+      const cachedResult = await getCachedImageBuffer(url);
+      if (cachedResult) {
+        finalUrl = `data:${cachedResult.contentType};base64,${cachedResult.buffer.toString('base64')}`;
+      }
     }
     
     let buffer: Buffer;
