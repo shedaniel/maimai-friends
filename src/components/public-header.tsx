@@ -27,7 +27,7 @@ export function PublicHeader({}: PublicHeaderProps) {
   
   const handleDiscordInvite = async () => {
     try {
-      const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${APPLICATION_ID}&scope=applications.commands`;
+      const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${APPLICATION_ID}`;
       window.open(inviteUrl, '_blank');
     } catch (error) {
       console.error('Failed to open invite link:', error);

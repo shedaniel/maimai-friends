@@ -36,7 +36,7 @@ interface ProfilePrivacySettings {
 
 interface SettingsDialogProps {
   isOpen: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   currentTimezone?: string | null;
   currentLanguage?: string | null;
   username?: string;
@@ -79,7 +79,7 @@ const TIMEZONES = [
 
 export function SettingsDialog({ 
   isOpen, 
-  onClose, 
+  onOpenChange, 
   currentTimezone, 
   currentLanguage, 
   username,
@@ -180,7 +180,7 @@ export function SettingsDialog({
       
       toast.success(t('settings.saved'));
       onSaveSuccess();
-      onClose();
+      onOpenChange(false);
     } catch (error) {
       console.error("Failed to update settings:", error);
       toast.error(t('settings.errorSaving'));
@@ -207,7 +207,7 @@ export function SettingsDialog({
       });
     }
     
-    onClose();
+    onOpenChange(false);
   };
 
   const getCurrentTimezoneDisplay = () => {
@@ -248,7 +248,7 @@ export function SettingsDialog({
   const isLoadingSettings = profileSettingsLoading || isLoading;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('settings.title')}</DialogTitle>

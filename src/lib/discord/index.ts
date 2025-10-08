@@ -20,10 +20,10 @@ export type { DiscordEmbed, DiscordResponse } from './responses';
 
 // Individual command handlers
 export { handleProfileCommand } from './commands/profile';
-export { handleTopCommand } from './commands/top';
+export { handleFetchCommand } from './commands/fetch';
 export { handleInviteCommand } from './commands/invite';
 export type { ProfileCommandOptions } from './commands/profile';
-export type { TopCommandOptions } from './commands/top';
+export type { FetchCommandOptions } from './commands/fetch';
 export type { InviteCommandOptions } from './commands/invite';
 
 // Image generation utilities

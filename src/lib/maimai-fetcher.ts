@@ -7,6 +7,7 @@ import { getCurrentVersion } from "./metadata";
 import { Agent } from "undici";
 import { FETCH_STATES, getStateForDifficulty } from "./fetch-states";
 import { appendFetchState } from "./fetch-states-server";
+import { normalizeName } from "./name-utils";
 
 export const JP_AGENT = new Agent({
   connect: {
@@ -684,7 +685,7 @@ function parseScoreData(html: string, difficulty: number): ScoreData[] {
         console.warn(`No music name block found for score block ${index}`);
         return;
       }
-      const songName = nameElement.text().trim().normalize("NFKC");
+      const songName = normalizeName(nameElement.text().trim());
 
       // Extract level
       const levelElement = block.find('.music_lv_block');
@@ -907,7 +908,7 @@ async function fetchHiddenSongsData(cookies: string, allSongsData: { [difficulty
           console.warn(`No music name block found for ${difficulty} score block ${index}`);
           return;
         }
-        const songName = nameElement.text().trim().normalize("NFKC");
+        const songName = normalizeName(nameElement.text().trim());
 
         // Extract music type (dx/std) from icon image
         const iconElement = block.find('img.music_kind_icon');
@@ -1298,11 +1299,13 @@ async function insertUserScores(
     await db
       .update(fetchSessions)
       .set({
-        extraData: JSON.stringify(notFoundScores.map(score => ({
-          songName: score.songName,
-          difficulty: score.difficulty,
-          musicType: score.musicType,
-        }))),
+        extraData: JSON.stringify({
+          notFoundScores: notFoundScores.map(score => ({
+            songName: score.songName,
+            difficulty: score.difficulty,
+            musicType: score.musicType,
+          })),
+        }),
       })
       .where(eq(fetchSessions.id, sessionId));
   }
@@ -1323,6 +1326,13 @@ export async function fetchMaimaiData(
 
   if (!tokenRecord) {
     throw new Error("No token found for this region. Please add your maimai token first.");
+  }
+
+  // Check current time, if it is within 4AM - 7AM in JST, throw an error
+  const now = new Date();
+  const jstHour = (now.getUTCHours() + 9) % 24;
+  if (jstHour >= 4 && jstHour < 7) {
+    throw new Error("Cannot fetch data during maintenance window (4AM - 7AM JST)");
   }
 
   // Validate the token first

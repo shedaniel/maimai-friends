@@ -30,10 +30,10 @@ interface Invite {
 
 interface InvitesDialogProps {
   isOpen: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
+export function InvitesDialog({ isOpen, onOpenChange }: InvitesDialogProps) {
   const t = useTranslations();
   
   // Only show dialog if invite system is enabled
@@ -175,7 +175,7 @@ export function InvitesDialog({ isOpen, onClose }: InvitesDialogProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

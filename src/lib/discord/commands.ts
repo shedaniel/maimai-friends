@@ -1,6 +1,6 @@
-import { handleProfileCommand } from './commands/profile';
-import { handleTopCommand } from './commands/top';
+import { handleFetchCommand } from './commands/fetch';
 import { handleInviteCommand } from './commands/invite';
+import { handleProfileCommand } from './commands/profile';
 import { createUnknownCommandResponse, DiscordResponse } from './responses';
 
 // Command definitions
@@ -17,13 +17,13 @@ export const COMMANDS = {
     name: 'profilejp', 
     description: 'Show your latest maimai rating (Japan region)',
   },
-  TOP: {
-    name: 'top',
-    description: 'Fetch and update your latest maimai scores (International region)',
+  FETCH: {
+    name: 'fetch',
+    description: 'Refetch and update your latest maimai scores (International region)',
   },
-  TOPJP: {
-    name: 'topjp', 
-    description: 'Fetch and update your latest maimai scores (Japan region)',
+  FETCHJP: {
+    name: 'fetchjp', 
+    description: 'Refetch and update your latest maimai scores (Japan region)',
   },
 } as const;
 
@@ -51,13 +51,13 @@ export async function handleCommand(context: CommandContext): Promise<DiscordRes
         interactionToken 
       });
 
-    case COMMANDS.TOP.name.toLowerCase():
-    case COMMANDS.TOPJP.name.toLowerCase():
+    case COMMANDS.FETCH.name.toLowerCase():
+    case COMMANDS.FETCHJP.name.toLowerCase():
       if (!discordUserId) {
         return createUnknownCommandResponse();
       }
-      const fetchRegion = commandName.toLowerCase() === 'topjp' ? 'jp' : 'intl';
-      return handleTopCommand({ 
+      const fetchRegion = commandName.toLowerCase() === 'fetchjp' ? 'jp' : 'intl';
+      return handleFetchCommand({ 
         discordUserId, 
         region: fetchRegion, 
         applicationId, 

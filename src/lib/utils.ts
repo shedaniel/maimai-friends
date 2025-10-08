@@ -26,3 +26,7 @@ export function createSafeMaimaiImageUrl(originalUrl: string): string {
   // Return original URL for other domains
   return originalUrl;
 }
+
+export function sortKeys<T>(obj: T): T {
+  return Object.fromEntries(Object.entries(obj as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b))) as unknown as T;
+}

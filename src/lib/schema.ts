@@ -12,6 +12,10 @@ export const user = sqliteTable("user", {
   username: text("username").unique(), // New field for URL-friendly usernames, nullable initially
   timezone: text("timezone"), // nullable, null = Asia/Tokyo (JP default)
   language: text("language", { enum: ["en", "en-GB", "ja", "zh-TW", "zh-HK", "zh-CN"] }), // nullable, null = auto-detect
+  role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
+  banned: integer("banned", { mode: "boolean" }).notNull().default(false),
+  banReason: text("banReason"),
+  banExpires: integer("banExpires", { mode: "timestamp" }),
   region: text("region", { enum: ["intl", "jp"] }), // nullable, null = intl (default)
   // Profile publishing settings
   publishProfile: integer("publishProfile", { mode: "boolean" }).notNull().default(false),
@@ -149,6 +153,7 @@ export const userScores = sqliteTable("user_scores", {
 }, (table) => ({
   snapshotIdIndex: index("user_scores_snapshotid_idx").on(table.snapshotId),
   snapshotIdSongIdIndex: index("user_scores_snapshotid_songid_idx").on(table.snapshotId, table.songId),
+  songIdIndex: index("user_scores_songid_idx").on(table.songId),
 }));
 
 export const detailedScores = sqliteTable("detailed_scores", {
@@ -185,4 +190,6 @@ export const detailedScores = sqliteTable("detailed_scores", {
   breakGood: integer("breakGood").notNull(),
   breakMiss: integer("breakMiss").notNull(),
   venue: text("venue"),
-}); 
+}, (table) => ({
+  songIdIndex: index("detailed_scores_songid_idx").on(table.songId),
+})); 

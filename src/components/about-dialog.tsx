@@ -16,7 +16,7 @@ interface AboutDialogProps {
 export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>About ともマイ</DialogTitle>
           <DialogDescription>
@@ -36,6 +36,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
             <div className="space-y-2 text-sm">
               <p><strong>SEGA</strong> for creating maimai DX</p>
               <p><strong><a href="https://github.com/gekichumai/dxrating" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">dxrating</a></strong> for providing internal level data</p>
+              <p><strong><a href="https://github.com/zvuc/otoge-db" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">otoge-db</a></strong> for providing level data</p>
             </div>
           </div>
           

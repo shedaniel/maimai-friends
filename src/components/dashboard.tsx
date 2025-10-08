@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { signOut } from "@/lib/auth-client";
 import { DataBanner } from "@/components/data-banner";
-import { TokenDialog } from "@/components/token-dialog";
 import { DataContent } from "@/components/data-content";
-import { UserHeader } from "@/components/user-header";
 import { SettingsDialog } from "@/components/settings-dialog";
+import { TokenDialog } from "@/components/token-dialog";
+import { UserHeader } from "@/components/user-header";
 import { UsernameSetupDialog } from "@/components/username-setup-dialog";
-import { useSnapshots } from "@/hooks/useSnapshots";
 import { useFetchSession } from "@/hooks/useFetchSession";
+import { useSnapshots } from "@/hooks/useSnapshots";
+import { signOut } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc-client";
-import { toast } from "sonner";
 import { Region, User } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface DashboardProps {
   user: User;
@@ -23,24 +23,21 @@ export function Dashboard({ user }: DashboardProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUsernameSetupOpen, setIsUsernameSetupOpen] = useState(false);
 
-  // Get user region preference
-  const { data: regionData, refetch: refetchRegion } = trpc.user.getRegion.useQuery(
+  // Check if user has username
+  const { data: userData, refetch: refetchUserData } = trpc.user.getUserData.useQuery(
     undefined,
     { refetchOnWindowFocus: false }
   );
 
-  // Check if user has username
-  const { data: usernameData, refetch: refetchUsername } = trpc.user.hasUsername.useQuery();
-
   // Use the stored region preference, fallback to "intl" if not set
-  const selectedRegion: Region = regionData?.region || "intl";
+  const selectedRegion: Region = userData?.region || "intl";
 
   // Show username setup dialog if user doesn't have username
   useEffect(() => {
-    if (usernameData && !usernameData.hasUsername) {
+    if (userData && !userData.hasUsername) {
       setIsUsernameSetupOpen(true);
     }
-  }, [usernameData]);
+  }, [userData]);
 
   const {
     snapshots,
@@ -87,7 +84,7 @@ export function Dashboard({ user }: DashboardProps) {
   const updateRegionMutation = trpc.user.updateRegion.useMutation({
     onSuccess: () => {
       toast.success("Region updated successfully!");
-      refetchRegion();
+      refetchUserData();
     },
     onError: (error) => {
       toast.error(`Failed to update region: ${error.message}`);
@@ -203,7 +200,7 @@ export function Dashboard({ user }: DashboardProps) {
 
   const handleUsernameSetupComplete = () => {
     setIsUsernameSetupOpen(false);
-    refetchUsername(); // Refresh to update the state
+    refetchUserData(); // Refresh to update the state
   };
 
   const handleDeleteSnapshot = async (snapshotId: string) => {
@@ -233,7 +230,8 @@ export function Dashboard({ user }: DashboardProps) {
   return (
     <div className="container mx-auto max-w-[1300px] px-4 py-8">
       <UserHeader 
-        user={user} 
+        user={user}
+        userRole={userData?.role ?? "user"}
         selectedRegion={selectedRegion}
         onRegionChange={handleRegionChange}
         onLogout={handleLogout}
@@ -261,7 +259,7 @@ export function Dashboard({ user }: DashboardProps) {
           region={selectedRegion}
           selectedSnapshotData={selectedSnapshotData || null}
           isLoading={isLoadingSnapshots}
-          visitableProfileAt={usernameData?.publishProfile ? usernameData?.username : null}
+          visitableProfileAt={userData?.publishProfile ? userData?.username : null}
         />
       </div>
 
@@ -274,14 +272,14 @@ export function Dashboard({ user }: DashboardProps) {
 
       <SettingsDialog
         isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
+        onOpenChange={setIsSettingsOpen}
         currentTimezone={timezoneData?.timezone ?? null}
         currentLanguage={languageData?.language ?? null}
-        username={usernameData?.username ?? undefined}
+        username={userData?.username ?? undefined}
         onTimezoneUpdate={handleTimezoneUpdate}
         onLanguageUpdate={handleLanguageUpdate}
         onOpenTokenDialog={handleOpenTokenDialog}
-        onSaveSuccess={() => refetchUsername()}
+        onSaveSuccess={() => refetchUserData()}
       />
 
       <UsernameSetupDialog

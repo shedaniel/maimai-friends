@@ -65,7 +65,11 @@ export function useFetchSession(onFetchComplete?: () => void) {
           setCurrentSession(updatedSession);
 
           if (result.status === "completed") {
-            toast.success("Data fetch completed successfully!");
+            if (result.notFoundScores && result.notFoundScores.length > 0) {
+              toast.error(`Data fetch completed with ${result.notFoundScores.length} songs not found in database! ${result.notFoundScores.map(score => `- ${score.songName} (${score.difficulty}, ${score.musicType})`).join(", ")}`);
+            } else {
+              toast.success("Data fetch completed successfully!");
+            }
             onFetchComplete?.();
             return "completed";
           } else if (result.status === "failed") {

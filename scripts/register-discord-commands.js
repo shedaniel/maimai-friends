@@ -22,12 +22,12 @@ const commands = [
     description: 'Show your latest maimai rating (Japan region)',
   },
   {
-    name: 'top',
-    description: 'Fetch and update your latest maimai scores (International region)',
+    name: 'fetch',
+    description: 'Refetch and update your latest maimai scores (International region)',
   },
   {
-    name: 'topjp',
-    description: 'Fetch and update your latest maimai scores (Japan region)',
+    name: 'fetchjp',
+    description: 'Refetch and update your latest maimai scores (Japan region)',
   },
 ];
 

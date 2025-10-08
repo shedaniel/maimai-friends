@@ -1,17 +1,28 @@
-import { db } from "@/lib/db";
 import { JP_AGENT, processMaimaiToken } from "@/lib/maimai-fetcher";
 import { getCurrentVersion, getVersionInfo } from "@/lib/metadata";
+import { normalizeName } from "@/lib/name-utils";
 import { songs } from "@/lib/schema";
+import { sortKeys } from "@/lib/utils";
 import { load } from "cheerio";
-import { randomUUID } from "crypto";
-import { and, count, eq, sql } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
+import { NextRequest, NextResponse } from "next/server";
 import { join } from "path";
 
 const DXDATA_URL = "https://raw.githubusercontent.com/gekichumai/dxrating/refs/heads/main/packages/dxdata/dxdata.json";
 const MAIMAI_SONGS_JSON_URL = "https://maimai.sega.jp/data/maimai_songs.json";
 const MAIMAI_SONGS_JSON_URL_INTL = "https://maimai.sega.com/assets/data/maimai_songs.json";
+
+type Song = {
+  songName: string;
+  artist: string;
+  cover: string;
+  difficulty: "basic" | "advanced" | "expert" | "master" | "remaster" | "utage";
+  level: "1" | "1+" | "2" | "2+" | "3" | "3+" | "4" | "4+" | "5" | "5+" | "6" | "6+" | "7" | "7+" | "8" | "8+" | "9" | "9+" | "10" | "10+" | "11" | "11+" | "12" | "12+" | "13" | "13+" | "14" | "14+" | "15" | "15+" | "16" | "16+";
+  levelPrecise: number;
+  type: "std" | "dx";
+  genre: string;
+  addedVersion: number;
+}
 
 // Helper function to convert level string to precise value (stored as 10x)
 function levelToPrecise(level: string): number {
@@ -63,7 +74,7 @@ function getInternalLevelFromDxData(
   dxData: any
 ): number | null {
   // Find the song by title
-  const song = dxData.songs.find((s: any) => s.title.normalize("NFKC") === songTitle);
+  const song = dxData.songs.find((s: any) => normalizeName(s.title) === songTitle);
   if (!song) {
     return null;
   }
@@ -252,7 +263,7 @@ function parseSongData(html: string, difficulty: number, version: number): any[]
         console.warn(`No music name block found for block ${index}`);
         return; // Skip this block
       }
-      const songName = nameElement.text().trim().normalize("NFKC");
+      const songName = normalizeName(nameElement.text().trim());
 
       // Extract level
       const levelElement = block.find('.music_lv_block');
@@ -373,9 +384,9 @@ function parseSongDetail(html: string, region: "intl" | "jp"): any {
 }
 
 // Helper function to prepare song entries from scraped difficulty data
-function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | undefined, region: "intl" | "jp", dxData: any): any[] {
+function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | undefined, region: "intl" | "jp", dxData: any): Song[] {
   const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
-  const records: any[] = [];
+  const records: Song[] = [];
 
   // Get common song info from first difficulty
   const songInfo = difficulties[0];
@@ -383,13 +394,11 @@ function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | 
 
   // Use JSON data for metadata if available
   const artist = jsonSong?.artist || "Unknown Artist";
-  const cover = jsonSong?.image_url 
-    ? `https://maimaidx.jp/maimai-mobile/img/Music/${jsonSong.image_url}`
+  const cover = jsonSong?.image_url
+    ? (region === "intl" ? `https://maimaidx-eng.com/maimai-mobile/img/Music/${jsonSong.image_url}` : `https://maimaidx.jp/maimai-mobile/img/Music/${jsonSong.image_url}`)
     : "https://maimaidx.jp/maimai-mobile/img/Music/default.png";
   const genre = jsonSong?.catcode || "Unknown";
   
-  const gameVersion = getCurrentVersion(region);
-
   // Prepare each difficulty as a separate record
   for (const difficulty of difficulties) {
     const difficultyName = difficultyNames[difficulty.difficultyNumber] || `difficulty_${difficulty.difficultyNumber}`;
@@ -398,7 +407,6 @@ function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | 
     const addedVersion = difficulty.version <= 12 ? -1 : difficulty.version - 13;
     
     records.push({
-      id: randomUUID(),
       songName,
       artist,
       cover,
@@ -407,8 +415,6 @@ function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | 
       levelPrecise: getPreciseLevelValue(songName, difficulty.level, musicType, difficultyName, region, dxData),
       type: musicType as "std" | "dx",
       genre,
-      region,
-      gameVersion,
       addedVersion,
     });
   }
@@ -418,9 +424,9 @@ function prepareSongEntriesFromScrapedData(difficulties: any[], jsonSong: any | 
 }
 
 // Helper function to prepare song entries using fetched metadata
-function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any, region: "intl" | "jp", dxData: any): any[] {
+function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any, region: "intl" | "jp", dxData: any): Song[] {
   const difficultyNames = ["basic", "advanced", "expert", "master", "remaster"];
-  const records: any[] = [];
+  const records: Song[] = [];
 
   // Get common song info from first difficulty
   const songInfo = difficulties[0];
@@ -429,8 +435,6 @@ function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any,
   // Use fetched metadata
   const { artist, coverUrl, genre } = songDetail;
   
-  const gameVersion = getCurrentVersion(region);
-
   // Prepare each difficulty as a separate record
   for (const difficulty of difficulties) {
     const difficultyName = difficultyNames[difficulty.difficultyNumber] || `difficulty_${difficulty.difficultyNumber}`;
@@ -439,7 +443,6 @@ function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any,
     const addedVersion = difficulty.version <= 12 ? -1 : difficulty.version - 13;
     
     records.push({
-      id: randomUUID(),
       songName,
       artist,
       cover: coverUrl,
@@ -448,8 +451,6 @@ function prepareSongEntriesWithFetchedData(difficulties: any[], songDetail: any,
       levelPrecise: getPreciseLevelValue(songName, difficulty.level, musicType, difficultyName, region, dxData),
       type: musicType as "std" | "dx",
       genre,
-      region,
-      gameVersion,
       addedVersion,
     });
   }
@@ -498,8 +499,8 @@ async function loadExclusionJsonData(region: "intl" | "jp", version: number): Pr
 }
 
 // Helper function to convert fallback JSON songs to database records
-function convertFallbackJsonToRecords(fallbackSongs: any[], region: "intl" | "jp", gameVersion: number): any[] {
-  const records: any[] = [];
+function convertFallbackJsonToRecords(fallbackSongs: any[]): Song[] {
+  const records: Song[] = [];
   const difficultyMap = {
     "easy": "basic",
     "advanced": "advanced", 
@@ -519,17 +520,14 @@ function convertFallbackJsonToRecords(fallbackSongs: any[], region: "intl" | "jp
       const levelData = difficultyData as { level: string; levelPrecise: number };
       
       records.push({
-        id: randomUUID(),
         songName: title,
         artist,
         cover,
         difficulty: mappedDifficulty as "basic" | "advanced" | "expert" | "master" | "remaster",
-        level: levelData.level,
+        level: levelData.level as Song["level"],
         levelPrecise: levelData.levelPrecise,
         type: type as "std" | "dx",
         genre,
-        region,
-        gameVersion,
         addedVersion,
       });
     }
@@ -540,7 +538,7 @@ function convertFallbackJsonToRecords(fallbackSongs: any[], region: "intl" | "jp
 }
 
 // Helper function to check if a song record already exists in the list
-function songRecordExists(records: any[], songName: string, difficulty: string, type: string): boolean {
+function songRecordExists(records: Song[], songName: string, difficulty: string, type: string): boolean {
   return records.some(record => 
     record.songName === songName && 
     record.difficulty === difficulty && 
@@ -549,11 +547,11 @@ function songRecordExists(records: any[], songName: string, difficulty: string, 
 }
 
 // Helper function to add fallback songs that don't already exist
-function addFallbackSongs(allRecords: any[], fallbackRecords: any[]): number {
+function addFallbackSongs(allRecords: Song[], fallbackRecords: Song[]): number {
   let addedCount = 0;
   
   for (const fallbackRecord of fallbackRecords) {
-    const fallbackSongName = fallbackRecord.songName.normalize("NFKC");
+    const fallbackSongName = normalizeName(fallbackRecord.songName);
     if (!songRecordExists(allRecords, fallbackSongName, fallbackRecord.difficulty, fallbackRecord.type)) {
       allRecords.push(fallbackRecord);
       addedCount++;
@@ -702,7 +700,7 @@ export async function GET(request: NextRequest) {
     // Step 5: Create a map of songs by title for quick lookup
     const songsJsonMap = new Map<string, any>();
     songsJsonData.forEach((song: any) => {
-      songsJsonMap.set(song.title.normalize("NFKC"), song);
+      songsJsonMap.set(normalizeName(song.title), song);
     });
 
     // Step 6: Process songs using scraped data and JSON metadata
@@ -723,7 +721,7 @@ export async function GET(request: NextRequest) {
 
     let processedFromJson = 0;
     let processedFromFetch = 0;
-    const allRecordsToInsert: any[] = [];
+    const allRecordsToInsert: Song[] = [];
 
     // Process each unique song
     for (const [songKey, difficulties] of songsGrouped) {
@@ -819,7 +817,7 @@ export async function GET(request: NextRequest) {
       console.log(`Found fallback JSON data with ${fallbackJsonData.length} songs`);
       
       // Convert fallback JSON to database records format
-      const fallbackRecords = convertFallbackJsonToRecords(fallbackJsonData, region, currentVersionForRegion);
+      const fallbackRecords = convertFallbackJsonToRecords(fallbackJsonData);
       
       // Add fallback songs that don't already exist
       fallbackSongsAdded = addFallbackSongs(allRecordsToInsert, fallbackRecords);
@@ -829,76 +827,16 @@ export async function GET(request: NextRequest) {
       console.log(`No fallback songs found for ${region}-${currentVersionForRegion}.json`);
     }
 
-    const prevSongsLength = await db.select({ count: count() }).from(songs)
-      .where(
-        and(
-          eq(songs.region, region),
-          eq(songs.gameVersion, currentVersionForRegion),
-        )
-      );
-
-    // Step 10: Batch upsert all records
-    if (allRecordsToInsert.length > 0) {
-      console.log(`Step 10: Performing batch upsert of ${allRecordsToInsert.length} records...`);
-      
-      try {
-        // Split into batches of 1000 records to avoid SQL limits
-        const batchSize = 1000;
-        let totalUpserted = 0;
-        
-        for (let i = 0; i < allRecordsToInsert.length; i += batchSize) {
-          const batch = allRecordsToInsert.slice(i, i + batchSize);
-          console.log(`Upserting batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allRecordsToInsert.length / batchSize)} (${batch.length} records)`);
-          
-          await db.insert(songs).values(batch).onConflictDoUpdate({
-            target: [songs.songName, songs.difficulty, songs.type, songs.region, songs.gameVersion],
-            set: {
-              artist: sql`excluded.artist`,
-              cover: sql`excluded.cover`,
-              level: sql`excluded.level`,
-              levelPrecise: sql`excluded.levelPrecise`,
-              genre: sql`excluded.genre`,
-              addedVersion: sql`excluded.addedVersion`,
-            },
-          });
-          
-          totalUpserted += batch.length;
-        }
-        
-        console.log(`Successfully upserted ${totalUpserted} records to database`);
-      } catch (error) {
-        console.error("Error during batch upsert:", error);
-        throw new Error(`Database upsert failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-      }
-    }
-
-    const newSongsLength = await db.select({ count: count() }).from(songs)
-      .where(
-        and(
-          eq(songs.region, region),
-          eq(songs.gameVersion, currentVersionForRegion),
-        )
-      );
-
-    const totalProcessed = processedFromJson + processedFromFetch;
-    console.log(`Successfully processed ${totalProcessed} songs total (${processedFromJson} from JSON, ${processedFromFetch} from individual fetch, ${fallbackSongsAdded} fallback songs added)`);
+    // Convert to json
+    const newRecords = allRecordsToInsert
+      // sort keys
+      .map(record => sortKeys(record))
+      .sort((a, b) => a.songName.localeCompare(b.songName) * 1000000 + a.difficulty.localeCompare(b.difficulty) * 1000 + a.type.localeCompare(b.type));
 
     return NextResponse.json({
       success: true,
       message: "Song data update completed",
-      statistics: {
-        total: totalProcessed,
-        fromJson: processedFromJson,
-        fromFetch: processedFromFetch,
-        fallbackSongsAdded,
-        totalRecords: allRecordsToInsert.length,
-        prevSongsLength: prevSongsLength[0].count,
-        newSongsLength: newSongsLength[0].count,
-        addedSongs: newSongsLength[0].count - prevSongsLength[0].count,
-        region,
-        gameVersion: getCurrentVersion(region),
-        timestamp: new Date().toISOString(),
-      },
+      records: newRecords,
     });
 
   } catch (error) {

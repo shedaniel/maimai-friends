@@ -20,27 +20,31 @@ import { InvitesDialog } from "@/components/invites-dialog";
 import { DiscordIcon } from "@/components/ui/discord-icon";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
+import { user } from "@/lib/schema";
+import { AdminDialog } from "./dialogs/admin-dialog";
 
 const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled';
 const APPLICATION_ID = process.env.NEXT_PUBLIC_DISCORD_APPLICATION_ID;
 
 interface UserHeaderProps {
   user: User;
+  userRole: typeof user.$inferSelect.role;
   selectedRegion: Region;
   onRegionChange: (region: Region) => void;
   onLogout: () => void;
   onSettings: () => void;
 }
 
-export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onSettings }: UserHeaderProps) {
+export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onLogout, onSettings }: UserHeaderProps) {
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 640px)');
 
   const handleDiscordInvite = async () => {
     try {
-      const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${APPLICATION_ID}&scope=applications.commands`;
+      const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${APPLICATION_ID}`;
       window.open(inviteUrl, '_blank');
     } catch (error) {
       console.error('Failed to open invite link:', error);
@@ -116,6 +120,15 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
                   <DropdownMenuSeparator />
                 </>
               )}
+              {userRole === "admin" && (
+                <>
+                  <DropdownMenuItem onClick={() => setAdminOpen(true)}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Admin</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               {isMobile && (
                 <>
                   <DropdownMenuItem onClick={() => setAboutOpen(true)}>
@@ -143,7 +156,8 @@ export function UserHeader({ user, selectedRegion, onRegionChange, onLogout, onS
       </div>
 
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
-      <InvitesDialog isOpen={invitesOpen} onClose={() => setInvitesOpen(false)} />
+      <InvitesDialog isOpen={invitesOpen} onOpenChange={setInvitesOpen} />
+      <AdminDialog open={adminOpen} onOpenChange={setAdminOpen} />
     </>
   );
 } 

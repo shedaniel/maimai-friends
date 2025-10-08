@@ -18,6 +18,11 @@ export interface FetchStatusResult {
   completedAt: Date | null;
   errorMessage: string | null;
   statusStates: string | null;
+  notFoundScores: {
+    songName: string;
+    difficulty: string;
+    musicType: string;
+  }[] | null;
 }
 
 // Extract startFetch logic from tRPC procedure
@@ -170,6 +175,7 @@ export async function getFetchStatusServer(userId: string, region: Region): Prom
       completedAt: fetchSessions.completedAt,
       errorMessage: fetchSessions.errorMessage,
       statusStates: fetchSessions.statusStates,
+      extraData: fetchSessions.extraData,
     })
     .from(fetchSessions)
     .where(
@@ -193,5 +199,6 @@ export async function getFetchStatusServer(userId: string, region: Region): Prom
     completedAt: session.completedAt,
     errorMessage: session.errorMessage,
     statusStates: session.statusStates,
+    notFoundScores: session.extraData ? JSON.parse(session.extraData).notFoundScores : null,
   };
 } 

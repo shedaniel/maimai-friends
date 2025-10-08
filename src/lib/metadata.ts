@@ -10,11 +10,102 @@ export interface VersionInfo {
 
 export const VERSIONS: VersionInfo[] = [
   {
+    id: -13,
+    name: "maimai",
+    shortName: "maimai",
+    intlReleaseDate: "2012/07/11",
+    jpReleaseDate: "2012/07/11"
+  },
+  {
+    id: -12,
+    name: "maimai PLUS",
+    shortName: "maimai PLUS",
+    intlReleaseDate: "2012/12/13",
+    jpReleaseDate: "2012/12/13"
+  },
+  {
+    id: -11,
+    name: "maimai GreeN",
+    shortName: "GreeN",
+    intlReleaseDate: "2013/07/11",
+    jpReleaseDate: "2013/07/11"
+  },
+  {
+    id: -10,
+    name: "maimai GreeN PLUS",
+    shortName: "GreeN PLUS",
+    intlReleaseDate: "2014/02/26",
+    jpReleaseDate: "2014/02/26"
+  },
+  {
+    id: -9,
+    name: "maimai ORANGE",
+    shortName: "ORANGE",
+    intlReleaseDate: "2014/09/18",
+    jpReleaseDate: "2014/09/18"
+  },
+  {
+    id: -8,
+    name: "maimai ORANGE PLUS",
+    shortName: "ORANGE PLUS",
+    intlReleaseDate: "2015/03/19",
+    jpReleaseDate: "2015/03/19"
+  },
+  {
+    id: -7,
+    name: "maimai PiNK",
+    shortName: "PiNK",
+    intlReleaseDate: "2015/12/09",
+    jpReleaseDate: "2015/12/09"
+  },
+  {
+    id: -6,
+    name: "maimai PiNK PLUS",
+    shortName: "PiNK PLUS",
+    intlReleaseDate: "2016/06/30",
+    jpReleaseDate: "2016/06/30"
+  },
+  {
+    id: -5,
+    name: "maimai MURASAKi",
+    shortName: "MURASAKi",
+    intlReleaseDate: "2016/12/15",
+    jpReleaseDate: "2016/12/15"
+  },
+  {
+    id: -4,
+    name: "maimai MURASAKi PLUS",
+    shortName: "MURASAKi PLUS",
+    intlReleaseDate: "2017/06/22",
+    jpReleaseDate: "2017/06/22"
+  },
+  {
+    id: -3,
+    name: "maimai MiLK",
+    shortName: "MiLK",
+    intlReleaseDate: "2017/12/14",
+    jpReleaseDate: "2017/12/14"
+  },
+  {
+    id: -2,
+    name: "maimai MiLK PLUS",
+    shortName: "MiLK PLUS",
+    intlReleaseDate: "2018/06/21",
+    jpReleaseDate: "2018/06/21"
+  },
+  {
+    id: -1,
+    name: "maimai FiNALE",
+    shortName: "FiNALE",
+    intlReleaseDate: "2018/12/13",
+    jpReleaseDate: "2018/12/13"
+  },
+  {
     id: 0,
     name: "maimai DX",
     shortName: "DX",
     intlReleaseDate: "2019/11/25",
-    jpReleaseDate: "2018/12/07"
+    jpReleaseDate: "2019/07/11"
   },
   {
     id: 1,

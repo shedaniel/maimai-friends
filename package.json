@@ -11,6 +11,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "db:fix": "node scripts/fix-drizzle.js",
     "discord:register": "node scripts/register-discord-commands.js"
   },
   "dependencies": {

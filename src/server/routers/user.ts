@@ -83,11 +83,11 @@ export const userRouter = router({
       };
     }),
 
-  // Check if user has set a username
-  hasUsername: protectedProcedure
+  // Get user data
+  getUserData: protectedProcedure
     .query(async ({ ctx }) => {
       const userRecord = await db
-        .select({ username: user.username, publishProfile: user.publishProfile })
+        .select({ username: user.username, publishProfile: user.publishProfile, region: user.region, role: user.role })
         .from(user)
         .where(eq(user.id, ctx.session.user.id))
         .limit(1);
@@ -103,6 +103,8 @@ export const userRouter = router({
         hasUsername: !!userRecord[0].username,
         username: userRecord[0].username,
         publishProfile: userRecord[0].publishProfile,
+        region: userRecord[0].region,
+        role: userRecord[0].role,
       };
     }),
 
@@ -477,25 +479,6 @@ export const userRouter = router({
         .where(eq(user.id, ctx.session.user.id));
 
       return { success: true };
-    }),
-
-  // Get user region
-  getRegion: protectedProcedure
-    .query(async ({ ctx }) => {
-      const userRecord = await db
-        .select({ region: user.region })
-        .from(user)
-        .where(eq(user.id, ctx.session.user.id))
-        .limit(1);
-
-      if (userRecord.length === 0) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        });
-      }
-
-      return { region: userRecord[0].region };
     }),
 
   // Update user region
