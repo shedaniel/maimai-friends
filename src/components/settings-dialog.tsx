@@ -25,21 +25,14 @@ import { Locale, setLocaleCookie } from "@/i18n/locale";
 import { trpc } from "@/lib/trpc-client";
 import { toast } from "sonner";
 import { getLanguages } from "@/lib/utils";
-
-interface ProfilePrivacySettings {
-  profileShowAllScores: boolean;
-  profileShowScoreDetails: boolean;
-  profileShowPlates: boolean;
-  profileShowPlayCounts: boolean;
-  profileShowEvents: boolean;
-  profileShowInSearch: boolean;
-}
+import { ProfilePrivacySettings, ProfileSettings } from "@/lib/types";
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   currentTimezone?: string | null;
   username?: string;
+  initialProfileSettings?: ProfileSettings;
   onTimezoneUpdate: (timezone: string | null) => Promise<void>;
   onOpenTokenDialog: () => void;
   onSaveSuccess: () => void;
@@ -81,6 +74,7 @@ export function SettingsDialog({
   onOpenChange, 
   currentTimezone, 
   username,
+  initialProfileSettings,
   onTimezoneUpdate,
   onOpenTokenDialog,
   onSaveSuccess, 
@@ -92,19 +86,24 @@ export function SettingsDialog({
   const [isLoading, setIsLoading] = useState(false);
 
   // Profile settings state
-  const [selectedPublishProfile, setSelectedPublishProfile] = useState(false);
-  const [selectedMainRegion, setSelectedMainRegion] = useState<'intl' | 'jp'>('intl');
+  const [selectedPublishProfile, setSelectedPublishProfile] = useState(initialProfileSettings?.publishProfile ?? false);
+  const [selectedMainRegion, setSelectedMainRegion] = useState<'intl' | 'jp'>(initialProfileSettings?.profileMainRegion ?? 'intl');
   const [selectedPrivacySettings, setSelectedPrivacySettings] = useState<ProfilePrivacySettings>({
-    profileShowAllScores: true,
-    profileShowScoreDetails: true,
-    profileShowPlates: true,
-    profileShowPlayCounts: true,
-    profileShowEvents: true,
-    profileShowInSearch: true,
+    profileShowAllScores: initialProfileSettings?.profileShowAllScores ?? true,
+    profileShowScoreDetails: initialProfileSettings?.profileShowScoreDetails ?? true,
+    profileShowPlates: initialProfileSettings?.profileShowPlates ?? true,
+    profileShowPlayCounts: initialProfileSettings?.profileShowPlayCounts ?? true,
+    profileShowEvents: initialProfileSettings?.profileShowEvents ?? true,
+    profileShowInSearch: initialProfileSettings?.profileShowInSearch ?? true,
   });
 
-  // tRPC hooks
-  const { data: profileSettings, isLoading: profileSettingsLoading } = trpc.user.getProfileSettings.useQuery();
+  // tRPC hooks with initial data
+  const { data: profileSettings, isLoading: profileSettingsLoading } = trpc.user.getProfileSettings.useQuery(
+    undefined,
+    {
+      initialData: initialProfileSettings,
+    }
+  );
   const updatePublishProfile = trpc.user.updatePublishProfile.useMutation();
   const updateProfileMainRegion = trpc.user.updateProfileMainRegion.useMutation();
   const updateProfilePrivacySettings = trpc.user.updateProfilePrivacySettings.useMutation();

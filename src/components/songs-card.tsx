@@ -708,7 +708,7 @@ export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: Snap
         <div className="flex items-center justify-between">
           <CardTitle>{t('dataContent.songs', { count: songs.length })}</CardTitle>
           <Select value={displayMode} onValueChange={(value) => setDisplayMode(value as "list" | "grid" | "compact")}>
-            <SelectTrigger className="w-30 h-8">
+            <SelectTrigger className="w-40 h-8">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

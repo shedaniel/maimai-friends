@@ -1,21 +1,7 @@
 import { DataContent } from "@/components/data-content";
 import { PublicDataBanner } from "@/components/public-data-banner";
 import { PublicHeader } from "@/components/public-header";
-import { Difficulty, Region, SnapshotWithSongs, SongWithScore } from "@/lib/types";
-
-interface ProfileData {
-  id: string;
-  name: string;
-  timezone: string | null;
-  publishProfile: boolean;
-  profileMainRegion: Region;
-  profileShowAllScores: boolean;
-  profileShowScoreDetails: boolean;
-  profileShowPlates: boolean;
-  profileShowPlayCounts: boolean;
-  profileShowEvents: boolean;
-  profileShowInSearch: boolean;
-}
+import { Difficulty, Region, SnapshotWithSongs, SongWithScore, ProfileData } from "@/lib/types";
 
 interface SnapshotData {
   snapshot: {

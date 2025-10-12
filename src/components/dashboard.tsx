@@ -10,15 +10,19 @@ import { useFetchSession } from "@/hooks/useFetchSession";
 import { useSnapshots } from "@/hooks/useSnapshots";
 import { signOut } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc-client";
-import { Region, User } from "@/lib/types";
+import { Region, User, UserData, ProfileSettings } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface DashboardProps {
   user: User;
+  initialUserData: UserData;
+  initialHasToken: boolean;
+  initialTimezone: string | null;
+  initialProfileSettings: ProfileSettings;
 }
 
-export function Dashboard({ user }: DashboardProps) {
+export function Dashboard({ user, initialUserData, initialHasToken, initialTimezone, initialProfileSettings }: DashboardProps) {
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUsernameSetupOpen, setIsUsernameSetupOpen] = useState(false);
@@ -26,11 +30,14 @@ export function Dashboard({ user }: DashboardProps) {
   // Check if user has username
   const { data: userData, refetch: refetchUserData } = trpc.user.getUserData.useQuery(
     undefined,
-    { refetchOnWindowFocus: false }
+    { 
+      refetchOnWindowFocus: false,
+      initialData: initialUserData,
+    }
   );
 
   // Use the stored region preference, fallback to "intl" if not set
-  const selectedRegion: Region = userData?.region || "intl";
+  const selectedRegion: Region = (userData?.region as Region) || "intl";
 
   // Show username setup dialog if user doesn't have username
   useEffect(() => {
@@ -62,16 +69,22 @@ export function Dashboard({ user }: DashboardProps) {
     resetFetchSession,
   } = useFetchSession(refreshSnapshots);
 
-  // Check if user has a saved token for the current region
+  // Check if user has a saved token for the current region (with initial server data)
   const { data: tokenData, isLoading: isLoadingToken } = trpc.user.hasToken.useQuery(
     { region: selectedRegion },
-    { refetchOnWindowFocus: false }
+    { 
+      refetchOnWindowFocus: false,
+      initialData: { hasToken: initialHasToken },
+    }
   );
 
-  // Get user timezone
+  // Get user timezone (with initial server data)
   const { data: timezoneData, refetch: refetchTimezone } = trpc.user.getTimezone.useQuery(
     undefined,
-    { refetchOnWindowFocus: false }
+    { 
+      refetchOnWindowFocus: false,
+      initialData: { timezone: initialTimezone },
+    }
   );
 
   // Update region mutation
@@ -254,6 +267,7 @@ export function Dashboard({ user }: DashboardProps) {
         onOpenChange={setIsSettingsOpen}
         currentTimezone={timezoneData?.timezone ?? null}
         username={userData?.username ?? undefined}
+        initialProfileSettings={initialProfileSettings}
         onTimezoneUpdate={handleTimezoneUpdate}
         onOpenTokenDialog={handleOpenTokenDialog}
         onSaveSuccess={() => refetchUserData()}

@@ -111,4 +111,48 @@ export interface HasTokenResponse {
 
 export interface GetTimezoneResponse {
   timezone: string | null;
+}
+
+// ===== USER & PROFILE TYPES =====
+
+export interface UserData {
+  hasUsername: boolean;
+  username: string | null;
+  publishProfile: boolean;
+  region: Region | null;
+  role: "user" | "admin";
+}
+
+export interface ProfileSettings {
+  publishProfile: boolean;
+  profileMainRegion: 'intl' | 'jp';
+  profileShowAllScores: boolean;
+  profileShowScoreDetails: boolean;
+  profileShowPlates: boolean;
+  profileShowPlayCounts: boolean;
+  profileShowEvents: boolean;
+  profileShowInSearch: boolean;
+}
+
+export interface ProfileData {
+  id: string;
+  name: string;
+  timezone: string | null;
+  publishProfile: boolean;
+  profileMainRegion: Region;
+  profileShowAllScores: boolean;
+  profileShowScoreDetails: boolean;
+  profileShowPlates: boolean;
+  profileShowPlayCounts: boolean;
+  profileShowEvents: boolean;
+  profileShowInSearch: boolean;
+}
+
+export interface ProfilePrivacySettings {
+  profileShowAllScores: boolean;
+  profileShowScoreDetails: boolean;
+  profileShowPlates: boolean;
+  profileShowPlayCounts: boolean;
+  profileShowEvents: boolean;
+  profileShowInSearch: boolean;
 } 
