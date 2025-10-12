@@ -41,11 +41,8 @@ export function PublicHeader({}: PublicHeaderProps) {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-1">
           <div className="whitespace-nowrap pr-2">
-            {isMobile ? (
-              <h1 className="text-lg leading-none font-semibold">ともマイ</h1>
-            ) : (
-              <h1 className="text-lg leading-none font-semibold">{t('common.title')}</h1>
-            )}
+            <h1 className="text-lg leading-none font-semibold md:hidden">ともマイ</h1>
+            <h1 className="text-lg leading-none font-semibold max-sm:hidden">{t('common.title')}</h1>
             <p className="text-muted-foreground text-xs">by shedaniel</p>
           </div>
           {!isMobile && (

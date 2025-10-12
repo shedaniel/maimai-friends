@@ -1,10 +1,7 @@
-"use client";
-
 import { DataContent } from "@/components/data-content";
 import { PublicDataBanner } from "@/components/public-data-banner";
 import { PublicHeader } from "@/components/public-header";
 import { Difficulty, Region, SnapshotWithSongs, SongWithScore } from "@/lib/types";
-import { useRouter } from "next/navigation";
 
 interface ProfileData {
   id: string;
@@ -58,7 +55,7 @@ interface SnapshotData {
   };
 }
 
-interface ProfilePageClientProps {
+interface ProfilePageProps {
   profileData: ProfileData;
   snapshotData: SnapshotData;
   region: Region;
@@ -66,21 +63,13 @@ interface ProfilePageClientProps {
   initialTab?: string;
 }
 
-export function ProfilePageClient({
+export function ProfilePage({
   profileData,
   snapshotData,
   region,
   username,
   initialTab,
-}: ProfilePageClientProps) {
-  const router = useRouter();
-
-  const handleRegionChange = (newRegion: Region) => {
-    if (newRegion !== region) {
-      // Navigate to the new region
-      router.push(`/profile/${username}/${newRegion}`);
-    }
-  };
+}: ProfilePageProps) {
 
   // Convert the snapshot data to the format expected by DataContent
   const snapshotWithSongs: SnapshotWithSongs = {
@@ -111,7 +100,6 @@ export function ProfilePageClient({
           }}
           userTimezone={profileData.timezone}
           profileUsername={username}
-          onRegionChange={handleRegionChange}
         />
 
         <DataContent

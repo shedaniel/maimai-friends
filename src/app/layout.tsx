@@ -7,6 +7,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import localFont from "next/font/local";
 import { Noto_Sans_SC, Noto_Sans_TC } from "next/font/google";
+import { VercelToolbar } from "@vercel/toolbar/next";
 import "./globals.css";
 
 // Local fonts
@@ -76,6 +77,7 @@ export default async function RootLayout({
   // Get messages for the current locale
   const locale = await getLocale();
   const messages = await getMessages();
+  const shouldInjectToolbar = process.env.NODE_ENV === "development";
 
   return (
     <html lang={locale}>
@@ -86,6 +88,7 @@ export default async function RootLayout({
           <LocaleProvider initialLocale={locale}>
             <TRPCProvider>
               {children}
+              {shouldInjectToolbar && <VercelToolbar />}
               <Toaster />
             </TRPCProvider>
           </LocaleProvider>

@@ -2,6 +2,7 @@
 
 import { Flag, Ship } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import { Region } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select-friendly";
@@ -13,25 +14,6 @@ interface RegionSwitcherProps {
 
 export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
   const t = useTranslations();
-
-  const getRegionCode = (region: Region) => {
-    switch (region) {
-      case "intl":
-        return t('regions.intl');
-      case "jp":
-        return t('regions.jp');
-    }
-  };
-
-  const getRegionCodeShort = (region: Region) => {
-    switch (region) {
-      case "intl":
-        return t('regions.short.intl');
-      case "jp":
-        return t('regions.short.jp');
-    }
-  };
-
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger variant="secondary" size="sm">
@@ -50,7 +32,37 @@ export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
             {t('regions.jp')}
           </div>
         </SelectItem>
+          <SelectItem value="cn">
+            <div className="flex items-center justify-between gap-2 whitespace-nowrap">
+              <Flag className="h-4 w-4" />
+              {t('regions.cn')}
+            </div>
+          </SelectItem>
       </SelectContent>
     </Select>
-  )
+  );
+}
+
+// Client component for profile pages that handles navigation
+interface RegionSwitcherClientProps {
+  value: Region;
+  username: string;
+}
+
+export function RegionSwitcherClient({ value, username }: RegionSwitcherClientProps) {
+  const router = useRouter();
+
+  const handleRegionChange = (newRegion: Region) => {
+    if (newRegion !== value) {
+      // Navigate to the new region
+      router.push(`/profile/${username}/${newRegion}`);
+    }
+  };
+
+  return (
+    <RegionSwitcher 
+      value={value} 
+      onChange={handleRegionChange}
+    />
+  );
 } 

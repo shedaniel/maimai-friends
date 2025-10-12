@@ -1,6 +1,4 @@
-"use client";
-
-import { RegionSwitcher } from "@/components/region-switcher";
+import { RegionSwitcherClient } from "@/components/region-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getVersionInfo } from "@/lib/metadata";
@@ -18,7 +16,6 @@ interface PublicDataBannerProps {
   } | null;
   userTimezone?: string | null; // null = Asia/Tokyo (JP default)
   profileUsername: string;
-  onRegionChange: (region: Region) => void;
 }
 
 export function PublicDataBanner({
@@ -26,7 +23,6 @@ export function PublicDataBanner({
   snapshotData,
   userTimezone,
   profileUsername,
-  onRegionChange,
 }: PublicDataBannerProps) {
   const t = useTranslations();
 
@@ -68,9 +64,9 @@ export function PublicDataBanner({
               <User className="h-4 w-4" />
               <span>{profileUsername}</span>
             </div>
-            <RegionSwitcher 
+            <RegionSwitcherClient 
               value={region} 
-              onChange={onRegionChange}
+              username={profileUsername}
             />
           </div>
         </div>

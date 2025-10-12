@@ -82,7 +82,8 @@
         "label": "Main Region",
         "description": "Choose your primary region for the published profile.",
         "intl": "International",
-        "jp": "Japan"
+        "jp": "Japan",
+        "cn": "China"
       },
       "privacy": {
         "label": "Privacy Settings",
@@ -225,9 +226,11 @@
   "regions": {
     "intl": "International",
     "jp": "Japan",
+    "cn": "China",
     "short": {
       "intl": "Asia",
-      "jp": "Japan"
+      "jp": "Japan",
+      "cn": "China"
     }
   },
   "userHeader": {

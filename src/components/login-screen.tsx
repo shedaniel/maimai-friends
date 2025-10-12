@@ -4,16 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Database } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { trpc } from "@/lib/trpc-client";
 import { LocaleSwitcher } from "./locale-switcher";
+import { signIn } from "@/lib/auth-client";
+import { toast } from "sonner";
 
-interface LoginScreenProps {
-  onAuth: () => void;
+interface SignupRequirements {
+  signupEnabled: boolean;
+  inviteRequired: boolean;
+  reason: 'disabled' | 'invite-only' | 'enabled' | 'open';
 }
 
-export function LoginScreen({ onAuth }: LoginScreenProps) {
+interface LoginScreenProps {
+  signupRequirements: SignupRequirements;
+}
+
+export function LoginScreen({ signupRequirements }: LoginScreenProps) {
   const t = useTranslations();
-  const { data: signupRequirements, isLoading } = trpc.user.getSignupRequirements.useQuery();
+
+  const handleDiscordAuth = async () => {
+    try {
+      await signIn.social({
+        provider: "discord",
+        callbackURL: "/",
+        errorCallbackURL: "/",
+      });
+    } catch (error) {
+      console.error("Discord auth error:", error);
+      toast.error("An error occurred during authentication. Please try again.");
+    }
+  };
 
   return (
     <div className="container mx-auto max-w-md px-4">
@@ -38,7 +57,7 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
 
             <div className="text-center space-y-2">
               <Button
-                onClick={onAuth}
+                onClick={handleDiscordAuth}
                 className="w-full"
                 size="lg"
               >
@@ -53,22 +72,22 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
                 <Button
                   variant="link"
                   size="sm"
-                  onClick={onAuth}
-                  disabled={isLoading || !signupRequirements?.signupEnabled}
+                  onClick={handleDiscordAuth}
+                  disabled={!signupRequirements.signupEnabled}
                 >
                   {t('auth.signupWithDiscord')}
                 </Button>
               </p>
             </div>
 
-            {!isLoading && signupRequirements?.reason === 'disabled' && (
+            {signupRequirements.reason === 'disabled' && (
               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded-md text-sm">
                 <p className="font-medium">{t('auth.signupDisabled')}</p>
                 <p className="text-xs mt-1">{t('auth.signupDisabledMessage')}</p>
               </div>
             )}
 
-            {!isLoading && signupRequirements?.reason === 'invite-only' && (
+            {signupRequirements.reason === 'invite-only' && (
               <div className="bg-blue-50 border border-blue-200 text-blue-800 px-3 py-2 rounded-md text-sm">
                 <p className="font-medium">Invitation Required</p>
                 <p className="text-xs mt-1">New signups require an invitation from an existing user.</p>

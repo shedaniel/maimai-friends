@@ -1,7 +1,7 @@
 import { createServerSideTRPC } from "@/lib/trpc-server";
 import { TRPCError } from "@trpc/server";
 import { Region } from "@/lib/types";
-import { ProfilePageClient } from "@/components/profile-page-client";
+import { ProfilePage } from "@/components/profile-page";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 
@@ -119,7 +119,7 @@ export default async function RegionProfilePage({ params, searchParams }: Region
     });
 
     return (
-      <ProfilePageClient 
+      <ProfilePage 
         profileData={profileData}
         snapshotData={snapshotData}
         region={region}

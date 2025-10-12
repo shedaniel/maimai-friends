@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
+import { withVercelToolbar as withVercelToolbarPlugin } from "@vercel/toolbar/plugins/next";
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -56,4 +57,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+const withVercelToolbar = withVercelToolbarPlugin();
+
+export default withNextIntl(withVercelToolbar(nextConfig));
