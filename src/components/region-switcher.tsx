@@ -32,12 +32,6 @@ export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
             {t('regions.jp')}
           </div>
         </SelectItem>
-          <SelectItem value="cn">
-            <div className="flex items-center justify-between gap-2 whitespace-nowrap">
-              <Flag className="h-4 w-4" />
-              {t('regions.cn')}
-            </div>
-          </SelectItem>
       </SelectContent>
     </Select>
   );
