@@ -58,33 +58,26 @@ export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onL
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-1">
           <div className="whitespace-nowrap pr-2">
-            {isMobile ? (
-              <h1 className="text-lg leading-none font-semibold">ともマイ</h1>
-            ) : (
-              <h1 className="text-lg leading-none font-semibold">{t('common.title')}</h1>
-            )}
+            <h1 className="text-lg leading-none font-semibold md:hidden">ともマイ</h1>
+            <h1 className="text-lg leading-none font-semibold max-sm:hidden">{t('common.title')}</h1>
             <p className="text-muted-foreground text-xs">by shedaniel</p>
           </div>
-          {!isMobile && (
-            <>
-              <Button
-                onClick={() => setAboutOpen(true)}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-gray-200"
-              >
-                <Info className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={handleDiscordInvite}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-gray-200"
-              >
-                <DiscordIcon className="h-4 w-4" />
-              </Button>
-            </>
-          )}
+          <Button
+            onClick={() => setAboutOpen(true)}
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-gray-200 max-sm:hidden"
+          >
+            <Info className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={handleDiscordInvite}
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-gray-200 max-sm:hidden"
+          >
+            <DiscordIcon className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="flex items-center space-x-4">

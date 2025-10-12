@@ -10,7 +10,7 @@ import { useFetchSession } from "@/hooks/useFetchSession";
 import { useSnapshots } from "@/hooks/useSnapshots";
 import { signOut } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc-client";
-import { Region, User, UserData, ProfileSettings } from "@/lib/types";
+import { Region, User, UserData, ProfileSettings, Snapshot, SnapshotWithSongs } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -20,9 +20,11 @@ interface DashboardProps {
   initialHasToken: boolean;
   initialTimezone: string | null;
   initialProfileSettings: ProfileSettings;
+  initialSnapshots: Snapshot[];
+  initialSnapshotData?: SnapshotWithSongs;
 }
 
-export function Dashboard({ user, initialUserData, initialHasToken, initialTimezone, initialProfileSettings }: DashboardProps) {
+export function Dashboard({ user, initialUserData, initialHasToken, initialTimezone, initialProfileSettings, initialSnapshots, initialSnapshotData }: DashboardProps) {
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUsernameSetupOpen, setIsUsernameSetupOpen] = useState(false);
@@ -50,8 +52,6 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
     snapshots,
     selectedSnapshot,
     selectedSnapshotData,
-    availableVersions,
-    isLoadingVersions,
     setSelectedSnapshot,
     deleteSnapshot,
     copySnapshot,
@@ -59,7 +59,10 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
     isLoading: isLoadingSnapshots,
     resetSnapshots,
     refreshSnapshots,
-  } = useSnapshots(selectedRegion, true);
+  } = useSnapshots(selectedRegion, true, {
+    initialSnapshots,
+    initialSnapshotData,
+  });
 
   const {
     isFetching,
@@ -231,21 +234,19 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
       />
 
       <div className="space-y-6">
-        <DataBanner
-          region={selectedRegion}
-          snapshots={snapshots}
-          selectedSnapshot={selectedSnapshot}
-          onSnapshotChange={setSelectedSnapshot}
-          onDeleteSnapshot={handleDeleteSnapshot}
-          onFetchData={handleFetchData}
-          isFetching={isFetching}
-          currentSession={currentSession}
-          userTimezone={timezoneData?.timezone ?? null}
-          availableVersions={availableVersions}
-          isLoadingVersions={isLoadingVersions}
-          onCopySnapshot={handleCopySnapshot}
-          isCopying={isCopying}
-        />
+              <DataBanner
+                region={selectedRegion}
+                snapshots={snapshots}
+                selectedSnapshot={selectedSnapshot}
+                onSnapshotChange={setSelectedSnapshot}
+                onDeleteSnapshot={handleDeleteSnapshot}
+                onFetchData={handleFetchData}
+                isFetching={isFetching}
+                currentSession={currentSession}
+                userTimezone={timezoneData?.timezone ?? null}
+                onCopySnapshot={handleCopySnapshot}
+                isCopying={isCopying}
+              />
 
         <DataContent
           region={selectedRegion}

@@ -1,13 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc-client";
-import { Region, Snapshot } from "@/lib/types";
+import { Region, Snapshot, SnapshotWithSongs } from "@/lib/types";
 import { VersionInfo } from "@/lib/metadata";
 
-export function useSnapshots(region: Region, isAuthenticated: boolean) {
-  const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);
-  const previousLengthRef = useRef<number>(0);
+interface UseSnapshotsOptions {
+  initialSnapshots?: Snapshot[];
+  initialSnapshotData?: SnapshotWithSongs;
+}
 
-  // Use tRPC query to fetch snapshots metadata only
+export function useSnapshots(
+  region: Region, 
+  isAuthenticated: boolean,
+  options?: UseSnapshotsOptions
+) {
+  const { initialSnapshots, initialSnapshotData } = options || {};
+  
+  // Initialize selected snapshot with the first snapshot from initial data
+  const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(
+    initialSnapshots && initialSnapshots.length > 0 ? initialSnapshots[0].id : null
+  );
+  const previousLengthRef = useRef<number>(initialSnapshots?.length || 0);
+
+  // Use tRPC query to fetch snapshots metadata only (with initial data)
   const {
     data: snapshotsData,
     isLoading: isLoadingSnapshots,
@@ -18,10 +32,13 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
       enabled: isAuthenticated, // Only run query if authenticated
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
+      initialData: initialSnapshots ? { snapshots: initialSnapshots } : undefined,
     }
   );
 
-  // Fetch complete snapshot data only when a snapshot is selected
+  // Fetch complete snapshot data only when a snapshot is selected (with initial data)
+  const hasInitialDataForSelected = initialSnapshotData && selectedSnapshot === initialSnapshotData.snapshot.id;
+  
   const {
     data: selectedSnapshotData,
     isLoading: isLoadingSnapshotData,
@@ -35,28 +52,11 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
       enabled: isAuthenticated && !!selectedSnapshot,
       refetchOnWindowFocus: false,
       staleTime: 10 * 60 * 1000, // 10 minutes - snapshot data changes less frequently
-    }
-  );
-
-  // Get available versions for copying when a snapshot is selected
-  const currentGameVersion = selectedSnapshotData?.snapshot?.gameVersion;
-  const {
-    data: availableVersionsData,
-    isLoading: isLoadingVersions,
-  } = trpc.user.getAvailableVersionsForCopy.useQuery(
-    {
-      region,
-      currentVersion: currentGameVersion!,
-    },
-    {
-      enabled: isAuthenticated && !!currentGameVersion,
-      refetchOnWindowFocus: false,
-      staleTime: 30 * 60 * 1000, // 30 minutes - versions don't change often
+      ...(hasInitialDataForSelected && { initialData: initialSnapshotData as any }),
     }
   );
 
   const snapshots: Snapshot[] = snapshotsData?.snapshots || [];
-  const availableVersions: VersionInfo[] = availableVersionsData?.availableVersions || [];
   const isLoading = isLoadingSnapshots || (!!selectedSnapshot && isLoadingSnapshotData);
 
   // Auto-select the latest snapshot if none selected and we have snapshots
@@ -146,8 +146,6 @@ export function useSnapshots(region: Region, isAuthenticated: boolean) {
     snapshots,
     selectedSnapshot,
     selectedSnapshotData: selectedSnapshotData || undefined,
-    availableVersions,
-    isLoadingVersions,
     setSelectedSnapshot: handleSnapshotSelect,
     deleteSnapshot: handleDeleteSnapshot,
     copySnapshot: handleCopySnapshot,

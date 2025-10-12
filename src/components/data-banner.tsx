@@ -32,6 +32,7 @@ import { parseStatusStates, calculateProgress } from "@/lib/fetch-states";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc-client";
 
 interface DataBannerProps {
   region: Region;
@@ -43,9 +44,7 @@ interface DataBannerProps {
   isFetching: boolean;
   currentSession: FetchSession | null;
   userTimezone?: string | null; // null = Asia/Tokyo (JP default)
-  // New props for copy functionality
-  availableVersions: VersionInfo[];
-  isLoadingVersions: boolean;
+  // Copy functionality
   onCopySnapshot: (snapshotId: string, targetVersion: number) => Promise<any>;
   isCopying: boolean;
 }
@@ -154,22 +153,40 @@ function DeleteSnapshotButton({
   );
 }
 
-// Copy snapshot button component
+// Copy snapshot button component with lazy-loaded versions
 function CopySnapshotButton({
   isDropdownOpen,
   setIsDropdownOpen,
   isCopying,
-  isLoadingVersions,
-  availableVersions,
+  region,
+  currentGameVersion,
   onCopyToVersion
 }: {
   isDropdownOpen: boolean;
   setIsDropdownOpen: (open: boolean) => void;
   isCopying: boolean;
-  isLoadingVersions: boolean;
-  availableVersions: VersionInfo[];
+  region: Region;
+  currentGameVersion: number | undefined;
   onCopyToVersion: (targetVersion: number) => void;
 }) {
+  // Only load versions when dropdown is opened
+  const {
+    data: availableVersionsData,
+    isLoading: isLoadingVersions,
+  } = trpc.user.getAvailableVersionsForCopy.useQuery(
+    {
+      region,
+      currentVersion: currentGameVersion!,
+    },
+    {
+      enabled: isDropdownOpen && !!currentGameVersion,
+      refetchOnWindowFocus: false,
+      staleTime: 30 * 60 * 1000, // 30 minutes - versions don't change often
+    }
+  );
+
+  const availableVersions = availableVersionsData?.availableVersions || [];
+
   return (
     <DropdownMenu modal={false} open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
       <DropdownMenuTrigger asChild>
@@ -299,14 +316,16 @@ export function DataBanner({
   isFetching,
   currentSession,
   userTimezone,
-  availableVersions,
-  isLoadingVersions,
   onCopySnapshot,
   isCopying,
 }: DataBannerProps) {
   const t = useTranslations();
   const hasSnapshots = snapshots.length > 0;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Get current game version from selected snapshot
+  const selectedSnapshotObj = snapshots.find(s => s.id === selectedSnapshot);
+  const currentGameVersion = selectedSnapshotObj?.gameVersion;
 
   const handleCopyToVersion = async (targetVersion: number) => {
     if (!selectedSnapshot) return;
@@ -367,8 +386,8 @@ export function DataBanner({
                   isDropdownOpen={isDropdownOpen}
                   setIsDropdownOpen={setIsDropdownOpen}
                   isCopying={isCopying}
-                  isLoadingVersions={isLoadingVersions}
-                  availableVersions={availableVersions}
+                  region={region}
+                  currentGameVersion={currentGameVersion}
                   onCopyToVersion={handleCopyToVersion}
                 />
               </div>

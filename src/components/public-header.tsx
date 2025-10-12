@@ -45,28 +45,24 @@ export function PublicHeader({}: PublicHeaderProps) {
             <h1 className="text-lg leading-none font-semibold max-sm:hidden">{t('common.title')}</h1>
             <p className="text-muted-foreground text-xs">by shedaniel</p>
           </div>
-          {!isMobile && (
-            <>
-              <Button
-                onClick={() => setAboutOpen(true)}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-gray-200"
-              >
-                <Info className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={handleDiscordInvite}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-gray-200"
-              >
-                <DiscordIcon className="h-4 w-4" />
-              </Button>
-            </>
-          )}
+          <Button
+            onClick={() => setAboutOpen(true)}
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-gray-200 max-sm:hidden"
+          >
+            <Info className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={handleDiscordInvite}
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-gray-200 max-sm:hidden"
+          >
+            <DiscordIcon className="h-4 w-4" />
+          </Button>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <LocaleSwitcher />
           <Button onClick={handleLogin} variant="default">

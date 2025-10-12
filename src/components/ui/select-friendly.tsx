@@ -58,7 +58,10 @@ interface SelectProps<T extends string> {
 }
 
 function Select<T extends string>({ value, onValueChange, children, disabled }: SelectProps<T>) {
-  const isMobile = useMediaQuery("(max-width: 768px)")
+  const isMobile = useMediaQuery("(max-width: 768px)", {
+    defaultValue: false,
+    initializeWithValue: false, // Prevent hydration mismatch by matching server render
+  })
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [valueNode, setValueNode] = React.useState<HTMLElement | null>(null);
   const [valueNodeHasChildren, setValueNodeHasChildren] = React.useState(false);

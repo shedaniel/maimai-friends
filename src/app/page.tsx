@@ -33,7 +33,7 @@ export default async function Home() {
   // Fetch initial dashboard data on the server with authenticated context
   const trpc = await createServerSideTRPC(session);
   
-  // First fetch user data to get their region preference
+  // First, get user data to determine their region preference
   const userData = await trpc.user.getUserData().catch(() => ({
     hasUsername: false,
     username: null,
@@ -42,10 +42,12 @@ export default async function Home() {
     role: "user" as const,
   }));
 
-  // Then fetch timezone, token status, and profile settings in parallel using the user's region
-  const [timezoneData, tokenData, profileSettings] = await Promise.all([
+  const userRegion = userData.region || "intl";
+
+  // Then fetch all other data in parallel using the correct region
+  const [timezoneData, tokenData, profileSettings, snapshotsData] = await Promise.all([
     trpc.user.getTimezone().catch(() => ({ timezone: null })),
-    trpc.user.hasToken({ region: userData.region || "intl" }).catch(() => ({ hasToken: false })),
+    trpc.user.hasToken({ region: userRegion }).catch(() => ({ hasToken: false })),
     trpc.user.getProfileSettings().catch(() => ({
       publishProfile: false,
       profileMainRegion: 'intl' as const,
@@ -56,7 +58,18 @@ export default async function Home() {
       profileShowEvents: true,
       profileShowInSearch: true,
     })),
+    trpc.user.getSnapshots({ region: userRegion }).catch(() => ({ snapshots: [] })),
   ]);
+
+  // Fetch the latest snapshot data if we have snapshots
+  // This is the slowest query (potentially hundreds of songs), so we do it last
+  const latestSnapshotId = snapshotsData.snapshots[0]?.id;
+  const initialSnapshotData = latestSnapshotId
+    ? await trpc.user.getSnapshotData({ 
+        snapshotId: latestSnapshotId, 
+        region: userRegion 
+      }).catch(() => undefined)
+    : undefined;
 
   return (
     <Dashboard 
@@ -65,6 +78,8 @@ export default async function Home() {
       initialHasToken={tokenData?.hasToken ?? false}
       initialTimezone={timezoneData?.timezone ?? null}
       initialProfileSettings={profileSettings}
+      initialSnapshots={snapshotsData.snapshots}
+      initialSnapshotData={initialSnapshotData}
     />
   );
 }
