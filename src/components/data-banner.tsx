@@ -83,7 +83,7 @@ function SnapshotSelector({
 
   return (
     <Select value={selectedSnapshot || undefined} onValueChange={onSnapshotChange}>
-      <SelectTrigger className="grow max-md:w-60 min-w-0">
+      <SelectTrigger className="flex-1 min-w-0">
         <SelectValue placeholder={t('dataBanner.selectSnapshot')}>
           {selectedSnapshotData ? (
             <div className="flex flex-col items-start min-w-0 truncate text-xs">
@@ -335,8 +335,8 @@ export function DataBanner({
       <CardContent>
         <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 md:space-x-4">
           {/* Left side - Snapshot selector */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-x-4">
+            <div className="flex items-center gap-x-2">
               <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="text-sm font-medium whitespace-nowrap">{t('dataBanner.dataSnapshot')}</span>
             </div>

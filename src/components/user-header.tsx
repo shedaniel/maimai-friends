@@ -22,6 +22,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { user } from "@/lib/schema";
 import { AdminDialog } from "./dialogs/admin-dialog";
+import { LocaleSwitcher } from "./locale-switcher";
 
 const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled';
 const APPLICATION_ID = process.env.NEXT_PUBLIC_DISCORD_APPLICATION_ID;
@@ -36,11 +37,11 @@ interface UserHeaderProps {
 }
 
 export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onLogout, onSettings }: UserHeaderProps) {
+  const isMobile = useMediaQuery('(max-width: 640px)');
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false);
-  const isMobile = useMediaQuery('(max-width: 640px)');
 
   const handleDiscordInvite = async () => {
     try {
@@ -57,7 +58,11 @@ export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onL
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-1">
           <div className="whitespace-nowrap pr-2">
-            <h1 className="text-lg leading-none font-semibold">tomomai ともマイ</h1>
+            {isMobile ? (
+              <h1 className="text-lg leading-none font-semibold">ともマイ</h1>
+            ) : (
+              <h1 className="text-lg leading-none font-semibold">{t('common.title')}</h1>
+            )}
             <p className="text-muted-foreground text-xs">by shedaniel</p>
           </div>
           {!isMobile && (
@@ -83,6 +88,7 @@ export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onL
         </div>
 
         <div className="flex items-center space-x-4">
+          <LocaleSwitcher />
           <RegionSwitcher value={selectedRegion} onChange={onRegionChange} />
 
           <DropdownMenu modal={false}>

@@ -452,35 +452,6 @@ export const userRouter = router({
       return { success: true };
     }),
 
-  // Get user language preference
-  getLanguage: protectedProcedure
-    .query(async ({ ctx }) => {
-      const result = await db
-        .select({ language: user.language })
-        .from(user)
-        .where(eq(user.id, ctx.session.user.id))
-        .limit(1);
-
-      return { language: result[0]?.language || null };
-    }),
-
-  // Update user language
-  updateLanguage: protectedProcedure
-    .input(z.object({
-      language: z.enum(['en', 'en-GB', 'ja', 'zh-TW', 'zh-HK', 'zh-CN']).nullable(), // null = auto-detect
-    }))
-    .mutation(async ({ ctx, input }) => {
-      await db
-        .update(user)
-        .set({
-          language: input.language as "en" | "en-GB" | "ja" | "zh-TW" | "zh-HK" | "zh-CN" | null,
-          updatedAt: new Date(),
-        })
-        .where(eq(user.id, ctx.session.user.id));
-
-      return { success: true };
-    }),
-
   // Update user region
   updateRegion: protectedProcedure
     .input(z.object({

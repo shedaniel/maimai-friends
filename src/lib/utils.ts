@@ -9,6 +9,16 @@ export const SAFE_MAIMAI_IMAGE_URLS = [
 
 import { twMerge } from "tailwind-merge";
 
+export const getLanguages = (t: (key: string) => string) => [
+  { value: null, label: t('settings.language.auto'), code: "AUTO" },
+  { value: "en", label: t('settings.language.en'), code: "US" },
+  { value: "en-GB", label: t('settings.language.en-GB'), code: "UK" },
+  { value: "ja", label: t('settings.language.ja'), code: "JA" },
+  { value: "zh-TW", label: t('settings.language.zh-TW'), code: "TW" },
+  { value: "zh-HK", label: t('settings.language.zh-HK'), code: "HK" },
+  { value: "zh-CN", label: t('settings.language.zh-CN'), code: "CN" },
+];
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }

@@ -1,16 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChevronDown, Flag, Globe } from "lucide-react";
+import { Flag, Ship } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Region } from "@/lib/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select-friendly";
 
 interface RegionSwitcherProps {
   value: Region;
@@ -19,7 +13,7 @@ interface RegionSwitcherProps {
 
 export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
   const t = useTranslations();
-  
+
   const getRegionCode = (region: Region) => {
     switch (region) {
       case "intl":
@@ -39,31 +33,24 @@ export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
   };
 
   return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 bg-white">
-          <Globe className="h-4 w-4" />
-          <span className="sm:hidden">{getRegionCodeShort(value)}</span>
-          <span className="max-sm:hidden">{getRegionCode(value)}</span>
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          onClick={() => onChange("intl")}
-          className={`${value === "intl" ? "bg-accent" : ""} flex items-center gap-2`}
-        >
-          <Globe className="h-4 w-4" />
-          {t('regions.intl')}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => onChange("jp")}
-          className={`${value === "jp" ? "bg-accent" : ""} flex items-center gap-2`}
-        >
-          <Flag className="h-4 w-4" />
-          {t('regions.jp')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger variant="secondary" size="sm">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="intl">
+          <div className="flex items-center justify-between gap-2 whitespace-nowrap">
+            <Ship className="h-4 w-4" />
+            {t('regions.intl')}
+          </div>
+        </SelectItem>
+        <SelectItem value="jp">
+          <div className="flex items-center justify-between gap-2 whitespace-nowrap">
+            <Flag className="h-4 w-4" />
+            {t('regions.jp')}
+          </div>
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  )
 } 

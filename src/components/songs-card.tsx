@@ -708,19 +708,8 @@ export function SongsCard({ selectedSnapshotData }: { selectedSnapshotData: Snap
         <div className="flex items-center justify-between">
           <CardTitle>{t('dataContent.songs', { count: songs.length })}</CardTitle>
           <Select value={displayMode} onValueChange={(value) => setDisplayMode(value as "list" | "grid" | "compact")}>
-            <SelectTrigger className="w-40 h-8">
-              <SelectValue>
-                <div className="flex items-center gap-2">
-                  {displayMode === "list" && <LayoutList className="h-4 w-4" />}
-                  {displayMode === "grid" && <LayoutGrid className="h-4 w-4" />}
-                  {displayMode === "compact" && <Menu className="h-4 w-4" />}
-                  <span>
-                    {displayMode === "list" && t('dataContent.displayModes.list')}
-                    {displayMode === "grid" && t('dataContent.displayModes.grid')}
-                    {displayMode === "compact" && t('dataContent.displayModes.compact')}
-                  </span>
-                </div>
-              </SelectValue>
+            <SelectTrigger className="w-30 h-8">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="grid">

@@ -8,6 +8,7 @@ import { AboutDialog } from "@/components/about-dialog";
 import { DiscordIcon } from "@/components/ui/discord-icon";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { LocaleSwitcher } from "./locale-switcher";
 
 const APPLICATION_ID = process.env.NEXT_PUBLIC_DISCORD_APPLICATION_ID;
 
@@ -16,9 +17,9 @@ interface PublicHeaderProps {
 }
 
 export function PublicHeader({}: PublicHeaderProps) {
+  const isMobile = useMediaQuery('(max-width: 640px)');
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
-  const isMobile = useMediaQuery('(max-width: 640px)');
   
   const handleLogin = () => {
     // Redirect to login page
@@ -40,12 +41,12 @@ export function PublicHeader({}: PublicHeaderProps) {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-1">
           <div className="whitespace-nowrap pr-2">
-            <h1 className="text-lg leading-none font-semibold">
-              tomomai ともマイ
-            </h1>
-            <p className="text-muted-foreground text-xs">
-              by shedaniel
-            </p>
+            {isMobile ? (
+              <h1 className="text-lg leading-none font-semibold">ともマイ</h1>
+            ) : (
+              <h1 className="text-lg leading-none font-semibold">{t('common.title')}</h1>
+            )}
+            <p className="text-muted-foreground text-xs">by shedaniel</p>
           </div>
           {!isMobile && (
             <>
@@ -70,6 +71,7 @@ export function PublicHeader({}: PublicHeaderProps) {
         </div>
         
         <div className="flex items-center space-x-4">
+          <LocaleSwitcher />
           <Button onClick={handleLogin} variant="default">
             <LogIn className="mr-2 h-4 w-4" />
             {t('common.login')}

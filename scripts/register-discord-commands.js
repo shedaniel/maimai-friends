@@ -49,7 +49,10 @@ async function registerCommands() {
           'Content-Type': 'application/json',
           'Authorization': `Bot ${BOT_TOKEN}`,
         },
-        body: JSON.stringify(commands),
+        body: JSON.stringify(commands.map(command => ({
+          ...command,
+          integration_types: [0, 1],
+        }))),
       }
     );
 

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Database } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc-client";
+import { LocaleSwitcher } from "./locale-switcher";
 
 interface LoginScreenProps {
   onAuth: () => void;
@@ -15,7 +16,10 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
   const { data: signupRequirements, isLoading } = trpc.user.getSignupRequirements.useQuery();
 
   return (
-    <div className="container mx-auto max-w-md mt-8 px-4">
+    <div className="container mx-auto max-w-md px-4">
+      <div className="flex justify-center py-4 [&>*]:w-fit">
+        <LocaleSwitcher forceVisible />
+      </div>
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="flex items-center justify-center space-x-2">
@@ -28,7 +32,7 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center space-y-4">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground text-balance">
               {t('auth.loginDescription')}
             </p>
 

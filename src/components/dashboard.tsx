@@ -74,12 +74,6 @@ export function Dashboard({ user }: DashboardProps) {
     { refetchOnWindowFocus: false }
   );
 
-  // Get user language
-  const { data: languageData, refetch: refetchLanguage } = trpc.user.getLanguage.useQuery(
-    undefined,
-    { refetchOnWindowFocus: false }
-  );
-
   // Update region mutation
   const updateRegionMutation = trpc.user.updateRegion.useMutation({
     onSuccess: () => {
@@ -99,17 +93,6 @@ export function Dashboard({ user }: DashboardProps) {
     },
     onError: (error) => {
       toast.error(`Failed to update timezone: ${error.message}`);
-    },
-  });
-
-  // Update language mutation
-  const updateLanguageMutation = trpc.user.updateLanguage.useMutation({
-    onSuccess: () => {
-      toast.success("Language updated successfully!");
-      refetchLanguage();
-    },
-    onError: (error) => {
-      toast.error(`Failed to update language: ${error.message}`);
     },
   });
 
@@ -194,10 +177,6 @@ export function Dashboard({ user }: DashboardProps) {
     await updateTimezoneMutation.mutateAsync({ timezone });
   };
 
-  const handleLanguageUpdate = async (language: string | null) => {
-    await updateLanguageMutation.mutateAsync({ language: language as "en" | "en-GB" | "ja" | "zh-TW" | "zh-HK" | "zh-CN" | null });
-  };
-
   const handleUsernameSetupComplete = () => {
     setIsUsernameSetupOpen(false);
     refetchUserData(); // Refresh to update the state
@@ -274,10 +253,8 @@ export function Dashboard({ user }: DashboardProps) {
         isOpen={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
         currentTimezone={timezoneData?.timezone ?? null}
-        currentLanguage={languageData?.language ?? null}
         username={userData?.username ?? undefined}
         onTimezoneUpdate={handleTimezoneUpdate}
-        onLanguageUpdate={handleLanguageUpdate}
         onOpenTokenDialog={handleOpenTokenDialog}
         onSaveSuccess={() => refetchUserData()}
       />

@@ -15,10 +15,12 @@ export function getRatingFactor(accuracy: number): number {
 }
 
 // Calculate song rating using the formula: rating = floor(factor * accuracy * levelPrecise / 10)
-export function calculateSongRating(song: SongWithScore): number {
+export function calculateSongRating(song: SongWithScore, version: number): number {
   const accuracy = song.achievement / 10000;
   const factor = getRatingFactor(accuracy);
-  return factor * Math.min(accuracy, 100.5) * song.levelPrecise / 10;
+  // Since version 12, AP/AP+ songs get an extra 1 rating
+  const extra = version >= 12 && (song.fc === "ap" || song.fc === "ap+") ? 1 : 0;
+  return factor * Math.min(accuracy, 100.5) * song.levelPrecise / 10 + extra;
 }
 
 // Extended song type with calculated rating
@@ -27,11 +29,11 @@ export interface SongWithRating extends SongWithScore {
 }
 
 // Helper function to add ratings to songs and sort by rating
-export function addRatingsAndSort(songs: SongWithScore[]): SongWithRating[] {
+export function addRatingsAndSort(songs: SongWithScore[], version: number): SongWithRating[] {
   return songs
     .map(song => ({
       ...song,
-      rating: calculateSongRating(song)
+      rating: calculateSongRating(song, version)
     }))
     .sort((a, b) => b.achievement - a.achievement)
     .sort((a, b) => b.rating - a.rating)
@@ -42,7 +44,7 @@ export function addRatingsAndSort(songs: SongWithScore[]): SongWithRating[] {
 }
 
 export function splitSongs(withScore: SongWithScore[], version: number) {
-  const songs = addRatingsAndSort(withScore);
+  const songs = addRatingsAndSort(withScore, version);
   // Since version 12, we incorporate songs from the previous version into the new version
   const versionAboveIsNew = version >= 12 ? version - 1 : version;
   const newSongs = songs.filter(song => song.addedVersion >= versionAboveIsNew);

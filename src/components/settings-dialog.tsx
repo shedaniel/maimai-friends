@@ -24,6 +24,7 @@ import { useLocale } from "@/components/providers/locale-provider";
 import { Locale, setLocaleCookie } from "@/i18n/locale";
 import { trpc } from "@/lib/trpc-client";
 import { toast } from "sonner";
+import { getLanguages } from "@/lib/utils";
 
 interface ProfilePrivacySettings {
   profileShowAllScores: boolean;
@@ -38,10 +39,8 @@ interface SettingsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   currentTimezone?: string | null;
-  currentLanguage?: string | null;
   username?: string;
   onTimezoneUpdate: (timezone: string | null) => Promise<void>;
-  onLanguageUpdate: (language: string | null) => Promise<void>;
   onOpenTokenDialog: () => void;
   onSaveSuccess: () => void;
 }
@@ -81,17 +80,15 @@ export function SettingsDialog({
   isOpen, 
   onOpenChange, 
   currentTimezone, 
-  currentLanguage, 
   username,
-  onTimezoneUpdate, 
-  onLanguageUpdate,
+  onTimezoneUpdate,
   onOpenTokenDialog,
   onSaveSuccess, 
 }: SettingsDialogProps) {
   const t = useTranslations();
-  const { setLocale } = useLocale();
+  const { locale, setLocale } = useLocale();
   const [selectedTimezone, setSelectedTimezone] = useState<string | null>(currentTimezone ?? null);
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(currentLanguage ?? null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(locale || null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Profile settings state
@@ -128,22 +125,13 @@ export function SettingsDialog({
     }
   }, [profileSettings]);
 
-  const LANGUAGES = [
-    { value: null, label: t('settings.language.auto'), code: "AUTO" },
-    { value: "en", label: t('settings.language.en'), code: "US" },
-    { value: "en-GB", label: t('settings.language.en-GB'), code: "UK" },
-    { value: "ja", label: t('settings.language.ja'), code: "JA" },
-    { value: "zh-TW", label: t('settings.language.zh-TW'), code: "TW" },
-    { value: "zh-HK", label: t('settings.language.zh-HK'), code: "HK" },
-    { value: "zh-CN", label: t('settings.language.zh-CN'), code: "CN" },
-  ];
+  const LANGUAGES = getLanguages(t);
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       const promises = [
-        onTimezoneUpdate(selectedTimezone),
-        onLanguageUpdate(selectedLanguage)
+        onTimezoneUpdate(selectedTimezone)
       ];
 
       // Update profile settings
@@ -172,10 +160,19 @@ export function SettingsDialog({
 
       await Promise.all(promises);
       
-      // Update the locale immediately if language changed
-      if (selectedLanguage && selectedLanguage !== currentLanguage) {
-        setLocaleCookie(selectedLanguage as Locale);
-        setLocale(selectedLanguage as Locale);
+      // Update the locale immediately if language changed (using cookies only)
+      if (selectedLanguage !== locale) {
+        if (selectedLanguage) {
+          setLocaleCookie(selectedLanguage as Locale);
+          setLocale(selectedLanguage as Locale);
+        } else {
+          // Clear cookie to use auto-detection
+          if (typeof document !== 'undefined') {
+            document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+          }
+          // Reload to detect language from browser
+          window.location.reload();
+        }
       }
       
       toast.success(t('settings.saved'));
@@ -191,7 +188,7 @@ export function SettingsDialog({
 
   const handleCancel = () => {
     setSelectedTimezone(currentTimezone ?? null);
-    setSelectedLanguage(currentLanguage ?? null);
+    setSelectedLanguage(locale || null);
     
     // Reset profile settings to original values
     if (profileSettings) {

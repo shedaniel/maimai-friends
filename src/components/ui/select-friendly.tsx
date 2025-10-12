@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils"
 import { Check, ChevronDown } from "lucide-react"
 import * as React from "react"
 import ReactDOM from "react-dom"
+import { Button, type buttonVariants } from "./button"
+import { VariantProps } from "class-variance-authority"
 
 interface SelectContextValue<T extends string> {
   isMobile: boolean
@@ -88,35 +90,39 @@ function Select<T extends string>({ value, onValueChange, children, disabled }: 
 
 // --- TRIGGER ---
 interface SelectTriggerProps extends React.ComponentProps<"button"> {
+  variant?: VariantProps<typeof buttonVariants>["variant"]
+  size?: VariantProps<typeof buttonVariants>["size"]
   className?: string
   children?: React.ReactNode
 }
 
-function SelectTrigger({ className, children, ...props }: SelectTriggerProps) {
+function SelectTrigger({ className, children, variant, size, ...props }: SelectTriggerProps) {
   const { isMobile } = useSelectContext()
 
   if (isMobile) {
     return (
       <SheetTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant={variant || "outline"}
+          size={size || "sm"}
           aria-haspopup="dialog"
           aria-expanded="false"
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-sm",
+            "flex items-center justify-between rounded-md border border-input bg-background",
             className
           )}
           {...props}
         >
           {children}
-          <ChevronDown className="h-4 w-4 opacity-50" />
-        </button>
+          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+        </Button>
       </SheetTrigger>
     )
   }
 
   return (
-    <SelectPrimitiveTrigger className={cn("w-full h-8", className)} {...props}>
+    <SelectPrimitiveTrigger className={cn("w-full h-8 space-x-2", className)} {...props}>
       {children}
     </SelectPrimitiveTrigger>
   )
@@ -127,7 +133,7 @@ interface SelectValueProps extends React.ComponentProps<"span"> {
   children?: React.ReactNode;
 }
 
-function SelectValue({ className, placeholder, children, ...props }: SelectValueProps) {
+function SelectValue({ placeholder, children, ...props }: SelectValueProps) {
   const ctx = useSelectContext()
   const hasChildren = children !== undefined;
 
@@ -215,12 +221,13 @@ function SelectItemPortal({
   const ctx = useSelectContext();
   const isSelected = ctx.value === value;
 
-  return (
-    <>
-      {isSelected && ctx.valueNode && !ctx.valueNodeHasChildren
-        ? ReactDOM.createPortal(children, ctx.valueNode)
-        : null}
-    </>
+  if (!isSelected || !ctx.valueNode || ctx.valueNodeHasChildren) return null;
+
+  return ReactDOM.createPortal(
+    <span className="inline pointer-events-none static" aria-hidden>
+      {children}
+    </span>,
+    ctx.valueNode as HTMLElement
   );
 }
 

@@ -20,6 +20,7 @@ interface RecommendationData {
   ratingGain: number;
   isInBest: boolean;
   category: "new" | "old";
+  efficiency: number;
 }
 
 const ACCURACY_VALUES = [
@@ -30,6 +31,7 @@ const ACCURACY_VALUES = [
     99.5,
     100.0,
     100.5,
+    101.0,
 ]
 
 function generateRecommendations(songsWithRating: SongWithRating[], version: number): RecommendationData[] {
@@ -56,11 +58,16 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
     const minRequiredRating = isNew ? minNewRating : minOldRating;
 
     // Skip if song can't be improved
-    if (currentAccuracy >= 100.5) return;
+    if (version >= 12) {
+      if (currentAccuracy >= 100.5 && (song.fc === "ap" || song.fc === "ap+")) return;
+    } else {
+      if (currentAccuracy >= 100.5) return;
+    }
 
     // For songs outside best lists, check if 100.5% would be beneficial
     if (!isInBest) {
-      const maxPossibleRating = Math.floor(0.224 * 100.5 * song.levelPrecise / 10);
+      const extra = version >= 12 ? 1 : 0;
+      const maxPossibleRating = Math.floor(0.224 * 100.5 * song.levelPrecise / 10) + extra;
       if (maxPossibleRating <= minRequiredRating) return;
     }
 
@@ -68,7 +75,8 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
       if (accuracy <= currentAccuracy) continue;
 
       const factor = getRatingFactor(accuracy);
-      const newRating = Math.floor(factor * accuracy * song.levelPrecise / 10);
+      const extra = version >= 12 && accuracy === 101.0 ? 1 : 0;
+      const newRating = Math.floor(factor * Math.min(accuracy, 100.5) * song.levelPrecise / 10) + extra;
 
       if (newRating <= minRequiredRating) continue;
 
@@ -77,6 +85,10 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
         : newRating - minRequiredRating;  // Replacing lowest song in B15/B35
 
       if (ratingGain <= 0) continue;
+
+      const efficiency = accuracy === 101.0
+        ? 2.0
+        : ratingGain / Math.max(accuracy - currentAccuracy, 0.1);
 
       recommendations.push({
         song,
@@ -87,7 +99,8 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
         targetRating: newRating,
         ratingGain,
         isInBest,
-        category: isNew ? "new" : "old"
+        category: isNew ? "new" : "old",
+        efficiency,
       });
       break
     }
@@ -96,15 +109,12 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
   // Sort by weighting: prioritize small accuracy diff and high rating gain
   return recommendations.sort((a, b) => {
     // Weighted score: prioritize efficiency (rating gain per accuracy diff)
-    const scoreA = a.ratingGain / Math.max(a.accuracyDiff, 0.1);
-    const scoreB = b.ratingGain / Math.max(b.accuracyDiff, 0.1);
-    
-    if (Math.abs(scoreA - scoreB) < 0.1) {
+    if (Math.abs(a.efficiency - b.efficiency) < 0.1) {
       // If efficiency is similar, prefer higher rating gain
       return b.ratingGain - a.ratingGain;
     }
     
-    return scoreB - scoreA;
+    return b.efficiency - a.efficiency;
   });
 }
 
@@ -162,17 +172,25 @@ function RecommendationRow({ recommendation }: { recommendation: RecommendationD
         <div className="xs:text-right xs:ml-2">
           <div className="text-xs text-muted-foreground">Current → Target</div>
           <div className="font-mono text-xs">
-            {currentAccuracy.toFixed(2)}% → <span className="text-green-600">{targetAccuracy.toFixed(2)}%</span>
+            {currentAccuracy.toFixed(2)}% → {targetAccuracy === 101.0 ? (
+              <span className="text-green-600">AP</span>
+            ) : (
+              <span className="text-green-600">{targetAccuracy.toFixed(2)}%</span>
+            )}
           </div>
           <div className="font-mono text-xs">
             {currentRating} → <span className="text-green-600">{targetRating}</span>
           </div>
         </div>
 
-        <div className="text-right ml-4 mr-2 space-y-0.5">
+        <div className="text-right ml-4 mr-2 space-y-0.5 w-16">
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Target className="h-3 w-3 text-amber-500" />
-            <span>+{accuracyDiff.toFixed(2)}%</span>
+            {targetAccuracy === 101.0 ? (
+              <span className="text-orange-400 font-semibold">AP</span>
+            ) : (
+              <span>+{accuracyDiff.toFixed(2)}%</span>
+            )}
           </div>
           <div className="text-xs flex items-center gap-1">
             <Zap className="h-3 w-3 text-green-500" />
@@ -189,7 +207,7 @@ export function RecommendationCard({ selectedSnapshotData }: { selectedSnapshotD
   const [filterCategory, setFilterCategory] = useState<"all" | "new" | "old" | "best">("all");
 
   const { songs, snapshot } = selectedSnapshotData;
-  const songsWithRating: SongWithRating[] = addRatingsAndSort(songs);
+  const songsWithRating: SongWithRating[] = addRatingsAndSort(songs, snapshot.gameVersion);
   
   const recommendations = generateRecommendations(songsWithRating, snapshot.gameVersion);
   
@@ -205,7 +223,7 @@ export function RecommendationCard({ selectedSnapshotData }: { selectedSnapshotD
       default:
         return true;
     }
-  }).slice(0, 150);
+  }).slice(0, 250);
 
   if (recommendations.length === 0) {
     return (
