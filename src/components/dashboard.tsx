@@ -123,10 +123,8 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
   const handleRegionChange = async (region: Region) => {
     try {
       await updateRegionMutation.mutateAsync({ region });
-      // Reset snapshots and fetch session when region changes
-      setSelectedSnapshot(null);
-      resetSnapshots();
-      resetFetchSession();
+      // Reload the page
+      window.location.reload();
     } catch (error) {
       console.error("Failed to update region:", error);
     }

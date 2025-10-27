@@ -148,6 +148,7 @@ export async function GET(request: NextRequest) {
       `/res/down/${data.snapshot.gameVersion}.png`,
       `/res/character/${data.snapshot.gameVersion}.png`,
       `/res/logo/${data.snapshot.gameVersion}.png`,
+      `/res/bg/${data.snapshot.gameVersion}.png`,
       `/res/label/new.png`,
       `/res/label/old.png`,
       ...newSongsB15.map(s => s.cover),

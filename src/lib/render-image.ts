@@ -23,6 +23,9 @@ const VERSION_SETTINGS = {
       top: -100,
       opacity: 1.0,
     },
+    premadeDecoration: false,
+    contentBackgroundColor: '#00000010',
+    footerBackgroundColor: '#00000020',
   },
   11: {
     backgroundGradient: [
@@ -36,6 +39,9 @@ const VERSION_SETTINGS = {
       top: -100,
       opacity: 1.0,
     },
+    premadeDecoration: true,
+    contentBackgroundColor: '#00000020',
+    footerBackgroundColor: '#00000030',
   },
   12: {
     backgroundGradient: [
@@ -49,6 +55,9 @@ const VERSION_SETTINGS = {
       top: -30,
       opacity: 1.0,
     },
+    premadeDecoration: true,
+    contentBackgroundColor: '#00000020',
+    footerBackgroundColor: '#00000030',
   },
 }
 
@@ -98,7 +107,7 @@ export async function renderImage(data: SnapshotWithSongs, cache: ImageCache, vi
   const canvas = new Canvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   const ctx = canvas.getContext('2d') as SkiaContext;
 
-  await renderBackground(ctx, data);
+  await renderBackground(ctx, data, cache);
   const overlayRect = await renderHeader(ctx, data, cache);
   await renderContent(ctx, data, cache, overlayRect);
   await renderFooter(ctx, data, visitableProfileAt);
@@ -106,7 +115,7 @@ export async function renderImage(data: SnapshotWithSongs, cache: ImageCache, vi
   return canvas;
 }
 
-async function renderBackground(ctx: SkiaContext, data: SnapshotWithSongs) {
+async function renderBackground(ctx: SkiaContext, data: SnapshotWithSongs, cache: ImageCache) {
   const gradientStops = VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.backgroundGradient || [];
   const gradient = ctx.createLinearGradient(0, CANVAS_HEIGHT, 0, 0);
   
@@ -116,6 +125,11 @@ async function renderBackground(ctx: SkiaContext, data: SnapshotWithSongs) {
 
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  if (VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.premadeDecoration) {
+    const backgroundImg = await loadImageWithCache(cache, `/res/bg/${data.snapshot.gameVersion}.png`);
+    ctx.drawImage(backgroundImg as any, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  }
 }
 
 async function renderHeaderBackground(
@@ -125,22 +139,24 @@ async function renderHeaderBackground(
 ) {
   const INNER_PADDING = 30;
 
-  // Render shine image
-  const shineImg = await loadImageWithCache(cache, `/res/shine/${data.snapshot.gameVersion}.png`);
-  const shineScale = CANVAS_WIDTH / shineImg.width;
-  ctx.save();
-  ctx.globalAlpha = 0.3;
-  ctx.drawImage(shineImg as any, 0, 0, CANVAS_WIDTH, shineImg.height * shineScale);
-  ctx.restore();
+  if (!VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.premadeDecoration) {
+    // Render shine image
+    const shineImg = await loadImageWithCache(cache, `/res/shine/${data.snapshot.gameVersion}.png`);
+    const shineScale = CANVAS_WIDTH / shineImg.width;
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.drawImage(shineImg as any, 0, 0, CANVAS_WIDTH, shineImg.height * shineScale);
+    ctx.restore();
 
-  // Render cloud image
-  const cloudImg = await loadImageWithCache(cache, `/res/down/${data.snapshot.gameVersion}.png`);
-  const cloudScale = CANVAS_WIDTH / cloudImg.width;
-  const cloudHeight = cloudImg.height * cloudScale;
-  ctx.save();
-  ctx.globalAlpha = 0.4;
-  ctx.drawImage(cloudImg as any, 0, CANVAS_HEIGHT - cloudHeight, CANVAS_WIDTH, cloudHeight);
-  ctx.restore();
+    // Render cloud image
+    const cloudImg = await loadImageWithCache(cache, `/res/down/${data.snapshot.gameVersion}.png`);
+    const cloudScale = CANVAS_WIDTH / cloudImg.width;
+    const cloudHeight = cloudImg.height * cloudScale;
+    ctx.save();
+    ctx.globalAlpha = 0.4;
+    ctx.drawImage(cloudImg as any, 0, CANVAS_HEIGHT - cloudHeight, CANVAS_WIDTH, cloudHeight);
+    ctx.restore();
+  }
 
   // Render character with clipping
   const characterSettings = VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.character || {
@@ -306,8 +322,9 @@ async function renderHeader(ctx: SkiaContext, data: SnapshotWithSongs, cache: Im
   // Render dark overlay
   const overlayTop = TARGET_HEIGHT + PADDING * 2;
   const gradient = ctx.createLinearGradient(0, CANVAS_HEIGHT, 0, 0);
-  gradient.addColorStop(1, '#00000010');
-  gradient.addColorStop(0, '#00000010');
+  const contentBackgroundColor = VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.contentBackgroundColor || '#00000010';
+  gradient.addColorStop(1, contentBackgroundColor);
+  gradient.addColorStop(0, contentBackgroundColor);
   
   ctx.fillStyle = gradient;
   ctx.fillRect(0, overlayTop, CANVAS_WIDTH, CANVAS_HEIGHT - overlayTop);
@@ -526,7 +543,7 @@ async function renderFooter(ctx: SkiaContext, data: SnapshotWithSongs, visitable
   const footerTop = CANVAS_HEIGHT - footerHeight;
   
   // Draw footer background
-  ctx.fillStyle = '#00000020';
+  ctx.fillStyle = VERSION_SETTINGS[data.snapshot.gameVersion as keyof typeof VERSION_SETTINGS]?.footerBackgroundColor || '#00000020';
   ctx.fillRect(0, footerTop, CANVAS_WIDTH, footerHeight);
 
   // Draw footer text
