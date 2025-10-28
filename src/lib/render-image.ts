@@ -41,7 +41,7 @@ const VERSION_SETTINGS = {
     },
     premadeDecoration: true,
     contentBackgroundColor: '#00000020',
-    footerBackgroundColor: '#00000030',
+    footerBackgroundColor: '#00000040',
   },
   12: {
     backgroundGradient: [
@@ -57,7 +57,7 @@ const VERSION_SETTINGS = {
     },
     premadeDecoration: true,
     contentBackgroundColor: '#00000020',
-    footerBackgroundColor: '#00000030',
+    footerBackgroundColor: '#00000040',
   },
 }
 
