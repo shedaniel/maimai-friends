@@ -17,7 +17,13 @@ export function RegionSwitcher({ value, onChange }: RegionSwitcherProps) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger variant="secondary" size="sm">
-        <SelectValue />
+        <SelectValue>{value === "intl" ? (<div className="flex items-center justify-between gap-2 whitespace-nowrap">
+          <Ship className="h-4 w-4" />
+          {t('regions.short.intl')}
+        </div>) : (<div className="flex items-center justify-between gap-2 whitespace-nowrap">
+          <Flag className="h-4 w-4" />
+          {t('regions.short.jp')}
+        </div>)}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="intl">

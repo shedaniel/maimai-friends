@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc, trpcClient } from "@/lib/trpc-client";
 import { toast } from "sonner";
 import { Region, FetchSession } from "@/lib/types";
@@ -7,6 +7,67 @@ export function useFetchSession(onFetchComplete?: () => void) {
   const [currentSession, setCurrentSession] = useState<FetchSession | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
+  
+  // Session polling state
+  const [sessionPollingEnabled, setSessionPollingEnabled] = useState(false);
+  const [sessionPollingRegion, setSessionPollingRegion] = useState<Region | null>(null);
+  const lastKnownSessionIdRef = useRef<string | null>(null);
+  const onSessionDetectedRef = useRef<(() => void) | undefined>(undefined);
+
+  // Poll for new fetch sessions (lightweight query)
+  const { data: latestSessionData } = trpc.user.getLatestFetchSessionId.useQuery(
+    { region: sessionPollingRegion! },
+    {
+      enabled: sessionPollingEnabled && sessionPollingRegion !== null,
+      refetchInterval: 1000, // Poll every 1 seconds
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  // Detect new sessions
+  useEffect(() => {
+    if (!latestSessionData || !sessionPollingEnabled) return;
+
+    const currentSessionId = latestSessionData.id;
+    
+    // Initialize the last known session ID on first poll
+    if (lastKnownSessionIdRef.current === null) {
+      lastKnownSessionIdRef.current = currentSessionId;
+      return;
+    }
+
+    // Check if a new session was created
+    if (currentSessionId !== lastKnownSessionIdRef.current) {
+      lastKnownSessionIdRef.current = currentSessionId;
+      
+      // Show success toast
+      toast.success("Token submitted successfully");
+      console.log("Token submitted successfully, on " + sessionPollingRegion + " region");
+
+      // Stop session polling
+      setSessionPollingEnabled(false);
+      
+      // Start full fetch status polling for the new session
+      if (sessionPollingRegion) {
+        const session: FetchSession = {
+          id: currentSessionId,
+          status: "pending",
+          startedAt: new Date(latestSessionData.startedAt),
+        };
+        setCurrentSession(session);
+        setLastFetchTime(new Date());
+        setFetchError(null);
+
+        // Start polling for the new session
+        pollFetchStatus(currentSessionId, sessionPollingRegion);
+      }
+
+      // Call the callback if provided
+      if (onSessionDetectedRef.current) {
+        onSessionDetectedRef.current();
+      }
+    }
+  }, [latestSessionData, sessionPollingEnabled, sessionPollingRegion]);
 
   // tRPC mutation for starting fetch
   const startFetchMutation = trpc.user.startFetch.useMutation({
@@ -62,6 +123,7 @@ export function useFetchSession(onFetchComplete?: () => void) {
             errorMessage: result.errorMessage || undefined,
             statusStates: result.statusStates || undefined,
           };
+          console.log("Fetch status updated for session " + sessionId + " on " + region + " region: " + JSON.stringify(updatedSession));
           setCurrentSession(updatedSession);
 
           if (result.status === "completed") {
@@ -106,6 +168,22 @@ export function useFetchSession(onFetchComplete?: () => void) {
     setFetchError(null);
   };
 
+  // Start polling for new sessions
+  const startSessionPolling = (region: Region, onSessionDetected?: () => void) => {
+    setSessionPollingRegion(region);
+    setSessionPollingEnabled(true);
+    lastKnownSessionIdRef.current = null; // Reset to detect the first session
+    onSessionDetectedRef.current = onSessionDetected;
+  };
+
+  // Stop polling for new sessions
+  const stopSessionPolling = () => {
+    setSessionPollingEnabled(false);
+    setSessionPollingRegion(null);
+    lastKnownSessionIdRef.current = null;
+    onSessionDetectedRef.current = undefined;
+  };
+
   const isFetching = currentSession?.status === "pending" || startFetchMutation.isPending;
 
   return {
@@ -116,5 +194,8 @@ export function useFetchSession(onFetchComplete?: () => void) {
     startDataFetch,
     startAutomaticFetch,
     resetFetchSession,
+    startSessionPolling,
+    stopSessionPolling,
+    isPollingForSession: sessionPollingEnabled,
   };
 } 

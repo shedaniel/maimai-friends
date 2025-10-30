@@ -1,4 +1,6 @@
 import { db } from '@/lib/db';
+import { createOpaqueUserId, generateUserOtp, getOtpExpiryTimestamp } from '@/lib/otp';
+import { resolveBaseUrl } from '@/lib/base-url';
 import { getFetchStatusServer, Region, startFetchServer } from '@/lib/maimai-server-actions';
 import { getAvailableVersions } from '@/lib/metadata';
 import { splitSongs } from '@/lib/rating-calculator';
@@ -80,6 +82,24 @@ export const userRouter = router({
         signupEnabled: false, 
         inviteRequired: false,
         reason: 'disabled'
+      };
+    }),
+
+  getLoginOtp: protectedProcedure
+    .query(({ ctx }) => {
+      const userId = ctx.session.user.id;
+      const otp = generateUserOtp(userId);
+      const expiresAt = new Date(getOtpExpiryTimestamp()).toISOString();
+      const baseUrl = resolveBaseUrl();
+      const scriptUrl = `${baseUrl}/api/login.js`;
+      const opaqueUserId = createOpaqueUserId(userId);
+      const loginLink = `https://lng-tgk-aime-gw.am-all.net/common_auth/#otp=${otp}&user=${encodeURIComponent(opaqueUserId)}`;
+
+      return {
+        otp,
+        scriptUrl,
+        loginLink,
+        expiresAt,
       };
     }),
 
@@ -414,6 +434,30 @@ export const userRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       return await getFetchStatusServer(ctx.session.user.id, input.region as Region);
+    }),
+
+  // Lightweight endpoint to just get the latest fetch session ID (for polling)
+  getLatestFetchSessionId: protectedProcedure
+    .input(z.object({
+      region: regionSchema,
+    }))
+    .query(async ({ ctx, input }) => {
+      const { db } = await import('@/lib/db');
+      const { fetchSessions } = await import('@/lib/schema');
+      
+      const session = await db
+        .select({ id: fetchSessions.id, startedAt: fetchSessions.startedAt })
+        .from(fetchSessions)
+        .where(
+          and(
+            eq(fetchSessions.userId, ctx.session.user.id),
+            eq(fetchSessions.region, input.region)
+          )
+        )
+        .orderBy(desc(fetchSessions.startedAt))
+        .limit(1);
+      
+      return session.length > 0 ? { id: session[0].id, startedAt: session[0].startedAt } : null;
     }),
 
   // Get user timezone

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import React from "react";
+import { trpc } from "@/lib/trpc-client";
+import { useFetchSession } from "@/hooks/useFetchSession";
 
 interface TokenDialogIntlNewProps {
   isOpen: boolean;
@@ -102,11 +104,49 @@ function StepBasedTokenDialog({
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
   const canSubmit = token.trim().length > 0 && isValidToken(token.trim()) && !isSubmitting;
 
+  const {
+    data: loginOtpData,
+    isLoading: loginOtpLoading,
+    refetch: refetchLoginOtp,
+  } = trpc.user.getLoginOtp.useQuery(undefined, {
+    enabled: isOpen && !showManualInput,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(1);
+      setDirection(1);
+    }
+  }, [isOpen]);
+
   useLayoutEffect(() => {
     if (contentRef.current) {
       setMeasuredHeight(contentRef.current.offsetHeight);
     }
-  }, [currentStep]);
+  }, [currentStep, loginOtpData, showManualInput]);
+
+  const scriptBookmarklet = useMemo(() => {
+    if (!loginOtpData) {
+      return "Generating secure script link...";
+    }
+    const scriptUrl = loginOtpData.scriptUrl;
+    return `javascript:void(function(d){var s=d.createElement("script");s.src="${scriptUrl}";d.body.append(s)}(document))`;
+  }, [loginOtpData]);
+
+  const loginLink = loginOtpData?.loginLink ?? "Generating personalized link...";
+  const otpValue = loginOtpData?.otp ?? "------";
+  const otpExpiry = useMemo(() => {
+    if (!loginOtpData?.expiresAt) {
+      return null;
+    }
+    try {
+      return new Date(loginOtpData.expiresAt).toLocaleTimeString();
+    } catch {
+      return null;
+    }
+  }, [loginOtpData]);
 
   const handleNext = () => {
     if (currentStep < 3) {
@@ -250,9 +290,10 @@ function StepBasedTokenDialog({
                   <CopyableCodeBlock code="https://maimaidx-eng.com/" />
                 </div>
 
-                <div className="text-sm text-foreground">
-                  Have your own cookies already?<Button variant="link" size="sm" onClick={() => setShowManualInput(true)}>Enter it directly</Button>
+                <div className="text-sm text-foreground mb-0">
+                  Have your own cookies already?
                 </div>
+                <Button variant="ghost" className="cursor-pointer px-0" size="sm" onClick={() => setShowManualInput(true)}>Enter it directly</Button>
               </motion.div>
             )}
 
@@ -270,8 +311,24 @@ function StepBasedTokenDialog({
                   <p className="text-sm text-foreground">
                     Visit this link below, in the same incognito / private tab.
                   </p>
-                  <p className="text-xs text-muted-foreground">Click the link below to copy to clipboard:</p>
-                  <CopyableCodeBlock code="https://lng-tgk-aime-gw.am-all.net/common_auth/#otp=420608&user=USER_ID" />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>OTP: <span className="font-mono font-semibold text-foreground">{otpValue}</span></span>
+                    {otpExpiry && (
+                      <span>Expires ~ {otpExpiry}</span>
+                    )}
+                  </div>
+                  <CopyableCodeBlock code={loginLink} />
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={() => { void refetchLoginOtp(); }}
+                      disabled={loginOtpLoading}
+                    >
+                      {loginOtpLoading ? "Refreshing..." : "Refresh OTP"}
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -305,7 +362,7 @@ function StepBasedTokenDialog({
                     <p>2. Create a bookmark in your browser and paste the copied text in the URL field.</p>
                     <p>3. Run the bookmark.</p>
                   </div>
-                  <CopyableCodeBlock code="javascript:void(function(d){var s=d.createElement('script');s.src='https://gistcdn.githack.com/beer-psi/0eb8d3e50ae753388a6d4a4af5678a2e/raw/ede9859c40741d4dad49a035857b30a3e21c5dce/login.js';d.body.append(s)}(document))" />
+                  <CopyableCodeBlock code={scriptBookmarklet} />
                 </div>
               </motion.div>
             )}
@@ -441,6 +498,9 @@ export function TokenDialogIntlNew({
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Use fetch session hook for polling new sessions
+  const { startSessionPolling, stopSessionPolling } = useFetchSession();
+
   // Validate token format: clal= followed by alphanumeric characters
   const isValidToken = (tokenValue: string) => {
     const tokenRegex = /^clal=[a-zA-Z0-9]+$/;
@@ -465,6 +525,24 @@ export function TokenDialogIntlNew({
     
     handleClose0();
   };
+
+  // Start/stop session polling when token dialog opens/closes
+  useEffect(() => {
+    if (isTokenDialogOpen) {
+      // Start polling for new sessions (intl region)
+      startSessionPolling("intl", () => {
+        // When new session detected, close all dialogs
+        handleClose0();
+      });
+    } else {
+      // Stop polling when dialog closes
+      stopSessionPolling();
+    }
+
+    return () => {
+      stopSessionPolling();
+    };
+  }, [isTokenDialogOpen]);
 
   const handleTokenSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -525,7 +603,7 @@ export function TokenDialogIntlNew({
               className="w-full p-4 border-2 rounded-lg hover:border-primary hover:bg-accent/50 transition-all text-left group"
             >
               <div className="flex items-start space-x-3">
-                <div className="mt-1 p-2 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <div className="mt-1 p-2 rounded-md bg-primary/10">
                   <Cookie className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -549,8 +627,8 @@ export function TokenDialogIntlNew({
               className="w-full p-4 border-2 rounded-lg hover:border-primary hover:bg-accent/50 transition-all text-left group"
             >
               <div className="flex items-start space-x-3">
-                <div className="mt-1 p-2 rounded-md bg-muted group-hover:bg-muted/80 transition-colors">
-                  <Lock className="h-5 w-5 text-muted-foreground" />
+                <div className="mt-1 p-2 rounded-md bg-primary/10">
+                  <Lock className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
