@@ -1,8 +1,10 @@
 export function resolveBaseUrl(): string {
   const normalize = (url: string) => url.replace(/\/+$/, "");
 
-  if (process.env.NEXTAUTH_URL) {
-    return normalize(process.env.NEXTAUTH_URL);
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    const full = productionUrl.startsWith("http") ? productionUrl : `https://${productionUrl}`;
+    return normalize(full);
   }
 
   if (process.env.VERCEL_URL) {
