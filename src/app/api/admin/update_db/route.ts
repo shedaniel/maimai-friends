@@ -1,14 +1,12 @@
 import { db } from "@/lib/db";
-import { JP_AGENT, processMaimaiToken } from "@/lib/maimai-fetcher";
-import { getCurrentVersion, getVersionFromDate, getVersionInfo } from "@/lib/metadata";
-import { songs } from "@/lib/schema";
-import { load } from "cheerio";
-import { randomUUID } from "crypto";
-import { and, count, eq, inArray, not, sql } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import { join } from "path";
+import { getCurrentVersion, getVersionFromDate } from "@/lib/metadata";
 import { normalizeName } from "@/lib/name-utils";
+import { songs } from "@/lib/schema";
+import { randomUUID } from "crypto";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { promises as fs } from "fs";
+import { NextRequest, NextResponse } from "next/server";
+import { join } from "path";
 
 const MAIMAI_SONGS_JSON_URL = "https://github.com/zvuc/otoge-db/raw/refs/heads/master/maimai/data/music-ex.json";
 const MAIMAI_SONGS_JSON_URL_INTL = "https://github.com/zvuc/otoge-db/raw/refs/heads/master/maimai/data/music-ex-intl.json";

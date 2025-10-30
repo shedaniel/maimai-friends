@@ -1,8 +1,8 @@
-import { 
-  editDiscordMessage, 
-  editDiscordMessageWithImage, 
-  getRatingComment, 
-  DISCORD_COLORS 
+import {
+  DISCORD_COLORS,
+  editDiscordMessage,
+  editDiscordMessageWithImage,
+  getRatingComment
 } from './responses';
 
 export interface SnapshotData {

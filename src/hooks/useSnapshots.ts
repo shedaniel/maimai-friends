@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc-client";
 import { Region, Snapshot, SnapshotWithSongs } from "@/lib/types";
-import { VersionInfo } from "@/lib/metadata";
+import { useEffect, useRef, useState } from "react";
 
 interface UseSnapshotsOptions {
   initialSnapshots?: Snapshot[];

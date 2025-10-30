@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useLocale } from "@/components/providers/locale-provider";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -15,17 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select-friendly";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Key, Languages, Globe, Copy, ExternalLink } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { useLocale } from "@/components/providers/locale-provider";
 import { Locale, setLocaleCookie } from "@/i18n/locale";
 import { trpc } from "@/lib/trpc-client";
-import { toast } from "sonner";
-import { getLanguages } from "@/lib/utils";
 import { ProfilePrivacySettings, ProfileSettings } from "@/lib/types";
+import { getLanguages } from "@/lib/utils";
+import { Copy, ExternalLink, Globe, Key, Languages } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface SettingsDialogProps {
   open: boolean;

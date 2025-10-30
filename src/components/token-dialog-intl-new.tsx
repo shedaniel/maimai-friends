@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useRef, useLayoutEffect, useMemo, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, Key, Cookie, Lock, Save, ChevronRight, Copy, Smartphone, Monitor, LogIn, AlertCircle } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { motion, AnimatePresence } from "motion/react";
-import React from "react";
 import { trpc } from "@/lib/trpc-client";
+import { cn } from "@/lib/utils";
+import { ChevronRight, Cookie, Copy, Eye, EyeOff, Key, Lock, Monitor, Save, Smartphone } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface TokenDialogIntlNewProps {
   isOpen: boolean;
@@ -47,22 +46,6 @@ interface PasswordSubDialogProps {
 }
 
 type Step = 1 | 2 | 3;
-
-interface StepContent {
-  icon: React.ReactNode;
-}
-
-const STEPS: Record<Step, StepContent> = {
-  1: {
-    icon: <LogIn className="h-6 w-6" />,
-  },
-  2: {
-    icon: <AlertCircle className="h-6 w-6" />,
-  },
-  3: {
-    icon: <Cookie className="h-6 w-6" />,
-  },
-};
 
 function CopyableCodeBlock({ code, label, t }: { code: string; label?: string; t: any }) {
   const handleCopy = async () => {

@@ -1,20 +1,19 @@
 import { db } from '@/lib/db';
-import { user, userSnapshots, account } from '@/lib/schema';
-import { eq, desc, and } from 'drizzle-orm';
-import { startFetchServer, getFetchStatusServer, Region } from '@/lib/maimai-server-actions';
-import { parseStatusStates, getAllStates } from '@/lib/fetch-states';
+import { getAllStates, parseStatusStates } from '@/lib/fetch-states';
+import { getFetchStatusServer, Region, startFetchServer } from '@/lib/maimai-server-actions';
+import { account, user, userSnapshots } from '@/lib/schema';
 import { waitUntil } from '@vercel/functions';
-import { 
-  createNotRegisteredResponse, 
+import { and, desc, eq } from 'drizzle-orm';
+import { generateAndSendProfileImage } from '../image-utils';
+import {
   createDeferredResponse,
   createErrorResponse,
-  getRatingComment,
-  getStateFriendlyName,
-  editDiscordMessage,
+  createNotRegisteredResponse,
   DISCORD_COLORS,
-  DiscordResponse 
+  DiscordResponse,
+  editDiscordMessage,
+  getStateFriendlyName
 } from '../responses';
-import { generateAndSendProfileImage } from '../image-utils';
 
 export interface FetchCommandOptions {
   discordUserId: string;

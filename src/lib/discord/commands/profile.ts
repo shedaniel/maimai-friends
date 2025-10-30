@@ -1,19 +1,18 @@
 import { db } from '@/lib/db';
-import { user, userSnapshots, account } from '@/lib/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { account, user, userSnapshots } from '@/lib/schema';
 import { waitUntil } from '@vercel/functions';
-import { 
-  createNotRegisteredResponse, 
-  createNoDataResponse, 
-  createErrorResponse,
-  createDeferredResponse,
-  getRatingComment,
-  editDiscordMessage,
-  DISCORD_COLORS,
-  DiscordResponse 
-} from '../responses';
+import { and, desc, eq } from 'drizzle-orm';
 import { generateAndSendProfileImage } from '../image-utils';
-import { InteractionResponseType } from 'discord-interactions';
+import {
+  createDeferredResponse,
+  createErrorResponse,
+  createNoDataResponse,
+  createNotRegisteredResponse,
+  DISCORD_COLORS,
+  DiscordResponse,
+  editDiscordMessage,
+  getRatingComment
+} from '../responses';
 
 export interface ProfileCommandOptions {
   discordUserId: string;

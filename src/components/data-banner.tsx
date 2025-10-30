@@ -1,9 +1,5 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select-friendly";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +11,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,15 +23,15 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Calendar, Download, Trash2, MoreHorizontal, Copy } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select-friendly";
+import { calculateProgress, parseStatusStates } from "@/lib/fetch-states";
 import { getVersionInfo } from "@/lib/metadata";
-import { Region, Snapshot, FetchSession } from "@/lib/types";
-import { VersionInfo } from "@/lib/metadata";
-import { parseStatusStates, calculateProgress } from "@/lib/fetch-states";
+import { trpc } from "@/lib/trpc-client";
+import { FetchSession, Region, Snapshot } from "@/lib/types";
+import { Calendar, Copy, Download, MoreHorizontal, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { trpc } from "@/lib/trpc-client";
 
 interface DataBannerProps {
   region: Region;

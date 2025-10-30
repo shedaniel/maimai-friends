@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/lib/image-spec";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from "@/lib/image-spec";
 import { SnapshotWithSongs } from "@/lib/types";
 import { Download, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";

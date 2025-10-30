@@ -11,6 +11,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const session = await getServerSession();
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const newTokenDialog = await useNewTokenDialog();
 
   if (!session) {
     // Fetch signup requirements on the server
@@ -71,9 +73,6 @@ export default async function Home() {
         region: userRegion 
       }).catch(() => undefined)
     : undefined;
-
-  // Precompute feature flag
-  const newTokenDialog = await useNewTokenDialog();
 
   return (
     <Dashboard 

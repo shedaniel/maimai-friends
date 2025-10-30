@@ -1,7 +1,6 @@
 import { JP_AGENT, processMaimaiToken } from "@/lib/maimai-fetcher";
 import { getCurrentVersion, getVersionInfo } from "@/lib/metadata";
 import { normalizeName } from "@/lib/name-utils";
-import { songs } from "@/lib/schema";
 import { sortKeys } from "@/lib/utils";
 import { load } from "cheerio";
 import { promises as fs } from "fs";

@@ -1,13 +1,12 @@
 "use client";
 
+import { AboutDialog } from "@/components/about-dialog";
 import { Button } from "@/components/ui/button";
-import { LogIn, Info } from "lucide-react";
+import { DiscordIcon } from "@/components/ui/discord-icon";
+import { Info, LogIn } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { AboutDialog } from "@/components/about-dialog";
-import { DiscordIcon } from "@/components/ui/discord-icon";
 import { toast } from "sonner";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { LocaleSwitcher } from "./locale-switcher";
 
 const APPLICATION_ID = process.env.NEXT_PUBLIC_DISCORD_APPLICATION_ID;
@@ -17,7 +16,6 @@ interface PublicHeaderProps {
 }
 
 export function PublicHeader({}: PublicHeaderProps) {
-  const isMobile = useMediaQuery('(max-width: 640px)');
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
   

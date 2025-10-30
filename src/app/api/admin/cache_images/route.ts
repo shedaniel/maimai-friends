@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
-import { songs } from "@/lib/schema";
 import { cacheImage } from "@/lib/image_cacher";
-import { sql } from "drizzle-orm";
+import { songs } from "@/lib/schema";
 import { NextRequest, NextResponse } from "next/server";
 
 // Helper function to check if URL is a data URL
