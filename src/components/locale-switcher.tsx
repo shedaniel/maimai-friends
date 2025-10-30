@@ -37,7 +37,7 @@ export function LocaleSwitcher({ forceVisible }: LocaleSwitcherProps  ) {
         <SelectValue>
           <div className="flex items-center gap-2">
             <Languages className="h-4 w-4" />
-            <span className={cn(!forceVisible && "max-sm:hidden")}>{t('common.language')}</span>
+            <span className={cn("whitespace-nowrap", !forceVisible && "max-sm:hidden")}>{t('common.language')}</span>
           </div>
         </SelectValue>
       </SelectTrigger>

@@ -221,7 +221,51 @@
       "expiration": "The token may get invalidated after a certain period of time, so you may need to update it in the future."
     },
     "passwordInstructions": "Use your SEGA account username and password directly",
-    "secureStorage": "Your credentials will be stored for future fetches."
+    "secureStorage": "Your credentials will be stored for future fetches.",
+    "steps": {
+      "step1Title": "Login to maimai DX NET",
+      "step2Title": "Go to Not Found page",
+      "step3Title": "Execute Code"
+    },
+    "clipboard": {
+      "copied": "Copied to clipboard!",
+      "failed": "Failed to copy to clipboard"
+    },
+    "loading": {
+      "scriptLink": "Generating script link...",
+      "loginLink": "Generating personalized link..."
+    },
+    "tokenDialogDescription": "Enter your browser token to authenticate",
+    "segaAccountDescription": "Enter your SEGA account credentials",
+    "backToSteps": "Back to Steps",
+    "step1": {
+      "description": "Login to maimai DX NET in an <strong>incognito / private window</strong>.",
+      "clickToCopy": "Click the link below to copy to clipboard:",
+      "haveCookies": "Have your own cookies already?",
+      "enterDirectly": "Enter it directly"
+    },
+    "step2": {
+      "description": "Visit this link below, in the same incognito / private tab.",
+      "otpLabel": "OTP:",
+      "otpExpires": "Expires ~ {time}",
+      "refreshing": "Refreshing...",
+      "refreshOtp": "Refresh OTP"
+    },
+    "step3": {
+      "desktop": "Desktop",
+      "desktopInstructions": "Copy the JavaScript code below and paste it in your browser's developer console (Ctrl + Shift + I or F12).",
+      "mobile": "Mobile",
+      "mobileStep1": "1. Tap the code below to copy to clipboard.",
+      "mobileStep2": "2. Create a bookmark in your browser and paste the copied text in the URL field.",
+      "mobileStep3": "3. Run the bookmark."
+    },
+    "navigation": {
+      "previousStep": "Previous Step",
+      "nextStep": "Next Step"
+    },
+    "recommended": "Recommended",
+    "tokenOptionDescription": "Login to your maimai DX NET account with your browser tokens. Token may expire from time to time. No password required and supports social logins.",
+    "passwordOptionDescription": "Login to your maimai DX NET account with your SEGA account credentials. Never expire. Not recommended."
   },
   "regions": {
     "intl": "International",

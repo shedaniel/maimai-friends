@@ -221,7 +221,51 @@
       "expiration": "トークンは一定期間で無効になる場合がありますので、その際は再度更新してください。"
     },
     "passwordInstructions": "SEGAアカウントのユーザー名とパスワードで直接ログイン",
-    "secureStorage": "認証情報は保管され、今後も利用できます。"
+    "secureStorage": "認証情報は保管され、今後も利用できます。",
+    "steps": {
+      "step1Title": "maimai DX NETにログイン",
+      "step2Title": "「Not Found」ページに移動",
+      "step3Title": "コードを実行"
+    },
+    "clipboard": {
+      "copied": "クリップボードにコピーしました！",
+      "failed": "クリップボードへのコピーに失敗しました"
+    },
+    "loading": {
+      "scriptLink": "スクリプトリンクを生成中...",
+      "loginLink": "専用リンクを生成中..."
+    },
+    "tokenDialogDescription": "ブラウザのトークンを入力して認証します",
+    "segaAccountDescription": "SEGAアカウントの認証情報を入力します",
+    "backToSteps": "手順に戻る",
+    "step1": {
+      "description": "<strong>シークレット / プライベートウィンドウ</strong>で maimai DX NET にログインします。",
+      "clickToCopy": "下のリンクをクリックしてクリップボードにコピー：",
+      "haveCookies": "すでに Cookie をお持ちですか？",
+      "enterDirectly": "直接入力する"
+    },
+    "step2": {
+      "description": "同じシークレット / プライベートタブで、下のリンクにアクセスします。",
+      "otpLabel": "OTP：",
+      "otpExpires": "有効期限 ~ {time}",
+      "refreshing": "更新中...",
+      "refreshOtp": "OTPを更新"
+    },
+    "step3": {
+      "desktop": "デスクトップ",
+      "desktopInstructions": "下の JavaScript コードをコピーし、ブラウザの開発者コンソール（Ctrl + Shift + I または F12）に貼り付けます。",
+      "mobile": "モバイル",
+      "mobileStep1": "1. 下のコードをタップしてクリップボードにコピーします。",
+      "mobileStep2": "2. ブラウザでブックマークを作成し、コピーしたテキストを URL 欄に貼り付けます。",
+      "mobileStep3": "3. ブックマークを実行します。"
+    },
+    "navigation": {
+      "previousStep": "戻る",
+      "nextStep": "次へ"
+    },
+    "recommended": "おすすめ",
+    "tokenOptionDescription": "ブラウザのトークンを使用して maimai DX NET アカウントにログインします。トークンは一定期間で無効になることがありますので、その際は再度更新してください。パスワードは不要で、ソーシャルログインもサポートしています。",
+    "passwordOptionDescription": "SEGA アカウントの認証情報を使用して maimai DX NET アカウントにログインします。期限切れはありません。非推奨です。"
   },
   "regions": {
     "intl": "インターナショナル",

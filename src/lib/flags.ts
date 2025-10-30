@@ -10,8 +10,8 @@ export const useEnableChinaRegion = flag<boolean>({
 
 export const useNewTokenDialog = flag<boolean>({
   key: "newTokenDialog",
-  defaultValue: false,
+  defaultValue: true,
   async decide() {
-    return false;
+    return true;
   },
 });

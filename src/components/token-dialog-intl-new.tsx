@@ -50,31 +50,27 @@ type Step = 1 | 2 | 3;
 
 interface StepContent {
   icon: React.ReactNode;
-  title: string;
 }
 
 const STEPS: Record<Step, StepContent> = {
   1: {
     icon: <LogIn className="h-6 w-6" />,
-    title: "Login to maimaidx",
   },
   2: {
     icon: <AlertCircle className="h-6 w-6" />,
-    title: "Go to Not Found page",
   },
   3: {
     icon: <Cookie className="h-6 w-6" />,
-    title: "Execute Code",
   },
 };
 
-function CopyableCodeBlock({ code, label }: { code: string; label?: string }) {
+function CopyableCodeBlock({ code, label, t }: { code: string; label?: string; t: any }) {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(code);
-      toast.success("Copied to clipboard!");
+      toast.success(t('tokenDialog.clipboard.copied'));
     } catch {
-      toast.error("Failed to copy to clipboard");
+      toast.error(t('tokenDialog.clipboard.failed'));
     }
   };
 
@@ -132,13 +128,13 @@ function StepBasedTokenDialog({
 
   const scriptBookmarklet = useMemo(() => {
     if (!loginOtpData) {
-      return "Generating secure script link...";
+      return t('tokenDialog.loading.scriptLink');
     }
     const scriptUrl = loginOtpData.scriptUrl;
     return `javascript:void(function(d){var s=d.createElement("script");s.src="${scriptUrl}";d.body.append(s)}(document))`;
-  }, [loginOtpData]);
+  }, [loginOtpData, t]);
 
-  const loginLink = loginOtpData?.loginLink ?? "Generating personalized link...";
+  const loginLink = loginOtpData?.loginLink ?? t('tokenDialog.loading.loginLink');
   const otpValue = loginOtpData?.otp ?? "------";
   const otpExpiry = useMemo(() => {
     if (!loginOtpData?.expiresAt) {
@@ -192,7 +188,7 @@ function StepBasedTokenDialog({
               <span>{t('tokenDialog.tokenTab')}</span>
             </DialogTitle>
             <DialogDescription>
-              Enter your browser token to authenticate
+              {t('tokenDialog.tokenDialogDescription')}
             </DialogDescription>
           </DialogHeader>
 
@@ -232,7 +228,7 @@ function StepBasedTokenDialog({
                 className="flex-1"
                 onClick={() => setShowManualInput(false)}
               >
-                Back to Steps
+                {t('tokenDialog.backToSteps')}
               </Button>
               <Button
                 type="submit"
@@ -268,7 +264,7 @@ function StepBasedTokenDialog({
             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-md font-bold">
               {currentStep}
             </div>
-            <span className="font-medium text-foreground tracking-tight">{STEPS[currentStep].title}</span>
+            <span className="font-medium text-foreground tracking-tight">{t(`tokenDialog.steps.step${currentStep}Title`)}</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -290,17 +286,17 @@ function StepBasedTokenDialog({
                 className="space-y-4"
               >
                 <div className="space-y-3">
-                  <p className="text-sm text-foreground">
-                    Login to maimaidx in an <span className="font-medium">incognito / private window</span>.
-                  </p>
-                  <p className="text-xs text-muted-foreground">Click the link below to copy to clipboard:</p>
-                  <CopyableCodeBlock code="https://maimaidx-eng.com/" />
+                  <p className="text-sm text-foreground">{t.rich('tokenDialog.step1.description', {
+                    strong: (chunks) => <strong className="font-semibold">{chunks}</strong>,
+                  })}</p>
+                  <p className="text-xs text-muted-foreground">{t('tokenDialog.step1.clickToCopy')}</p>
+                  <CopyableCodeBlock code="https://maimaidx-eng.com/" t={t} />
                 </div>
 
                 <div className="text-sm text-foreground mb-0">
-                  Have your own cookies already?
+                  {t('tokenDialog.step1.haveCookies')}
                 </div>
-                <Button variant="ghost" className="cursor-pointer px-0" size="sm" onClick={() => setShowManualInput(true)}>Enter it directly</Button>
+                <Button variant="ghost" className="cursor-pointer px-0" size="sm" onClick={() => setShowManualInput(true)}>{t('tokenDialog.step1.enterDirectly')}</Button>
               </motion.div>
             )}
 
@@ -316,7 +312,7 @@ function StepBasedTokenDialog({
               >
                 <div className="space-y-3">
                   <p className="text-sm text-foreground">
-                    Visit this link below, in the same incognito / private tab.
+                    {t('tokenDialog.step2.description')}
                   </p>
                   <motion.div
                     animate={{
@@ -326,13 +322,13 @@ function StepBasedTokenDialog({
                     transition={{ duration: 0.2, ease: "easeInOut" }}
                   >
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>OTP: <span className="font-mono font-semibold text-foreground">{otpValue}</span></span>
+                      <span>{t('tokenDialog.step2.otpLabel')} <span className="font-mono font-semibold text-foreground">{otpValue}</span></span>
                       {otpExpiry && (
-                        <span>Expires ~ {otpExpiry}</span>
+                        <span>{t('tokenDialog.step2.otpExpires', { time: otpExpiry })}</span>
                       )}
                     </div>
                     <div className="mt-2">
-                      <CopyableCodeBlock code={loginLink} />
+                      <CopyableCodeBlock code={loginLink} t={t} />
                     </div>
                   </motion.div>
                   <div className="flex justify-end">
@@ -343,7 +339,7 @@ function StepBasedTokenDialog({
                       onClick={() => { void handleRefreshOtp(); }}
                       disabled={isRefreshingOtp}
                     >
-                      {isRefreshingOtp ? "Refreshing..." : "Refresh OTP"}
+                      {isRefreshingOtp ? t('tokenDialog.step2.refreshing') : t('tokenDialog.step2.refreshOtp')}
                     </Button>
                   </div>
                 </div>
@@ -363,23 +359,23 @@ function StepBasedTokenDialog({
                 <div className="space-y-3">
                   {/* Desktop Section */}
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-md">Desktop</span>
+                    <span className="font-semibold text-md">{t('tokenDialog.step3.desktop')}</span>
                     <Monitor className="h-6 w-6 text-primary" />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Copy the JavaScript code below and paste it in your browser's developer console (Ctrl + Shift + I or F12).
+                    {t('tokenDialog.step3.desktopInstructions')}
                   </p>
                   {/* Mobile Section */}
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-md">Mobile</span>
+                    <span className="font-semibold text-md">{t('tokenDialog.step3.mobile')}</span>
                     <Smartphone className="h-6 w-6 text-primary" />
                   </div>
                   <div className="text-sm text-muted-foreground space-y-1">
-                    <p>1. Tap the code below to copy to clipboard.</p>
-                    <p>2. Create a bookmark in your browser and paste the copied text in the URL field.</p>
-                    <p>3. Run the bookmark.</p>
+                    <p>{t('tokenDialog.step3.mobileStep1')}</p>
+                    <p>{t('tokenDialog.step3.mobileStep2')}</p>
+                    <p>{t('tokenDialog.step3.mobileStep3')}</p>
                   </div>
-                  <CopyableCodeBlock code={scriptBookmarklet} />
+                  <CopyableCodeBlock code={scriptBookmarklet} t={t} />
                 </div>
               </motion.div>
             )}
@@ -392,13 +388,13 @@ function StepBasedTokenDialog({
             onClick={handlePrev}
             disabled={currentStep === 1}
           >
-            Previous Step
+            {t('tokenDialog.navigation.previousStep')}
           </Button>
           <Button
             onClick={handleNext}
             disabled={currentStep === 3}
           >
-            Next Step
+            {t('tokenDialog.navigation.nextStep')}
           </Button>
         </div>
       </DialogContent>
@@ -430,7 +426,7 @@ function PasswordSubDialog({
             <span>{t('tokenDialog.passwordTab')}</span>
           </DialogTitle>
           <DialogDescription>
-            Enter your SEGA account credentials
+            {t('tokenDialog.segaAccountDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -628,11 +624,11 @@ export function TokenDialogIntlNew({
                   <div className="flex items-center space-x-2 mb-1">
                     <span className="font-semibold text-base">{t('tokenDialog.tokenTab')}</span>
                     <Badge variant="default">
-                      Recommended
+                      {t('tokenDialog.recommended')}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Login to your maimaidx account with your browser tokens. Token may expire from time to time. No password required and supports social logins.
+                    {t('tokenDialog.tokenOptionDescription')}
                   </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors mt-1" />
@@ -653,7 +649,7 @@ export function TokenDialogIntlNew({
                     <span className="font-semibold text-base">{t('tokenDialog.passwordTab')}</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Login to your maimaidx account with your SEGA account credentials. Never expire. Not recommended.
+                    {t('tokenDialog.passwordOptionDescription')}
                   </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors mt-1" />

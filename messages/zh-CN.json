@@ -221,7 +221,51 @@
       "expiration": "Cookies 可能会在一段时间后失效，你可能需要重新登录。"
     },
     "passwordInstructions": "直接使用你的 SEGA 账户用户名和密码",
-    "secureStorage": "你的验证方式将被保存以供将来使用。"
+    "secureStorage": "你的验证方式将被保存以供将来使用。",
+    "steps": {
+      "step1Title": "登录 maimai DX NET",
+      "step2Title": "访问 \"Not Found\" 页面",
+      "step3Title": "执行代码"
+    },
+    "clipboard": {
+      "copied": "已复制到剪贴板！",
+      "failed": "复制到剪贴板失败"
+    },
+    "loading": {
+      "scriptLink": "正在生成脚本链接...",
+      "loginLink": "正在生成个性化链接..."
+    },
+    "tokenDialogDescription": "输入您的浏览器令牌以进行验证",
+    "segaAccountDescription": "输入您的 SEGA 帐户凭证",
+    "backToSteps": "返回步骤",
+    "step1": {
+      "description": "在<strong>无痕 / 隐私窗口</strong>中登录 maimai DX NET。",
+      "clickToCopy": "点击下方的链接以复制到剪贴板：",
+      "haveCookies": "已经有自己的 Cookies 了吗？",
+      "enterDirectly": "直接输入"
+    },
+    "step2": {
+      "description": "在同一个无痕 / 隐私标签页中，访问下方的链接。",
+      "otpLabel": "OTP:",
+      "otpExpires": "过期时间 ~ {time}",
+      "refreshing": "刷新中...",
+      "refreshOtp": "刷新 OTP"
+    },
+    "step3": {
+      "desktop": "桌面版",
+      "desktopInstructions": "复制下方的 JavaScript 代码，并将其粘贴到浏览器的开发者控制台（Ctrl + Shift + I 或 F12）中。",
+      "mobile": "移动版",
+      "mobileStep1": "1. 点击下方的代码以复制到剪贴板。",
+      "mobileStep2": "2. 在您的浏览器中创建一个书签，并将复制的文本粘贴到 URL 字段中。",
+      "mobileStep3": "3. 运行该书签。"
+    },
+    "navigation": {
+      "previousStep": "上一步",
+      "nextStep": "下一步"
+    },
+    "recommended": "推荐",
+    "tokenOptionDescription": "使用您的浏览器令牌登录您的 maimai DX NET 帐户。令牌可能会不时过期。无需密码，并支持社交登录。",
+    "passwordOptionDescription": "使用您的 SEGA 帐户凭证登录您的 maimai DX NET 帐户。永久有效。不推荐。"
   },
   "regions": {
     "intl": "国际服",
