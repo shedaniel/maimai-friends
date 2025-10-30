@@ -11,7 +11,7 @@ import { and, count, desc, eq, isNull, lt, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
-const SIGNUP_REQUIRED_AMOUNT = 128;
+const SIGNUP_REQUIRED_AMOUNT = 256;
 
 const regionSchema = z.enum(['intl', 'jp']);
 
