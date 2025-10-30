@@ -3,6 +3,7 @@ import { Dashboard } from "@/components/dashboard";
 import { LoginScreen } from "@/components/login-screen";
 import { getServerSession } from "@/lib/auth-server";
 import { createServerSideTRPC } from "@/lib/trpc-server";
+import { useNewTokenDialog } from "@/lib/flags";
 import { Suspense } from "react";
 
 // Force dynamic rendering since we need to check authentication
@@ -71,6 +72,9 @@ export default async function Home() {
       }).catch(() => undefined)
     : undefined;
 
+  // Precompute feature flag
+  const newTokenDialog = await useNewTokenDialog();
+
   return (
     <Dashboard 
       user={session.user}
@@ -80,6 +84,7 @@ export default async function Home() {
       initialProfileSettings={profileSettings}
       initialSnapshots={snapshotsData.snapshots}
       initialSnapshotData={initialSnapshotData}
+      newTokenDialog={newTokenDialog}
     />
   );
 }

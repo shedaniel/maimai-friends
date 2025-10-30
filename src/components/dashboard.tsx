@@ -22,9 +22,10 @@ interface DashboardProps {
   initialProfileSettings: ProfileSettings;
   initialSnapshots: Snapshot[];
   initialSnapshotData?: SnapshotWithSongs;
+  newTokenDialog: boolean;
 }
 
-export function Dashboard({ user, initialUserData, initialHasToken, initialTimezone, initialProfileSettings, initialSnapshots, initialSnapshotData }: DashboardProps) {
+export function Dashboard({ user, initialUserData, initialHasToken, initialTimezone, initialProfileSettings, initialSnapshots, initialSnapshotData, newTokenDialog }: DashboardProps) {
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUsernameSetupOpen, setIsUsernameSetupOpen] = useState(false);
@@ -259,6 +260,7 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
         isOpen={isTokenDialogOpen}
         onClose={closeTokenDialog}
         onTokenUpdate={handleTokenUpdate}
+        newTokenDialog={newTokenDialog}
       />
 
       <SettingsDialog
