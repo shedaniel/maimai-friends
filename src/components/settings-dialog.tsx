@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ import { getLanguages } from "@/lib/utils";
 import { ProfilePrivacySettings, ProfileSettings } from "@/lib/types";
 
 interface SettingsDialogProps {
-  isOpen: boolean;
+  open: boolean;
   onOpenChange: (open: boolean) => void;
   currentTimezone?: string | null;
   username?: string;
@@ -70,7 +70,7 @@ const TIMEZONES = [
 ];
 
 export function SettingsDialog({ 
-  isOpen, 
+  open, 
   onOpenChange, 
   currentTimezone, 
   username,
@@ -98,31 +98,30 @@ export function SettingsDialog({
   });
 
   // tRPC hooks with initial data
-  const { data: profileSettings, isLoading: profileSettingsLoading } = trpc.user.getProfileSettings.useQuery(
-    undefined,
-    {
-      initialData: initialProfileSettings,
-    }
-  );
+  const { data: profileSettings, isLoading: profileSettingsLoading } = trpc.user.getProfileSettings.useQuery(undefined, {
+    enabled: open,
+    initialData: initialProfileSettings,
+    refetchOnWindowFocus: false,
+  });
   const updatePublishProfile = trpc.user.updatePublishProfile.useMutation();
   const updateProfileMainRegion = trpc.user.updateProfileMainRegion.useMutation();
   const updateProfilePrivacySettings = trpc.user.updateProfilePrivacySettings.useMutation();
 
   // Update local state when profile settings are loaded
-  useEffect(() => {
-    if (profileSettings) {
-      setSelectedPublishProfile(profileSettings.publishProfile);
-      setSelectedMainRegion(profileSettings.profileMainRegion);
-      setSelectedPrivacySettings({
-        profileShowAllScores: profileSettings.profileShowAllScores,
-        profileShowScoreDetails: profileSettings.profileShowScoreDetails,
-        profileShowPlates: profileSettings.profileShowPlates,
-        profileShowPlayCounts: profileSettings.profileShowPlayCounts,
-        profileShowEvents: profileSettings.profileShowEvents,
-        profileShowInSearch: profileSettings.profileShowInSearch,
-      });
-    }
-  }, [profileSettings]);
+  // useEffect(() => {
+  //   if (profileSettings) {
+  //     setSelectedPublishProfile(profileSettings.publishProfile);
+  //     setSelectedMainRegion(profileSettings.profileMainRegion);
+  //     setSelectedPrivacySettings({
+  //       profileShowAllScores: profileSettings.profileShowAllScores,
+  //       profileShowScoreDetails: profileSettings.profileShowScoreDetails,
+  //       profileShowPlates: profileSettings.profileShowPlates,
+  //       profileShowPlayCounts: profileSettings.profileShowPlayCounts,
+  //       profileShowEvents: profileSettings.profileShowEvents,
+  //       profileShowInSearch: profileSettings.profileShowInSearch,
+  //     });
+  //   }
+  // }, [profileSettings]);
 
   const LANGUAGES = getLanguages(t);
 
@@ -244,7 +243,7 @@ export function SettingsDialog({
   const isLoadingSettings = profileSettingsLoading || isLoading;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('settings.title')}</DialogTitle>

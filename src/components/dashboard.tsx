@@ -232,19 +232,19 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
       />
 
       <div className="space-y-6">
-              <DataBanner
-                region={selectedRegion}
-                snapshots={snapshots}
-                selectedSnapshot={selectedSnapshot}
-                onSnapshotChange={setSelectedSnapshot}
-                onDeleteSnapshot={handleDeleteSnapshot}
-                onFetchData={handleFetchData}
-                isFetching={isFetching}
-                currentSession={currentSession}
-                userTimezone={timezoneData?.timezone ?? null}
-                onCopySnapshot={handleCopySnapshot}
-                isCopying={isCopying}
-              />
+        <DataBanner
+          region={selectedRegion}
+          snapshots={snapshots}
+          selectedSnapshot={selectedSnapshot}
+          onSnapshotChange={setSelectedSnapshot}
+          onDeleteSnapshot={handleDeleteSnapshot}
+          onFetchData={handleFetchData}
+          isFetching={isFetching}
+          currentSession={currentSession}
+          userTimezone={timezoneData?.timezone ?? null}
+          onCopySnapshot={handleCopySnapshot}
+          isCopying={isCopying}
+        />
 
         <DataContent
           region={selectedRegion}
@@ -262,18 +262,18 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
       />
 
       <SettingsDialog
-        isOpen={isSettingsOpen}
+        open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
         currentTimezone={timezoneData?.timezone ?? null}
         username={userData?.username ?? undefined}
         initialProfileSettings={initialProfileSettings}
         onTimezoneUpdate={handleTimezoneUpdate}
         onOpenTokenDialog={handleOpenTokenDialog}
-        onSaveSuccess={() => refetchUserData()}
+        onSaveSuccess={refetchUserData}
       />
 
       <UsernameSetupDialog
-        isOpen={isUsernameSetupOpen}
+        open={isUsernameSetupOpen}
         onComplete={handleUsernameSetupComplete}
       />
     </div>

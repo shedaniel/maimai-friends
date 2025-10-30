@@ -211,7 +211,7 @@
     "tokenValidationError": "Cookies 必須以 \"clal=\" 開頭，後面跟著字母和數字",
     "authenticationNote": "驗證：",
     "segaCredentialsNote": "使用你的 SEGA 帳戶憑證來驗證 maimai DX NET。",
-    "credentialsSecureNote": "你的驗證方式將安全地儲存以供將來使用。",
+    "credentialsSecureNote": "你的驗證方式將被儲存以供將來使用。",
     "savingCredentials": "儲存驗證方式中...",
     "saveCredentials": "儲存驗證方式",
     "tokenTab": "Cookies",
@@ -221,7 +221,7 @@
       "expiration": "Cookies 會在一段時間後失效，你或需要重新登入。"
     },
     "passwordInstructions": "直接使用你的 SEGA 帳戶使用者名稱和密碼",
-    "secureStorage": "你的驗證方式將安全地儲存以供將來使用。"
+    "secureStorage": "你的驗證方式將被儲存以供將來使用。"
   },
   "regions": {
     "intl": "國際區",

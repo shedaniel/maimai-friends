@@ -17,11 +17,11 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 interface UsernameSetupDialogProps {
-  isOpen: boolean;
+  open: boolean;
   onComplete: () => void;
 }
 
-export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogProps) {
+export function UsernameSetupDialog({ open, onComplete }: UsernameSetupDialogProps) {
   const t = useTranslations();
   const [username, setUsername] = useState('');
   const [isChecking, setIsChecking] = useState(false);
@@ -33,7 +33,7 @@ export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogP
   // Get suggested username
   const { data: suggestedData } = trpc.user.getSuggestedUsername.useQuery(
     undefined,
-    { enabled: isOpen }
+    { enabled: open }
   );
 
   // Set/update username mutation
@@ -118,7 +118,7 @@ export function UsernameSetupDialog({ isOpen, onComplete }: UsernameSetupDialogP
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent 
         className="sm:max-w-md" 
         onPointerDownOutside={(e) => e.preventDefault()}

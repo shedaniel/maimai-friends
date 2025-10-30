@@ -211,7 +211,7 @@
     "tokenValidationError": "Token must start with \"clal=\" followed by letters and numbers only",
     "authenticationNote": "Authentication:",
     "segaCredentialsNote": "Use your SEGA account credentials to authenticate with maimai DX NET.",
-    "credentialsSecureNote": "Your credentials will be stored securely for future fetches.",
+    "credentialsSecureNote": "Your credentials will be stored for future fetches.",
     "savingCredentials": "Saving Credentials...",
     "saveCredentials": "Save Credentials",
     "tokenTab": "Token",
@@ -221,7 +221,7 @@
       "expiration": "The token may get invalidated after a certain period of time, so you may need to update it in the future."
     },
     "passwordInstructions": "Use your SEGA account username and password directly",
-    "secureStorage": "Your credentials will be stored securely for future fetches."
+    "secureStorage": "Your credentials will be stored for future fetches."
   },
   "regions": {
     "intl": "International",
