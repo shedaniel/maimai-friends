@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
@@ -26,6 +26,32 @@ export function AdminDialog({ open, onOpenChange }: AdminDialogProps) {
 
   const intlVersion = getCurrentVersion("intl");
   const jpVersion = getCurrentVersion("jp");
+
+  // Load tokens from localStorage on mount
+  useEffect(() => {
+    const savedAdminToken = localStorage.getItem("adminToken");
+    const savedMaimaiToken = localStorage.getItem("maimaiToken");
+    if (savedAdminToken) {
+      setAdminToken(savedAdminToken);
+    }
+    if (savedMaimaiToken) {
+      setMaimaiToken(savedMaimaiToken);
+    }
+  }, []);
+
+  // Save admin token to localStorage whenever it changes
+  useEffect(() => {
+    if (adminToken) {
+      localStorage.setItem("adminToken", adminToken);
+    }
+  }, [adminToken]);
+
+  // Save maimai token to localStorage whenever it changes
+  useEffect(() => {
+    if (maimaiToken) {
+      localStorage.setItem("maimaiToken", maimaiToken);
+    }
+  }, [maimaiToken]);
 
   const appendConsoleLog = useCallback((log: string) => {
     setConsoleLog(old => old + log + "\n");
