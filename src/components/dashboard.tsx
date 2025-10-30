@@ -71,6 +71,8 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
     startDataFetch,
     startAutomaticFetch,
     resetFetchSession,
+    startSessionPolling,
+    stopSessionPolling,
   } = useFetchSession(refreshSnapshots);
 
   // Check if user has a saved token for the current region (with initial server data)
@@ -261,6 +263,8 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
         onClose={closeTokenDialog}
         onTokenUpdate={handleTokenUpdate}
         newTokenDialog={newTokenDialog}
+        startSessionPolling={startSessionPolling}
+        stopSessionPolling={stopSessionPolling}
       />
 
       <SettingsDialog

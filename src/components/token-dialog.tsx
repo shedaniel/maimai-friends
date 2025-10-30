@@ -11,6 +11,8 @@ interface TokenDialogProps {
   onClose: () => void;
   onTokenUpdate: (token: string) => Promise<void>;
   newTokenDialog: boolean;
+  startSessionPolling?: (region: "intl" | "jp", onSessionDetected?: () => void) => void;
+  stopSessionPolling?: () => void;
 }
 
 export function TokenDialog({
@@ -19,6 +21,8 @@ export function TokenDialog({
   onClose,
   onTokenUpdate,
   newTokenDialog,
+  startSessionPolling,
+  stopSessionPolling,
 }: TokenDialogProps) {
   if (region === "jp") {
     return (
@@ -36,6 +40,8 @@ export function TokenDialog({
         isOpen={isOpen}
         onClose={onClose}
         onTokenUpdate={onTokenUpdate}
+        startSessionPolling={startSessionPolling}
+        stopSessionPolling={stopSessionPolling}
       />
     );
   }

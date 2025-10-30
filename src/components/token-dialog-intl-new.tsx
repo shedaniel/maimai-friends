@@ -13,12 +13,14 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import React from "react";
 import { trpc } from "@/lib/trpc-client";
-import { useFetchSession } from "@/hooks/useFetchSession";
 
 interface TokenDialogIntlNewProps {
   isOpen: boolean;
   onClose: () => void;
   onTokenUpdate: (token: string) => Promise<void>;
+  // Session polling functions from parent
+  startSessionPolling?: (region: "intl" | "jp", onSessionDetected?: () => void) => void;
+  stopSessionPolling?: () => void;
 }
 
 interface TokenSubDialogProps {
@@ -103,6 +105,7 @@ function StepBasedTokenDialog({
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
   const canSubmit = token.trim().length > 0 && isValidToken(token.trim()) && !isSubmitting;
+  const [isRefreshingOtp, setIsRefreshingOtp] = useState(false);
 
   const {
     data: loginOtpData,
@@ -147,6 +150,15 @@ function StepBasedTokenDialog({
       return null;
     }
   }, [loginOtpData]);
+
+  const handleRefreshOtp = async () => {
+    setIsRefreshingOtp(true);
+    await refetchLoginOtp();
+    // Add a small delay to ensure the animation is visible
+    setTimeout(() => {
+      setIsRefreshingOtp(false);
+    }, 300);
+  };
 
   const handleNext = () => {
     if (currentStep < 3) {
@@ -204,17 +216,12 @@ function StepBasedTokenDialog({
               )}
             </div>
 
-            <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-2">
+            <div className="bg-muted/50 rounded-md text-xs text-muted-foreground space-y-2">
               <p className="font-medium">
                 {t('tokenDialog.authenticationNote')}
               </p>
               <p>{t('tokenDialog.tokenInstructions.description')}</p>
               <p>{t('tokenDialog.tokenInstructions.expiration')}</p>
-              <div className="space-y-1 pt-2">
-                <p>For easier cookie extraction, first install this <a className="underline text-blue-600" href="/maimai-cookie-extractor.user.js" target="_blank" rel="noopener noreferrer">userscript</a> (requires Tampermonkey/Greasemonkey).</p>
-                <p>Then, <a className="underline text-blue-600" href="https://lng-tgk-aime-gw.am-all.net/common_auth/login?site_id=maimaidxex&redirect_url=https://maimaidx-eng.com/maimai-mobile/&back_url=https://maimai.sega.com/" target="_blank" rel="noopener noreferrer">visit this link</a> in incognito mode and login to aime.</p>
-                <p>Finally, <a className="underline text-blue-600" href="https://lng-tgk-aime-gw.am-all.net/common_auth" target="_blank" rel="noopener noreferrer">visit this link</a>, you will see &quot;Not Found&quot;, click the &quot;Copy maimai cookie&quot; button on top right and paste the cookie into the input field above.</p>
-              </div>
               <p className="pt-2">{t('tokenDialog.secureStorage')}</p>
             </div>
 
@@ -311,22 +318,32 @@ function StepBasedTokenDialog({
                   <p className="text-sm text-foreground">
                     Visit this link below, in the same incognito / private tab.
                   </p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>OTP: <span className="font-mono font-semibold text-foreground">{otpValue}</span></span>
-                    {otpExpiry && (
-                      <span>Expires ~ {otpExpiry}</span>
-                    )}
-                  </div>
-                  <CopyableCodeBlock code={loginLink} />
+                  <motion.div
+                    animate={{
+                      filter: isRefreshingOtp ? "blur(4px)" : "blur(0px)",
+                      opacity: isRefreshingOtp ? 0.5 : 1,
+                    }}
+                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                  >
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>OTP: <span className="font-mono font-semibold text-foreground">{otpValue}</span></span>
+                      {otpExpiry && (
+                        <span>Expires ~ {otpExpiry}</span>
+                      )}
+                    </div>
+                    <div className="mt-2">
+                      <CopyableCodeBlock code={loginLink} />
+                    </div>
+                  </motion.div>
                   <div className="flex justify-end">
                     <Button
                       variant="ghost"
                       size="sm"
                       className="cursor-pointer"
-                      onClick={() => { void refetchLoginOtp(); }}
-                      disabled={loginOtpLoading}
+                      onClick={() => { void handleRefreshOtp(); }}
+                      disabled={isRefreshingOtp}
                     >
-                      {loginOtpLoading ? "Refreshing..." : "Refresh OTP"}
+                      {isRefreshingOtp ? "Refreshing..." : "Refresh OTP"}
                     </Button>
                   </div>
                 </div>
@@ -488,6 +505,8 @@ export function TokenDialogIntlNew({
   isOpen,
   onClose,
   onTokenUpdate,
+  startSessionPolling,
+  stopSessionPolling,
 }: TokenDialogIntlNewProps) {
   const t = useTranslations();
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
@@ -497,9 +516,6 @@ export function TokenDialogIntlNew({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Use fetch session hook for polling new sessions
-  const { startSessionPolling, stopSessionPolling } = useFetchSession();
 
   // Validate token format: clal= followed by alphanumeric characters
   const isValidToken = (tokenValue: string) => {
@@ -528,21 +544,23 @@ export function TokenDialogIntlNew({
 
   // Start/stop session polling when token dialog opens/closes
   useEffect(() => {
-    if (isTokenDialogOpen) {
+    if (isTokenDialogOpen && startSessionPolling && stopSessionPolling) {
       // Start polling for new sessions (intl region)
       startSessionPolling("intl", () => {
         // When new session detected, close all dialogs
         handleClose0();
       });
-    } else {
+    } else if (stopSessionPolling) {
       // Stop polling when dialog closes
       stopSessionPolling();
     }
 
     return () => {
-      stopSessionPolling();
+      if (stopSessionPolling) {
+        stopSessionPolling();
+      }
     };
-  }, [isTokenDialogOpen]);
+  }, [isTokenDialogOpen, startSessionPolling, stopSessionPolling]);
 
   const handleTokenSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

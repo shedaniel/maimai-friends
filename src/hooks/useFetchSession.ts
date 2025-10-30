@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc, trpcClient } from "@/lib/trpc-client";
 import { toast } from "sonner";
 import { Region, FetchSession } from "@/lib/types";
@@ -30,14 +30,18 @@ export function useFetchSession(onFetchComplete?: () => void) {
 
     const currentSessionId = latestSessionData.id;
     
+    console.log("[Session Polling] Current session ID:", currentSessionId, "Last known:", lastKnownSessionIdRef.current);
+    
     // Initialize the last known session ID on first poll
     if (lastKnownSessionIdRef.current === null) {
+      console.log("[Session Polling] Initializing with session ID:", currentSessionId);
       lastKnownSessionIdRef.current = currentSessionId;
       return;
     }
 
     // Check if a new session was created
     if (currentSessionId !== lastKnownSessionIdRef.current) {
+      console.log("[Session Polling] NEW SESSION DETECTED! Old:", lastKnownSessionIdRef.current, "New:", currentSessionId);
       lastKnownSessionIdRef.current = currentSessionId;
       
       // Show success toast
@@ -163,26 +167,28 @@ export function useFetchSession(onFetchComplete?: () => void) {
     return poll();
   };
 
-  const resetFetchSession = () => {
+  const resetFetchSession = useCallback(() => {
     setCurrentSession(null);
     setFetchError(null);
-  };
+  }, []);
 
   // Start polling for new sessions
-  const startSessionPolling = (region: Region, onSessionDetected?: () => void) => {
+  const startSessionPolling = useCallback((region: Region, onSessionDetected?: () => void) => {
+    console.log("[startSessionPolling] Starting session polling for region:", region);
     setSessionPollingRegion(region);
     setSessionPollingEnabled(true);
     lastKnownSessionIdRef.current = null; // Reset to detect the first session
     onSessionDetectedRef.current = onSessionDetected;
-  };
+  }, []);
 
   // Stop polling for new sessions
-  const stopSessionPolling = () => {
+  const stopSessionPolling = useCallback(() => {
+    console.log("[stopSessionPolling] Stopping session polling");
     setSessionPollingEnabled(false);
     setSessionPollingRegion(null);
     lastKnownSessionIdRef.current = null;
     onSessionDetectedRef.current = undefined;
-  };
+  }, []);
 
   const isFetching = currentSession?.status === "pending" || startFetchMutation.isPending;
 
