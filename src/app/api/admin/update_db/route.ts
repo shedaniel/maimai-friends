@@ -7,6 +7,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { promises as fs } from "fs";
 import { NextRequest, NextResponse } from "next/server";
 import { join } from "path";
+import { resolveBaseUrl } from "@/lib/base-url";
 
 const MAIMAI_SONGS_JSON_URL = "https://github.com/zvuc/otoge-db/raw/refs/heads/master/maimai/data/music-ex.json";
 const MAIMAI_SONGS_JSON_URL_INTL = "https://github.com/zvuc/otoge-db/raw/refs/heads/master/maimai/data/music-ex-intl.json";
@@ -241,6 +242,120 @@ function convertToSong(record: Song, region: "intl" | "jp", gameVersion: number)
   };
 }
 
+// Helper function to format difficulty for Discord
+function formatDifficulty(difficulty: string): string {
+  const diffMap: Record<string, string> = {
+    basic: "BAS",
+    advanced: "ADV",
+    expert: "EXP",
+    master: "MAS",
+    remaster: "REM",
+    utage: "UTAGE",
+  };
+  return diffMap[difficulty] || difficulty.toUpperCase();
+}
+
+// Helper function to format level precise as decimal
+function formatLevelPrecise(levelPrecise: number): string {
+  return (levelPrecise / 10).toFixed(1);
+}
+
+// Helper function to send Discord webhook
+async function sendDiscordWebhook(
+  region: "intl" | "jp",
+  added: typeof songs.$inferSelect[],
+  deleted: typeof songs.$inferSelect[],
+  modified: Array<{ old: typeof songs.$inferSelect; new: typeof songs.$inferSelect }>,
+) {
+  const webhookUrl = process.env.DISCORD_UPDATE_WEBHOOK;
+  if (!webhookUrl) {
+    console.log("DISCORD_UPDATE_WEBHOOK not set, skipping webhook notification");
+    return;
+  }
+
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+  const regionName = region === "jp" ? "Japan" : "International";
+
+  let description = "";
+
+  // Added charts
+  if (added.length > 0) {
+    description += `**${added.length} Chart${added.length > 1 ? 's' : ''} Added**\n`;
+    for (const song of added) {
+      description += `- ${song.songName}: ${formatDifficulty(song.difficulty)} ${song.level} (${formatLevelPrecise(song.levelPrecise)})\n`;
+    }
+    description += "\n";
+  }
+
+  // Deleted charts
+  if (deleted.length > 0) {
+    description += `**${deleted.length} Chart${deleted.length > 1 ? 's' : ''} Deleted**\n`;
+    for (const song of deleted) {
+      description += `- ${song.songName}: ${formatDifficulty(song.difficulty)} ${song.level} (${formatLevelPrecise(song.levelPrecise)})\n`;
+    }
+    description += "\n";
+  }
+
+  // Modified charts (only show if level or levelPrecise changed)
+  const levelChanges = modified.filter(
+    m => m.old.level !== m.new.level || m.old.levelPrecise !== m.new.levelPrecise
+  );
+  if (levelChanges.length > 0) {
+    description += `**${levelChanges.length} Chart${levelChanges.length > 1 ? 's' : ''} Updated**\n`;
+    for (const { old, new: newSong } of levelChanges) {
+      description += `- ${newSong.songName}: ${formatDifficulty(newSong.difficulty)} ${old.level} (${formatLevelPrecise(old.levelPrecise)}) -> ${newSong.level} (${formatLevelPrecise(newSong.levelPrecise)})\n`;
+    }
+    description += "\n";
+  }
+
+  // Determine color based on changes
+  let color: number;
+  if (deleted.length > 0) {
+    color = 0xFF0000; // Red - any deleted
+  } else if (added.length > 0) {
+    color = 0x00FF00; // Green - songs added, no deleted
+  } else if (levelChanges.length > 0) {
+    color = 0xFFFF00; // Yellow - only modified
+  } else {
+    color = 0x808080; // Gray - no changes
+  }
+
+  const baseUrl = resolveBaseUrl();
+  const payload = {
+    username: "ともマイ",
+    avatar_url: `${baseUrl}/icon.png`,
+    embeds: [
+      {
+        title: `Song data update - ${dateStr} - ${regionName}`,
+        description: description.trim() || "No changes detected",
+        color: color,
+        timestamp: now.toISOString(),
+      },
+    ],
+  };
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      console.error(`Discord webhook failed: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`Discord webhook error response: ${errorText}`);
+    } else {
+      console.log("Discord webhook sent successfully");
+    }
+  } catch (error) {
+    console.error("Error sending Discord webhook:", error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Check for admin token authentication
@@ -313,6 +428,30 @@ export async function POST(request: NextRequest) {
         console.log(`Added fallback song: ${record.songName} (${record.difficulty}, ${record.type})`);
       }
     }
+
+    // Fetch existing songs from database before modifications
+    console.log("Fetching existing songs from database...");
+    const existingSongs = await db
+      .select()
+      .from(songs)
+      .where(
+        and(eq(songs.region, region), eq(songs.gameVersion, currentVersionForRegion))
+      );
+    console.log(`Found ${existingSongs.length} existing songs in database`);
+
+    // Create maps for tracking changes
+    const existingSongsMap = new Map(
+      existingSongs.map(song => [
+        `${song.songName}-${song.difficulty}-${song.type}`,
+        song
+      ])
+    );
+    const newSongsMap = new Map(
+      allRecords.map(record => [
+        `${record.songName}-${record.difficulty}-${record.type}`,
+        record
+      ])
+    );
 
     if (SAVE_TO_FILE) {
       // Write current date to file
@@ -410,12 +549,76 @@ export async function POST(request: NextRequest) {
       console.log(`No old records found to delete for region ${region} and game version ${currentVersionForRegion}.`);
     }
 
+    // Calculate changes for Discord webhook
+    const addedSongs: typeof songs.$inferSelect[] = [];
+    const deletedSongs: typeof songs.$inferSelect[] = [];
+    const modifiedSongs: Array<{ old: typeof songs.$inferSelect; new: typeof songs.$inferSelect }> = [];
+
+    // Find added songs (in new but not in existing)
+    for (const record of allRecords) {
+      const key = `${record.songName}-${record.difficulty}-${record.type}`;
+      if (!existingSongsMap.has(key)) {
+        // This is a new song, convert it to the format expected
+        const newSongData = convertToSong(record, region, currentVersionForRegion);
+        addedSongs.push({
+          ...newSongData,
+          // We need to fill in the other fields that are part of $inferSelect
+          id: newSongData.id,
+        } as typeof songs.$inferSelect);
+      } else {
+        // Check if it was modified (levelPrecise changed)
+        const existingSong = existingSongsMap.get(key)!;
+        if (existingSong.artist !== record.artist) {
+          // Check if there are two songs with different artists but the same song name and difficulty and type
+          const sameSong = allRecords.find(r => r.songName === record.songName && r.difficulty === record.difficulty && r.type === record.type && r.artist !== record.artist);
+          if (sameSong) {
+            continue;
+          } else {
+            // Song changed artist, so it is a modified song
+            console.log(`Song ${record.songName} (${record.difficulty} ${record.type}) changed artist from ${existingSong.artist} to ${record.artist}`);
+          }
+        }
+        if (record.difficulty === "utage") {
+          // Check amount of songs with the same song name and difficulty and type, and in utage
+          const sameSongsUtage = allRecords.filter(r => r.songName === record.songName && r.difficulty === record.difficulty && r.type === record.type && r.difficulty === "utage");
+          if (sameSongsUtage.length > 1) {
+            continue;
+          }
+        }
+        if (existingSong.levelPrecise !== record.levelPrecise || existingSong.level !== record.level) {
+          const newSongData = convertToSong(record, region, currentVersionForRegion);
+          modifiedSongs.push({
+            old: existingSong,
+            new: {
+              ...newSongData,
+              id: existingSong.id, // Keep the same ID
+            } as typeof songs.$inferSelect,
+          });
+        }
+      }
+    }
+
+    // Find deleted songs (in existing but not in new)
+    for (const existingSong of existingSongs) {
+      const key = `${existingSong.songName}-${existingSong.difficulty}-${existingSong.type}`;
+      if (!newSongsMap.has(key)) {
+        deletedSongs.push(existingSong);
+      }
+    }
+
+    console.log(`Changes summary: ${addedSongs.length} added, ${deletedSongs.length} deleted, ${modifiedSongs.length} modified`);
+
+    // Send Discord webhook notification
+    await sendDiscordWebhook(region, addedSongs, deletedSongs, modifiedSongs);
+
     return NextResponse.json({
       success: true,
       message: "Song data update completed",
       statistics: {
         total: allRecords.length,
+        added: addedSongs.length,
         deleted: idsToDelete.length,
+        modified: modifiedSongs.length,
       },
     });
   } catch (error) {
