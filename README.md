@@ -2,37 +2,6 @@
 
 A modern web application for tracking and analyzing your maimai DX scores with friends. Built with Next.js 15, TypeScript, and Tailwind CSS.
 
-## ✨ Features
-
-### 🎮 **Complete Score Tracking**
-- **Automatic Data Import**: Import your complete maimai profile and scores directly from maimai DX NET
-- **Multi-Region Support**: Separate tracking for International and Japan regions
-- **Real-Time Sync**: Live updates during data fetching with progress indicators
-- **Historical Snapshots**: Keep track of your progress over time with dated snapshots
-
-### 📊 **Advanced Analytics**
-- **Rating System**: Accurate rating calculations using official maimai formulas
-- **B15/B35 Analysis**: Automatic organization of your best 15 new songs and best 35 old songs
-- **Visual Progress**: Color-coded difficulty displays and achievement percentages
-- **Player Statistics**: Comprehensive view of play counts, ratings, and rankings
-
-### 🌍 **Internationalization**
-- **5 Languages**: English (US/UK), Japanese, Chinese (Traditional/Simplified)
-- **Auto-Detection**: Automatically detects your preferred language
-- **Complete Translation**: All UI elements, notifications, and messages are localized
-
-### 🎨 **Modern Interface**
-- **Responsive Design**: Perfect experience on desktop and mobile devices
-- **Tabbed Navigation**: Organized sections for Player Info, Songs, Recommendations, Plates
-- **Real-Time Notifications**: Toast notifications for all actions and status updates
-- **Dark/Light Theme Ready**: Built with theme switching in mind
-
-### 🔒 **Security & Privacy**
-- **Discord OAuth**: Secure authentication with your Discord account
-- **Encrypted Storage**: All tokens and sensitive data are encrypted
-- **Rate Limiting**: Built-in protection against abuse
-- **Data Isolation**: Complete separation between users and regions
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -62,13 +31,22 @@ A modern web application for tracking and analyzing your maimai DX scores with f
    Configure your `.env.local` file:
    ```env
    BETTER_AUTH_SECRET=your-secure-random-secret-key
-   DISCORD_CLIENT_ID=your-discord-client-id
+   NEXT_PUBLIC_DISCORD_APPLICATION_ID=your-discord-client-id
    DISCORD_CLIENT_SECRET=your-discord-client-secret
    TURSO_DATABASE_URL=libsql://your-database-url.turso.io
    TURSO_AUTH_TOKEN=your-turso-auth-token
    
+   # Generate using: node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
+   FLAGS_SECRET=your-flags-secret
+   
+   # Generate using: openssl rand -hex 32
+   MAIMAI_TOTP_SECRET=your-totp-secret
+   
    # Optional: Admin functionality for song database updates
    ADMIN_UPDATE_TOKEN=your-secure-admin-token
+   
+   # Optional: Webhook URL for announcing song updates to Discord
+   DISCORD_UPDATE_WEBHOOK=your-discord-webhook-url
    
    # Discord Bot (required for Discord bot functionality)
    NEXT_PUBLIC_DISCORD_APPLICATION_ID=your-discord-application-id
@@ -78,12 +56,12 @@ A modern web application for tracking and analyzing your maimai DX scores with f
 
 4. **Set up database**
    ```bash
-   npm run db:push
+   npm run db:migrate
    ```
 
    **Note**: If you're upgrading from a previous version, you'll need to run database migrations:
    ```bash
-   npm run db:push      # Apply any pending migrations
+   npm run db:migrate      # Apply any pending migrations
    ```
 
 5. **Register Discord bot commands (optional)**
@@ -100,54 +78,8 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 
 ## 🎯 Usage
 
-### Getting Started
-1. **Sign In**: Use your Discord account to sign in
-2. **Select Region**: Choose between International or Japan region
-3. **Add Token**: Enter your maimai DX NET authentication token
-4. **Fetch Data**: Click "Fetch New Data" to import your scores
-5. **Explore**: View your player info, song ratings, and progress in the tabbed interface
-
-### Understanding Your Data
-- **Rating**: Your calculated rating based on your best performances
-- **B15**: Your best 15 scores from the current maimai version
-- **B35**: Your best 35 scores from previous maimai versions
-- **Achievements**: Your accuracy percentages for each song
-- **FC/FS Status**: Full Combo and Full Sync achievements
-
 ### Admin Functionality (Optional)
-If you have admin access, you can update the song database:
-```bash
-curl -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
-  "http://localhost:3000/api/admin/update?token=clal=YOUR_MAIMAI_TOKEN&region=intl"
-```
-
-This endpoint:
-- Scrapes the complete maimai song database from official sources
-- Fetches metadata from external APIs for accurate song information
-- Updates the database with all songs, difficulties, and internal level values
-- Supports both International and Japan regions
-
-## 🛠 Tech Stack
-
-### Frontend
-- **Next.js 15** with App Router
-- **TypeScript** for type safety
-- **Tailwind CSS v4** for styling
-- **shadcn/ui** for beautiful UI components
-- **next-intl** for internationalization
-- **tRPC** for type-safe API calls
-
-### Backend
-- **Next.js API Routes** with TypeScript
-- **Better Auth** for Discord OAuth
-- **Drizzle ORM** with SQLite/Turso
-- **Cheerio** for HTML parsing
-- **Rate limiting** and security features
-
-### Database
-- **Turso (LibSQL)** for production (managed SQLite)
-- **SQLite** for local development
-- **Automatic migrations** with Drizzle
+Set your user role in the database to `admin`, and you will be able to see an admin panel on the top right submenu. Enter the admin token set in the env var.
 
 ## 🗄 Database Schema
 
@@ -176,32 +108,6 @@ npm run db:generate     # Generate migration files
 npm run db:push         # Push schema changes to database
 npm run db:migrate      # Run migrations
 npm run db:studio       # Open Drizzle Studio (database browser)
-```
-
-### Project Structure
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes (auth, trpc, admin)
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page
-├── components/            # React components
-│   ├── ui/               # shadcn/ui components
-│   ├── data-content.tsx  # Main data visualization
-│   ├── info-card.tsx     # Player info display
-│   ├── songs-card.tsx    # Song list with ratings
-│   └── ...
-├── lib/                   # Utility libraries
-│   ├── auth.ts           # Authentication configuration
-│   ├── db.ts             # Database connection
-│   ├── schema.ts         # Database schema
-│   ├── rating-calculator.ts # Rating calculation logic
-│   ├── maimai-fetcher.ts # Data fetching and parsing
-│   └── ...
-├── server/               # tRPC server setup
-└── middleware.ts         # Next.js middleware
 ```
 
 ## 🌐 Discord Setup
@@ -284,8 +190,6 @@ The ともマイ Discord bot extends the web application's functionality directl
 
 ## 🏗 Database Setup
 
-### Option 1: Turso (Recommended for Production)
-
 1. **Install Turso CLI**
    ```bash
    curl -sSfL https://get.tur.so/install.sh | bash
@@ -304,12 +208,6 @@ The ともマイ Discord bot extends the web application's functionality directl
    TURSO_AUTH_TOKEN=your-turso-auth-token
    ```
 
-### Option 2: Local SQLite
-
-For local development, you can use SQLite directly:
-```env
-DATABASE_URL=file:./dev.db
-```
 
 ## 🚀 Deployment
 
@@ -327,13 +225,21 @@ DATABASE_URL=file:./dev.db
     TURSO_DATABASE_URL=your-production-database-url
     TURSO_AUTH_TOKEN=your-production-auth-token
     
+    # Generate using: node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
+    FLAGS_SECRET=your-flags-secret
+    
+    # Generate using: openssl rand -hex 32
+    MAIMAI_TOTP_SECRET=your-totp-secret
+    
     # Optional: Admin functionality for song database updates
     ADMIN_UPDATE_TOKEN=your-production-admin-token
+    
+    # Optional: Webhook URL for announcing song updates to Discord
+    DISCORD_UPDATE_WEBHOOK=your-discord-webhook-url
     ```
 
 3. **Database Migrations**
-   - Run `npm run db:push` to set up your production database
-   - Or use the migration commands if you prefer versioned migrations
+   - Run `npm run db:migrate` to set up your production database
 
 ## 📄 License
 
@@ -342,11 +248,8 @@ This project is licensed under the GNU Affero General Public License v3.0 - see 
 ## 🙏 Acknowledgments
 
 - **SEGA** for creating maimai DX
-- **[dxrating](https://github.com/gekichumai/dxrating)** for providing comprehensive maimai DX song metadata and internal level data
-- **shadcn/ui** for the beautiful component library
-- **Vercel** for hosting and deployment
-- **Turso** for the edge database solution
-- **Discord** for OAuth integration
+- **[dxrating](https://github.com/gekichumai/dxrating)** for providing internal level data
+- **[otoge-db](https://github.com/zvuc/otoge-db)** for providing level data
 
 ## 🚧 Contributing & Support
 
