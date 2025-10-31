@@ -3,9 +3,9 @@
 import { AboutDialog } from "@/components/about-dialog";
 import { Button } from "@/components/ui/button";
 import { DiscordIcon } from "@/components/ui/discord-icon";
-import { Info, LogIn } from "lucide-react";
+import { Info, LogIn, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { LocaleSwitcher } from "./locale-switcher";
 
@@ -18,6 +18,12 @@ interface PublicHeaderProps {
 export function PublicHeader({}: PublicHeaderProps) {
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
+  
+  useEffect(() => {
+    const dismissed = localStorage.getItem('discord-banner-dismissed');
+    setShowBanner(!dismissed);
+  }, []);
   
   const handleLogin = () => {
     // Redirect to login page
@@ -32,6 +38,11 @@ export function PublicHeader({}: PublicHeaderProps) {
       console.error('Failed to open invite link:', error);
       toast.error("Failed to open invite link");
     }
+  };
+  
+  const handleDismissBanner = () => {
+    localStorage.setItem('discord-banner-dismissed', 'true');
+    setShowBanner(false);
   };
   
   return (
@@ -64,11 +75,42 @@ export function PublicHeader({}: PublicHeaderProps) {
         <div className="flex items-center space-x-4">
           <LocaleSwitcher />
           <Button onClick={handleLogin} variant="default">
-            <LogIn className="mr-2 h-4 w-4" />
-            {t('common.login')}
+            <LogIn className="mr-1 h-4 w-4" />
+            {t('common.join')}
           </Button>
         </div>
       </div>
+      
+      {showBanner && (
+        <div className="mb-6 relative bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 sm:p-4">
+          <button
+            onClick={handleDismissBanner}
+            className="absolute top-2 right-2 p-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          </button>
+          <div className="flex items-start gap-3 pr-8">
+            <DiscordIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-blue-900 dark:text-blue-100 leading-relaxed">
+                {t('publicHeader.discordBanner')}
+              </p>
+              <a
+                href="https://discord.gg/jZqQHr3UDq"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline"
+              >
+                <span>Discord</span>
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
       
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
     </>

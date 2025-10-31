@@ -110,6 +110,22 @@ export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onL
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-xs text-muted-foreground">
+                    {t('userHeader.discordPrompt')}
+                  </p>
+                  <a 
+                    href="https://discord.gg/jZqQHr3UDq" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium leading-none text-primary hover:underline text-center px-1 py-3"
+                  >
+                    {t('userHeader.joinDiscord')}
+                  </a>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
               {SIGNUP_TYPE === 'invite-only' && (
                 <>
                   <DropdownMenuItem onClick={() => setInvitesOpen(true)}>

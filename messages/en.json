@@ -10,6 +10,7 @@
     "timezone": "Timezone",
     "update": "Update",
     "login": "Login",
+    "join": "Join",
     "logout": "Logout",
     "username": "Username",
     "password": "Password",
@@ -285,7 +286,12 @@
     }
   },
   "userHeader": {
-    "memberLabel": "ともマイ member"
+    "memberLabel": "ともマイ member",
+    "discordPrompt": "Facing issues? Or have features or ideas to add to tomomai ともマイ?",
+    "joinDiscord": "Join our Community Discord!"
+  },
+  "publicHeader": {
+    "discordBanner": "Have questions or suggestions? Join our Discord community!"
   },
   "usernameSetup": {
     "title": "Choose Your Username",

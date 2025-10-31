@@ -10,6 +10,7 @@
     "timezone": "タイムゾーン",
     "update": "更新",
     "login": "ログイン",
+    "join": "登録",
     "logout": "ログアウト",
     "username": "ユーザー名",
     "password": "パスワード",
@@ -285,7 +286,12 @@
     }
   },
   "userHeader": {
-    "memberLabel": "ともマイのメンバー"
+    "memberLabel": "ともマイのメンバー",
+    "discordPrompt": "何かお困りのことはありますか？ともマイへのご意見・アイデアをぜひお聞かせください！",
+    "joinDiscord": "Discordコミュニティに参加する"
+  },
+  "publicHeader": {
+    "discordBanner": "ご質問やご提案は、ぜひDiscordコミュニティでお聞かせください！"
   },
   "usernameSetup": {
     "title": "ユーザー名を選択",

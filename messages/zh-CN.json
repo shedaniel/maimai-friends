@@ -10,6 +10,7 @@
     "timezone": "时区",
     "update": "更新",
     "login": "登录",
+    "join": "加入",
     "logout": "登出",
     "username": "用户名",
     "password": "密码",
@@ -285,7 +286,12 @@
     }
   },
   "userHeader": {
-    "memberLabel": "ともマイ 成员"
+    "memberLabel": "ともマイ 成员",
+    "discordPrompt": "遇到问题了吗？或想对 tomomai ともマイ 提出功能或建议？",
+    "joinDiscord": "加入我们的社群 Discord！"
+  },
+  "publicHeader": {
+    "discordBanner": "有任何问题或建议吗？欢迎加入我们的 Discord 社群！"
   },
   "usernameSetup": {
     "title": "选择你的用户名",
