@@ -151,7 +151,8 @@
       "recommendations": "推薦歌曲",
       "plates": "名牌板",
       "map": "活動地圖",
-      "exportImage": "匯出圖片"
+      "exportImage": "匯出圖片",
+      "history": "歷史紀錄"
     },
     "playerInfo": "玩家資料",
     "rating": "Rating：{rating}",
@@ -184,7 +185,13 @@
     },
     "switchToListForAllSongs": "切換至清單或表格檢視以查看所有歌曲",
     "noDataAvailable": "無可用資料",
-    "getStartedInstructions": "點擊上方的匯入按鈕來匯入你的 maimai 資料。"
+    "getStartedInstructions": "點擊上方的匯入按鈕來匯入你的 maimai 資料。",
+    "history": {
+      "title": "Rating 歷史紀錄",
+      "ratingOverTime": "Rating 變化趨勢",
+      "noHistory": "暫無歷史紀錄",
+      "needMoreData": "至少匯入兩次資料才能檢視歷史紀錄"
+    }
   },
   "recommendations": {
     "noRecommendations": "無推薦歌曲",

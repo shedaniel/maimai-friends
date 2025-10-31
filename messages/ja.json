@@ -151,7 +151,8 @@
       "recommendations": "おすすめ楽曲",
       "plates": "ネームプレート",
       "map": "イベント",
-      "exportImage": "エクスポート"
+      "exportImage": "エクスポート",
+      "history": "履歴"
     },
     "playerInfo": "プレイヤー情報",
     "rating": "レート値：{rating}",
@@ -184,7 +185,13 @@
     },
     "switchToListForAllSongs": "すべての楽曲を見るには、リストまたは表表示に切り替えてください。",
     "noDataAvailable": "データがありません",
-    "getStartedInstructions": "上の取得ボタンからmaimaiデータを取得して使い始めましょう。"
+    "getStartedInstructions": "上の取得ボタンからmaimaiデータを取得して使い始めましょう。",
+    "history": {
+      "title": "レート値の履歴",
+      "ratingOverTime": "レート値の推移",
+      "noHistory": "レート値の履歴がありません",
+      "needMoreData": "履歴を表示するには、少なくとも2回データを取得してください"
+    }
   },
   "recommendations": {
     "noRecommendations": "おすすめがありません",

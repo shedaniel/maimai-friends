@@ -15,3 +15,11 @@ export const useNewTokenDialog = flag<boolean>({
     return true;
   },
 });
+
+export const useHistoryCard = flag<boolean>({
+  key: "historyCard",
+  defaultValue: false,
+  async decide() {
+    return false;
+  },
+});

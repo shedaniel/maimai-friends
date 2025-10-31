@@ -2,7 +2,7 @@
 
 import { Region, SnapshotWithSongs } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, Disc, Heart, Image as ImageIcon, Loader2, Map, Music, User } from "lucide-react";
+import { Database, Disc, Heart, Image as ImageIcon, Loader2, Map, Music, TrendingUp, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -10,9 +10,11 @@ import { InfoCard } from "./info-card";
 import { SongsCard } from "./songs-card";
 import { RecommendationCard } from "./recommendation-card";
 import { ExportImageCard } from "./export-image-card";
+import { HistoryCard } from "./history-card";
 
 interface DataContentProps {
   region: Region;
+  historyCard: boolean;
   selectedSnapshotData: SnapshotWithSongs | null;
   isLoading: boolean;
   privacySettings?: {
@@ -22,9 +24,11 @@ interface DataContentProps {
   };
   visitableProfileAt: string | null;
   initialTab?: string;
+  visitedBySelf: boolean;
 }
 
 export function DataContent({
+  historyCard,
   selectedSnapshotData,
   isLoading,
   privacySettings = {
@@ -34,6 +38,8 @@ export function DataContent({
   },
   visitableProfileAt,
   initialTab,
+  visitedBySelf,
+  region,
 }: DataContentProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -41,7 +47,7 @@ export function DataContent({
   const searchParams = useSearchParams();
   
   // Valid tab values
-  const allPossibleTabs = ["info", "songs", "recommendations", "plates", "map", "exportImage"];
+  const allPossibleTabs = ["info", "songs", "recommendations", "plates", "map", "exportImage", "history"];
   
   // Get initial tab from props (SSR) or search params (client)
   const getInitialTab = () => {
@@ -104,6 +110,12 @@ export function DataContent({
       value: "recommendations",
       icon: Heart,
       show: true, // Always show recommendations
+    },
+    {
+      name: t('dataContent.tabs.history'),
+      value: "history",
+      icon: TrendingUp,
+      show: visitedBySelf && historyCard,
     },
     {
       name: t('dataContent.tabs.plates'),
@@ -178,6 +190,11 @@ export function DataContent({
         <TabsContent value="recommendations" className="mt-0 flex-1 min-w-0">
           <RecommendationCard selectedSnapshotData={selectedSnapshotData} />
         </TabsContent>
+        {visitedBySelf && historyCard && (
+          <TabsContent value="history" className="mt-0 flex-1 min-w-0">
+            <HistoryCard region={region} />
+          </TabsContent>
+        )}
         {privacySettings.showPlates && (
           <TabsContent value="plates" className="mt-0 flex-1 min-w-0">
             <div className="p-8 text-center w-full h-[calc(100vh-20rem)] flex flex-col items-center justify-center">

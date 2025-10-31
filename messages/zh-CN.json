@@ -151,7 +151,8 @@
       "recommendations": "推荐歌曲",
       "plates": "名牌板",
       "map": "活动地图",
-      "exportImage": "导出图片"
+      "exportImage": "导出图片",
+      "history": "历史记录"
     },
     "playerInfo": "玩家信息",
     "rating": "R 值：{rating}",
@@ -184,7 +185,13 @@
     },
     "switchToListForAllSongs": "切换到列表或表格视图查看所有歌曲",
     "noDataAvailable": "无可用数据",
-    "getStartedInstructions": "点击上方的导入按钮来导入你的 maimai 数据。"
+    "getStartedInstructions": "点击上方的导入按钮来导入你的 maimai 数据。",
+    "history": {
+      "title": "R 值历史记录",
+      "ratingOverTime": "R 值变化趋势",
+      "noHistory": "暂无历史记录",
+      "needMoreData": "至少导入两次数据才能查看历史记录"
+    }
   },
   "recommendations": {
     "noRecommendations": "无推荐歌曲",

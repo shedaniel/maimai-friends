@@ -136,10 +136,12 @@ export const songs = sqliteTable("songs", {
   region: text("region", { enum: ["intl", "jp"] }).notNull(),
   gameVersion: integer("gameVersion").notNull(),
   addedVersion: integer("addedVersion").notNull(), // -1 for legacy versions, or actual version number for newer versions
+  b50: integer("b50", { mode: "boolean" }).notNull().default(false), // Whether this song is in user's B50
 }, (table) => ({
   songNameDifficultyTypeRegionVersionUnique: unique("song_name_difficulty_type_region_version_unique").on(table.songName, table.difficulty, table.type, table.region, table.gameVersion),
   regionGameVersionIndex: index("songs_region_gameversion_idx").on(table.region, table.gameVersion),
   songNameDifficultyIndex: index("songs_songname_difficulty_idx").on(table.songName, table.difficulty),
+  regionB50Index: index("songs_region_b50_idx").on(table.region, table.b50),
 }));
 
 export const userScores = sqliteTable("user_scores", {

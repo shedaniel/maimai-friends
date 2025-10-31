@@ -151,7 +151,8 @@
       "recommendations": "Recommended",
       "plates": "Plates",
       "map": "Events",
-      "exportImage": "Export Image"
+      "exportImage": "Export Image",
+      "history": "History"
     },
     "playerInfo": "Player Info",
     "rating": "Rating: {rating}",
@@ -184,7 +185,13 @@
     },
     "switchToListForAllSongs": "Switch to List or Table view for all songs",
     "noDataAvailable": "No Data Available",
-    "getStartedInstructions": "Get started by fetching your maimai data using the fetch button above."
+    "getStartedInstructions": "Get started by fetching your maimai data using the fetch button above.",
+    "history": {
+      "title": "Rating History",
+      "ratingOverTime": "Rating Over Time",
+      "noHistory": "No rating history available",
+      "needMoreData": "Fetch data at least twice to see your rating history"
+    }
   },
   "recommendations": {
     "noRecommendations": "No Recommendations Available",

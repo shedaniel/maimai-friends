@@ -23,9 +23,10 @@ interface DashboardProps {
   initialSnapshots: Snapshot[];
   initialSnapshotData?: SnapshotWithSongs;
   newTokenDialog: boolean;
+  historyCard: boolean;
 }
 
-export function Dashboard({ user, initialUserData, initialHasToken, initialTimezone, initialProfileSettings, initialSnapshots, initialSnapshotData, newTokenDialog }: DashboardProps) {
+export function Dashboard({ user, initialUserData, initialHasToken, initialTimezone, initialProfileSettings, initialSnapshots, initialSnapshotData, newTokenDialog, historyCard }: DashboardProps) {
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUsernameSetupOpen, setIsUsernameSetupOpen] = useState(false);
@@ -254,6 +255,8 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
           selectedSnapshotData={selectedSnapshotData || null}
           isLoading={isLoadingSnapshots}
           visitableProfileAt={userData?.publishProfile ? userData?.username : null}
+          visitedBySelf={true}
+          historyCard={historyCard}
         />
       </div>
 

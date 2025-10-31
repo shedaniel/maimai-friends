@@ -95,6 +95,8 @@ export function ProfilePage({
           privacySettings={snapshotData.privacySettings}
           visitableProfileAt={username}
           initialTab={initialTab}
+          visitedBySelf={false}
+          historyCard={false}
         />
       </div>
     </div>

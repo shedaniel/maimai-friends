@@ -1,0 +1,1 @@
+CREATE INDEX `songs_region_b50_idx` ON `songs` (`region`,`b50`);
