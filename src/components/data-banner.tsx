@@ -82,7 +82,7 @@ function SnapshotSelector({
   return (
     <Select value={selectedSnapshot || undefined} onValueChange={onSnapshotChange}>
       <SelectTrigger className="flex-1 min-w-0">
-        <SelectValue placeholder={t('dataBanner.selectSnapshot')}>
+        <SelectValue placeholder={t('dataBanner.selectSnapshot')} className="overflow-hidden">
           {selectedSnapshotData ? (
             <div className="flex flex-col items-start min-w-0 truncate text-xs">
               <span>{formatDate(selectedSnapshotData.fetchedAt, userTimezone)}</span>
