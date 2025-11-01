@@ -40,6 +40,7 @@ export async function handleFetchCommand({
       .select({
         id: user.id,
         name: user.name,
+        username: user.username,
       })
       .from(user)
       .innerJoin(account, eq(account.userId, user.id))
@@ -88,7 +89,7 @@ export async function handleFetchCommand({
         });
 
         // Poll for status updates
-        await pollForUpdates(dbUser.id, dbUser.name, region, regionName, discordUserId, startResult.sessionId, applicationId, interactionToken);
+        await pollForUpdates(dbUser.id, dbUser.username ?? dbUser.name, region, regionName, discordUserId, startResult.sessionId, applicationId, interactionToken);
       } catch (error) {
         console.error('Error in fetch process:', error);
         // Edit message with error

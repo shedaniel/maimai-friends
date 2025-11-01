@@ -12,6 +12,7 @@ import { randomUUID } from 'crypto';
 import { and, count, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
+import { flagDefinitions } from '@/lib/flags';
 
 const SIGNUP_REQUIRED_AMOUNT = 256;
 
@@ -1697,6 +1698,18 @@ export const userRouter = router({
         originalRating: originalSnapshot.rating,
         newRating: newRating,
       };
+    }),
+
+  // Get user-selectable flags
+  getUserSelectableFlags: publicProcedure
+    .query(async () => {
+      const selectableFlags: Record<string, any> = {};
+      for (const [key, def] of Object.entries(flagDefinitions)) {
+        if (def.userSelectable) {
+          selectableFlags[key] = def;
+        }
+      }
+      return { flags: selectableFlags };
     }),
 
 

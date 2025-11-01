@@ -55,6 +55,7 @@ const nextConfig: NextConfig = {
     '/api/export-image': ['./public/res/**/*'],
     '/api/admin/cache_images': ['./public/res/**/*'],
   },
+  devIndicators: false,
 };
 
 const withVercelToolbar = withVercelToolbarPlugin();

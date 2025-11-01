@@ -1,7 +1,8 @@
 import { DataContent } from "@/components/data-content";
 import { PublicDataBanner } from "@/components/public-data-banner";
 import { PublicHeader } from "@/components/public-header";
-import { Difficulty, Region, SnapshotWithSongs, SongWithScore, ProfileData } from "@/lib/types";
+import { defaultFlags } from "@/lib/flags";
+import { Difficulty, ProfileData, Region, SnapshotWithSongs, SongWithScore } from "@/lib/types";
 
 interface SnapshotData {
   snapshot: {
@@ -96,7 +97,7 @@ export function ProfilePage({
           visitableProfileAt={username}
           initialTab={initialTab}
           visitedBySelf={false}
-          historyCard={false}
+          flags={defaultFlags}
         />
       </div>
     </div>

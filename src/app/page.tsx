@@ -2,8 +2,9 @@ import { AuthHandler } from "@/components/auth-handler";
 import { Dashboard } from "@/components/dashboard";
 import { LoginScreen } from "@/components/login-screen";
 import { getServerSession } from "@/lib/auth-server";
+import { applyFlagOverrides, useFlags } from "@/lib/flags";
 import { createServerSideTRPC } from "@/lib/trpc-server";
-import { useHistoryCard, useNewTokenDialog } from "@/lib/flags";
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 
 // Force dynamic rendering since we need to check authentication
@@ -12,10 +13,13 @@ export const dynamic = 'force-dynamic';
 export default async function Home() {
   const session = await getServerSession();
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const newTokenDialog = await useNewTokenDialog();
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const historyCard = await useHistoryCard();
-
+  let flags = await useFlags();
+  
+  // Apply flag overrides from cookies
+  const cookieStore = await cookies();
+  const flagOverridesCookie = cookieStore.get("flagOverrides")?.value;
+  flags = applyFlagOverrides(flags, flagOverridesCookie);
+  
   if (!session) {
     // Fetch signup requirements on the server
     const trpc = await createServerSideTRPC();
@@ -85,8 +89,7 @@ export default async function Home() {
       initialProfileSettings={profileSettings}
       initialSnapshots={snapshotsData.snapshots}
       initialSnapshotData={initialSnapshotData}
-      newTokenDialog={newTokenDialog}
-      historyCard={historyCard}
+      flags={flags}
     />
   );
 }

@@ -25,6 +25,7 @@
     "invitations": "邀請",
     "discord": "Discord",
     "about": "關於",
+    "experiments": "實驗功能",
     "comingSoon": "敬請期待……"
   },
   "auth": {
@@ -198,11 +199,20 @@
     "noRecommendations": "無推薦歌曲",
     "allOptimal": "沒有其他能提升 Rating 的歌曲！繼續加油！",
     "description": "根據你目前的成績推薦可提升 Rating 的歌曲。",
+    "filterButton": "篩選",
     "filters": {
       "all": "全部",
       "best": "B15/B35 內",
       "new": "新歌",
       "old": "舊歌"
+    },
+    "filterCategories": {
+      "difficulty": "難度",
+      "level": "等級",
+      "type": "類型",
+      "targetRating": "目標分數",
+      "achievement": "達成率",
+      "version": "版本"
     }
   },
   "tokenDialog": {

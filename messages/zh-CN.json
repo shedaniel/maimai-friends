@@ -25,6 +25,7 @@
     "invitations": "邀请",
     "discord": "Discord",
     "about": "关于",
+    "experiments": "实验",
     "comingSoon": "敬请期待..."
   },
   "auth": {
@@ -198,11 +199,20 @@
     "noRecommendations": "无推荐歌曲",
     "allOptimal": "没有其他能提升 R 值的歌曲了。做得很好！",
     "description": "根据你当前的成绩计算出可提升 R 值的歌曲。",
+    "filterButton": "筛选",
     "filters": {
       "all": "全部",
       "best": "B15/B35 内",
       "new": "新歌",
       "old": "旧歌"
+    },
+    "filterCategories": {
+      "difficulty": "难度",
+      "level": "等级",
+      "type": "类型",
+      "targetRating": "目标分数",
+      "achievement": "达成率",
+      "version": "版本"
     }
   },
   "tokenDialog": {

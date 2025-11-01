@@ -39,6 +39,7 @@ export async function handleProfileCommand({
       .select({
         id: user.id,
         name: user.name,
+        username: user.username,
       })
       .from(user)
       .innerJoin(account, eq(account.userId, user.id))
@@ -106,7 +107,7 @@ export async function handleProfileCommand({
           applicationId,
           interactionToken,
           title: `🎯 ${regionName} Region Rating`,
-          username: dbUser.name,
+          username: dbUser.username ?? dbUser.name,
         });
       } catch (error) {
         console.error('Error generating profile image:', error);

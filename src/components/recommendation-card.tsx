@@ -4,11 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { addRatingsAndSort, getRatingFactor, SongWithRating, splitSongs } from "@/lib/rating-calculator";
 import { SnapshotWithSongs } from "@/lib/types";
 import { cn, createSafeMaimaiImageUrl } from "@/lib/utils";
-import { Heart, Target, Zap } from "lucide-react";
+import { Award, Calendar, Disc3, Filter, Hash, Heart, Layers, Target, X, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Select, SelectContent, SelectTrigger, SelectItem, SelectValue } from "./ui/select-friendly";
+import { Flags } from "@/lib/flags";
+import { Button } from "./ui/button";
+import { motion, AnimatePresence } from "motion/react";
 
 interface RecommendationData {
   song: SongWithRating;
@@ -33,6 +36,127 @@ const ACCURACY_VALUES = [
     100.5,
     101.0,
 ]
+
+type FilterType = 
+  | { type: "difficulty"; value: "basic" | "advanced" | "expert" | "master" | "remaster" }
+  | { type: "level"; value: string }
+  | { type: "type"; value: "std" | "dx" }
+  | { type: "target"; value: string }
+  | { type: "achievement"; value: string }
+  | { type: "version"; value: "new" | "old" };
+
+const DIFFICULTY_OPTIONS = ["basic", "advanced", "expert", "master", "remaster"] as const;
+const TYPE_OPTIONS = ["std", "dx"] as const;
+const VERSION_OPTIONS = [
+  { value: "new", label: "New Songs" },
+  { value: "old", label: "Old Songs" }
+] as const;
+const ACHIEVEMENT_OPTIONS = [
+  { value: "97.0", label: "S" },
+  { value: "98.0", label: "S+" },
+  { value: "99.0", label: "SS" },
+  { value: "99.5", label: "SS+" },
+  { value: "100.0", label: "SSS" },
+  { value: "100.5", label: "SSS+" },
+  { value: "101.0", label: "AP" }
+] as const;
+
+function generateLevelOptions(songs: SongWithRating[]): string[] {
+  const levels = new Set<string>();
+  songs.forEach(song => {
+    const level = song.levelPrecise / 10;
+    const isPlus = level % 1 >= 0.6;
+    const baseLevel = Math.floor(level);
+    levels.add(isPlus ? `${baseLevel}+` : `${baseLevel}`);
+  });
+  return Array.from(levels).sort((a, b) => {
+    const aNum = parseFloat(a.replace('+', '.5'));
+    const bNum = parseFloat(b.replace('+', '.5'));
+    return aNum - bNum;
+  });
+}
+
+function generateTargetOptions(recommendations: RecommendationData[]): string[] {
+  const targets = new Set<number>();
+  recommendations.forEach(rec => {
+    const rangeStart = Math.floor(rec.targetRating / 10) * 10;
+    targets.add(rangeStart);
+  });
+  return Array.from(targets).sort((a, b) => a - b).map(t => `${t} - ${t + 9}`);
+}
+
+function getFilterLabel(filter: FilterType, t: ReturnType<typeof useTranslations>): string {
+  switch (filter.type) {
+    case "difficulty":
+      const difficultyMap = {
+        basic: "Easy",
+        advanced: "Advanced",
+        expert: "Expert",
+        master: "Master",
+        remaster: "Re:Master"
+      };
+      return difficultyMap[filter.value as keyof typeof difficultyMap] || filter.value;
+    case "level":
+      return `Lv ${filter.value}`;
+    case "type":
+      return filter.value.toUpperCase();
+    case "target":
+      return filter.value;
+    case "achievement": {
+      const achievement = ACHIEVEMENT_OPTIONS.find(opt => opt.value === filter.value);
+      return achievement ? achievement.label : filter.value;
+    }
+    case "version":
+      return filter.value === "new" ? t('recommendations.filters.new') : t('recommendations.filters.old');
+  }
+}
+
+function getFilterKey(filter: FilterType): string {
+  return `${filter.type}-${filter.value}`;
+}
+
+function applyFilters(recommendations: RecommendationData[], filters: FilterType[]): RecommendationData[] {
+  if (filters.length === 0) return recommendations;
+
+  // Group filters by category
+  const filtersByCategory = filters.reduce((acc, filter) => {
+    if (!acc[filter.type]) {
+      acc[filter.type] = [];
+    }
+    acc[filter.type].push(filter);
+    return acc;
+  }, {} as Record<string, FilterType[]>);
+
+  return recommendations.filter(rec => {
+    // For each category, at least one filter must match (OR within category)
+    // All categories must have a match (AND across categories)
+    return Object.entries(filtersByCategory).every(([category, categoryFilters]) => {
+      return categoryFilters.some(filter => {
+        switch (filter.type) {
+          case "difficulty":
+            return rec.song.difficulty === filter.value;
+          case "level": {
+            const level = rec.song.levelPrecise / 10;
+            const isPlus = level % 1 >= 0.6;
+            const baseLevel = Math.floor(level);
+            const levelStr = isPlus ? `${baseLevel}+` : `${baseLevel}`;
+            return levelStr === filter.value;
+          }
+          case "type":
+            return rec.song.type === filter.value;
+          case "target": {
+            const [min, max] = filter.value.split(' - ').map(Number);
+            return rec.targetRating >= min && rec.targetRating <= max;
+          }
+          case "achievement":
+            return rec.targetAccuracy === parseFloat(filter.value);
+          case "version":
+            return rec.category === filter.value;
+        }
+      });
+    });
+  });
+}
 
 function generateRecommendations(songsWithRating: SongWithRating[], version: number): RecommendationData[] {
   // Get B15/B35 and minimum required ratings
@@ -116,6 +240,203 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
     
     return b.efficiency - a.efficiency;
   });
+}
+
+interface FilterPanelProps {
+  filters: FilterType[];
+  onAddFilter: (filter: FilterType) => void;
+  onRemoveFilter: (filter: FilterType) => void;
+  availableLevels: string[];
+  availableTargets: string[];
+  allRecommendations: RecommendationData[];
+}
+
+function FilterPanel({ filters, onAddFilter, onRemoveFilter, availableLevels, availableTargets, allRecommendations }: FilterPanelProps) {
+  const t = useTranslations();
+  
+  const wouldYieldResults = (testFilter: FilterType): boolean => {
+    // First check if the filter alone yields any results (remove useless filters)
+    const aloneResults = applyFilters(allRecommendations, [testFilter]).length > 0;
+    if (!aloneResults) return false;
+    
+    // Then check if it yields results with existing filters
+    const testFilters = [...filters, testFilter];
+    return applyFilters(allRecommendations, testFilters).length > 0;
+  };
+
+  const getAvailableOptions = (category: string) => {
+    const activeFilters = filters.filter(f => f.type === category).map(f => f.value);
+    
+    let options: Array<{ value: string; label: string }> = [];
+    
+    switch (category) {
+      case "difficulty":
+        const difficultyMap = {
+          basic: "Easy",
+          advanced: "Advanced",
+          expert: "Expert",
+          master: "Master",
+          remaster: "Re:Master"
+        };
+        options = DIFFICULTY_OPTIONS.filter(opt => !activeFilters.includes(opt)).map(opt => ({
+          value: opt,
+          label: difficultyMap[opt as keyof typeof difficultyMap]
+        }));
+        break;
+      case "level":
+        options = availableLevels.filter(opt => !activeFilters.includes(opt)).map(opt => ({
+          value: opt,
+          label: `Lv ${opt}`
+        }));
+        break;
+      case "type":
+        options = TYPE_OPTIONS.filter(opt => !activeFilters.includes(opt)).map(opt => ({
+          value: opt,
+          label: opt.toUpperCase()
+        }));
+        break;
+      case "target":
+        options = availableTargets.filter(opt => !activeFilters.includes(opt)).map(opt => ({
+          value: opt,
+          label: opt
+        }));
+        break;
+      case "achievement":
+        options = ACHIEVEMENT_OPTIONS.filter(opt => !activeFilters.includes(opt.value)).map(opt => ({
+          value: opt.value,
+          label: opt.label
+        }));
+        break;
+      case "version":
+        options = VERSION_OPTIONS.filter(opt => !activeFilters.includes(opt.value)).map(opt => ({
+          value: opt.value,
+          label: opt.value === "new" ? t('recommendations.filters.new') : t('recommendations.filters.old')
+        }));
+        break;
+      default:
+        return [];
+    }
+
+    // Filter to only show options that would yield results
+    return options.filter(opt => 
+      wouldYieldResults({ type: category, value: opt.value } as FilterType)
+    );
+  };
+
+  const handleSelectValue = (category: string, value: string) => {
+    const filter: FilterType = { type: category, value: value } as FilterType;
+    onAddFilter(filter);
+  };
+
+  const categories = [
+    { value: "difficulty", label: t('recommendations.filterCategories.difficulty'), icon: Layers },
+    { value: "level", label: t('recommendations.filterCategories.level'), icon: Hash },
+    { value: "type", label: t('recommendations.filterCategories.type'), icon: Disc3 },
+    { value: "target", label: t('recommendations.filterCategories.targetRating'), icon: Target },
+    { value: "achievement", label: t('recommendations.filterCategories.achievement'), icon: Award },
+    { value: "version", label: t('recommendations.filterCategories.version'), icon: Calendar }
+  ];
+
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ 
+        height: { 
+          duration: 0.3,
+          ease: [0.4, 0, 0.2, 1] // cubic-bezier easing
+        },
+        opacity: { 
+          duration: 0.25,
+          ease: "easeInOut"
+        }
+      }}
+    >
+      <motion.div
+        className="pt-4 space-y-3"
+        initial={{ y: -10 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          duration: 0.3,
+          ease: [0.4, 0, 0.2, 1]
+        }}
+      >
+        {/* Horizontal layout for filters and add buttons */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Active Filters */}
+          <AnimatePresence mode="popLayout">
+            {filters.map((filter, index) => (
+              <motion.div
+                key={getFilterKey(filter)}
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "auto", opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ 
+                  duration: 0.2,
+                  ease: [0.4, 0, 0.2, 1],
+                  delay: index * 0.03
+                }}
+                layout
+              >
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="gap-2 whitespace-nowrap"
+                  onClick={() => onRemoveFilter(filter)}
+                >
+                  {getFilterLabel(filter, t)}
+                  <X className="h-3 w-3" />
+                </Button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Add Filter Buttons */}
+          <AnimatePresence mode="popLayout">
+            {categories.map((category, index) => {
+              const options = getAvailableOptions(category.value);
+              if (options.length === 0) return null;
+
+              const Icon = category.icon;
+
+              return (
+                <motion.div
+                  key={category.value}
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: "auto", opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ 
+                    duration: 0.25,
+                    ease: [0.4, 0, 0.2, 1],
+                    delay: 0.1 + (index * 0.05)
+                  }}
+                  layout
+                >
+                  <Select
+                    value=""
+                    onValueChange={(value) => handleSelectValue(category.value, value)}
+                  >
+                    <SelectTrigger className="w-auto h-8 min-w-[100px] whitespace-nowrap gap-1">
+                      <Icon className="h-4 w-4" />
+                      <SelectValue placeholder={category.label} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
 }
 
 function RecommendationRow({ recommendation }: { recommendation: RecommendationData }) {
@@ -202,28 +523,59 @@ function RecommendationRow({ recommendation }: { recommendation: RecommendationD
   );
 }
 
-export function RecommendationCard({ selectedSnapshotData }: { selectedSnapshotData: SnapshotWithSongs }) {
+export function RecommendationCard({ selectedSnapshotData, flags }: { selectedSnapshotData: SnapshotWithSongs, flags: Flags }) {
   const t = useTranslations();
-  const [filterCategory, setFilterCategory] = useState<"all" | "new" | "old" | "best">("all");
+  const [filterCategory, setFilterCategory] = useState<"all" | "new" | "old" | "best">(
+    flags.recommendationFilters ? "all" : "all"
+  );
+  const [advancedFilters, setAdvancedFilters] = useState<FilterType[]>([]);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const hasMountedRef = useRef(false);
+
+  useEffect(() => {
+    hasMountedRef.current = true;
+  }, []);
 
   const { songs, snapshot } = selectedSnapshotData;
   const songsWithRating: SongWithRating[] = addRatingsAndSort(songs, snapshot.gameVersion);
   
   const recommendations = generateRecommendations(songsWithRating, snapshot.gameVersion);
   
-  // Filter recommendations based on selected category
-  const filteredRecommendations = recommendations.filter(rec => {
-    switch (filterCategory) {
-      case "new":
-        return rec.category === "new";
-      case "old":
-        return rec.category === "old";
-      case "best":
-        return rec.isInBest;
-      default:
-        return true;
-    }
-  }).slice(0, 250);
+  // Generate available options for filters
+  const availableLevels = generateLevelOptions(songsWithRating);
+  const availableTargets = generateTargetOptions(recommendations);
+
+  const handleAddFilter = (filter: FilterType) => {
+    setAdvancedFilters(prev => [...prev, filter]);
+  };
+
+  const handleRemoveFilter = (filter: FilterType) => {
+    setAdvancedFilters(prev => prev.filter(f => getFilterKey(f) !== getFilterKey(filter)));
+  };
+  
+  // Filter recommendations based on selected category or advanced filters
+  let filteredRecommendations = recommendations;
+  
+  if (flags.recommendationFilters) {
+    // Use advanced filters
+    filteredRecommendations = applyFilters(recommendations, advancedFilters);
+  } else {
+    // Use old category filter
+    filteredRecommendations = recommendations.filter(rec => {
+      switch (filterCategory) {
+        case "new":
+          return rec.category === "new";
+        case "old":
+          return rec.category === "old";
+        case "best":
+          return rec.isInBest;
+        default:
+          return true;
+      }
+    });
+  }
+  
+  filteredRecommendations = filteredRecommendations.slice(0, 100);
 
   if (recommendations.length === 0) {
     return (
@@ -255,35 +607,84 @@ export function RecommendationCard({ selectedSnapshotData }: { selectedSnapshotD
             <Heart className="h-5 w-5 text-pink-500" />
             {t('dataContent.tabs.recommendations')} ({filteredRecommendations.length})
           </CardTitle>
-          <Select value={filterCategory} onValueChange={(value) => setFilterCategory(value as typeof filterCategory)}>
-            <SelectTrigger className="w-40 h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {t('recommendations.filters.all')}
-              </SelectItem>
-              <SelectItem value="best">
-                {t('recommendations.filters.best')}
-              </SelectItem>
-              <SelectItem value="new">
-                {t('recommendations.filters.new')}
-              </SelectItem>
-              <SelectItem value="old">
-                {t('recommendations.filters.old')}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            {flags.recommendationFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilterPanel(!showFilterPanel)}
+                className={cn(
+                  "gap-2",
+                  showFilterPanel && "bg-accent"
+                )}
+              >
+                <Filter className="h-4 w-4" />
+                {t('recommendations.filterButton')}
+              </Button>
+            )}
+            {!flags.recommendationFilters && (
+              <Select value={filterCategory} onValueChange={(value) => setFilterCategory(value as typeof filterCategory)}>
+                <SelectTrigger className="w-40 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    {t('recommendations.filters.all')}
+                  </SelectItem>
+                  <SelectItem value="best">
+                    {t('recommendations.filters.best')}
+                  </SelectItem>
+                  <SelectItem value="new">
+                    {t('recommendations.filters.new')}
+                  </SelectItem>
+                  <SelectItem value="old">
+                    {t('recommendations.filters.old')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </div>
         <div className="text-sm text-muted-foreground">
           {t('recommendations.description')}
         </div>
+        
+        {/* Advanced Filter Panel */}
+        {flags.recommendationFilters && (
+          <AnimatePresence>
+            {showFilterPanel && (
+              <FilterPanel
+                filters={advancedFilters}
+                onAddFilter={handleAddFilter}
+                onRemoveFilter={handleRemoveFilter}
+                availableLevels={availableLevels}
+                availableTargets={availableTargets}
+                allRecommendations={recommendations}
+              />
+            )}
+          </AnimatePresence>
+        )}
       </CardHeader>
       <CardContent>
         <div className="divide-y divide-dashed divide-gray-200">
-          {filteredRecommendations.map(rec => (
-            <RecommendationRow key={`${rec.song.songId}-${rec.song.difficulty}`} recommendation={rec} />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {filteredRecommendations.map((rec) => (
+              <motion.div
+                key={`${rec.song.songId}-${rec.song.difficulty}`}
+                initial={hasMountedRef.current ? { opacity: 0, height: 0 } : false}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{
+                  duration: 0.2,
+                  ease: [0.4, 0, 0.2, 1],
+                }}
+                layout
+                className="overflow-hidden"
+              >
+                <RecommendationRow recommendation={rec} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </CardContent>
     </Card>
