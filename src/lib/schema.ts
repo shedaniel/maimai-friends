@@ -136,12 +136,10 @@ export const songs = sqliteTable("songs", {
   region: text("region", { enum: ["intl", "jp"] }).notNull(),
   gameVersion: integer("gameVersion").notNull(),
   addedVersion: integer("addedVersion").notNull(), // -1 for legacy versions, or actual version number for newer versions
-  b50: integer("b50", { mode: "boolean" }).notNull().default(false), // Whether this song is in user's B50
 }, (table) => ({
   songNameDifficultyTypeRegionVersionUnique: unique("song_name_difficulty_type_region_version_unique").on(table.songName, table.difficulty, table.type, table.region, table.gameVersion),
   regionGameVersionIndex: index("songs_region_gameversion_idx").on(table.region, table.gameVersion),
   songNameDifficultyIndex: index("songs_songname_difficulty_idx").on(table.songName, table.difficulty),
-  regionB50Index: index("songs_region_b50_idx").on(table.region, table.b50),
 }));
 
 export const userScores = sqliteTable("user_scores", {
@@ -152,8 +150,9 @@ export const userScores = sqliteTable("user_scores", {
   dxScore: integer("dxScore").notNull(),
   fc: text("fc", { enum: ["none", "fc", "fc+", "ap", "ap+"] }).notNull(),
   fs: text("fs", { enum: ["none", "sync", "fs", "fs+", "fdx", "fdx+"] }).notNull(),
+  rank: integer("rank"), // Rank of the song in the snapshot (0-based). null = uncalculated, 0-49 = B50, 50+ = not in B50
 }, (table) => ({
-  snapshotIdIndex: index("user_scores_snapshotid_idx").on(table.snapshotId),
+  snapshotIdRankIndex: index("user_scores_snapshotid_rank_idx").on(table.snapshotId, table.rank),
   snapshotIdSongIdIndex: index("user_scores_snapshotid_songid_idx").on(table.snapshotId, table.songId),
   songIdIndex: index("user_scores_songid_idx").on(table.songId),
 }));

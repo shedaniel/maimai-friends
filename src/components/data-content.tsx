@@ -214,7 +214,7 @@ export function DataContent({
           </TabsContent>
         )}
         <TabsContent value="exportImage" className="mt-0 flex-1 min-w-0">
-          <ExportImageCard selectedSnapshotData={selectedSnapshotData} visitableProfileAt={visitableProfileAt} />
+          <ExportImageCard selectedSnapshotData={selectedSnapshotData} />
         </TabsContent>
       </Tabs>
     )

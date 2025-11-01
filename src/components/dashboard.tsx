@@ -59,7 +59,6 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
     copySnapshot,
     isCopying,
     isLoading: isLoadingSnapshots,
-    resetSnapshots,
     refreshSnapshots,
   } = useSnapshots(selectedRegion, true, {
     initialSnapshots,
@@ -71,7 +70,6 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
     currentSession,
     startDataFetch,
     startAutomaticFetch,
-    resetFetchSession,
     startSessionPolling,
     stopSessionPolling,
   } = useFetchSession(refreshSnapshots);

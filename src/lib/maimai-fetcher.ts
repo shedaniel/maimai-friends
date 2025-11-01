@@ -8,6 +8,8 @@ import { Agent } from "undici";
 import { FETCH_STATES, getStateForDifficulty } from "./fetch-states";
 import { appendFetchState } from "./fetch-states-server";
 import { normalizeName } from "./name-utils";
+import { splitSongs } from "./rating-calculator";
+import { SongWithScore } from "./types";
 
 export const JP_AGENT = new Agent({
   connect: {
@@ -1195,6 +1197,94 @@ async function createUserSnapshot(
   return snapshotId;
 }
 
+/**
+ * Adds rank field to user score inserts based on rating calculation.
+ * Ranks are assigned as: 0-14 (new B15), 15-49 (old B35), 50+ (remaining)
+ */
+async function withRank(
+  scoreInserts: typeof userScores.$inferInsert[],
+  region: "intl" | "jp",
+  gameVersion: number
+): Promise<typeof userScores.$inferInsert[]> {
+  if (scoreInserts.length === 0) {
+    return scoreInserts;
+  }
+
+  console.log(`Calculating ranks for ${scoreInserts.length} scores...`);
+
+  // Get full song data for all songs
+  const fullSongs = await db.query.songs.findMany({
+    where: and(
+      eq(songs.region, region),
+      eq(songs.gameVersion, gameVersion)
+    ),
+  });
+
+  const fullSongMap = new Map(fullSongs.map(s => [s.id, s]));
+
+  // Convert score inserts to SongWithScore format for rating calculation
+  const songsForRanking: SongWithScore[] = [];
+  for (const scoreInsert of scoreInserts) {
+    const fullSong = fullSongMap.get(scoreInsert.songId);
+    if (!fullSong) continue;
+
+    songsForRanking.push({
+      songId: fullSong.id,
+      songName: fullSong.songName,
+      artist: fullSong.artist,
+      cover: fullSong.cover,
+      difficulty: fullSong.difficulty as any,
+      level: fullSong.level,
+      levelPrecise: fullSong.levelPrecise,
+      type: fullSong.type as any,
+      genre: fullSong.genre,
+      addedVersion: fullSong.addedVersion,
+      achievement: scoreInsert.achievement,
+      dxScore: scoreInsert.dxScore,
+      fc: scoreInsert.fc as any,
+      fs: scoreInsert.fs as any,
+    });
+  }
+
+  // Calculate rankings using splitSongs
+  const { newSongsB15, oldSongsB35, newSongsRemaining, oldSongsRemaining } = splitSongs(songsForRanking, gameVersion);
+
+  // Create a map of songId+difficulty -> rank
+  const rankMap = new Map<string, number>();
+
+  // New B15: ranks 0-14
+  for (let i = 0; i < newSongsB15.length; i++) {
+    const song = newSongsB15[i];
+    rankMap.set(`${song.songId}-${song.difficulty}`, i);
+  }
+
+  // Old B35: ranks 15-49
+  for (let i = 0; i < oldSongsB35.length; i++) {
+    const song = oldSongsB35[i];
+    rankMap.set(`${song.songId}-${song.difficulty}`, 15 + i);
+  }
+
+  // Remaining: merge and sort by rating desc, start from rank 50
+  const remainingSongs = [...newSongsRemaining, ...oldSongsRemaining].sort((a, b) => b.rating - a.rating);
+  for (let i = 0; i < remainingSongs.length; i++) {
+    const song = remainingSongs[i];
+    rankMap.set(`${song.songId}-${song.difficulty}`, 50 + i);
+  }
+
+  // Assign ranks to score inserts
+  for (const scoreInsert of scoreInserts) {
+    const fullSong = fullSongMap.get(scoreInsert.songId);
+    if (fullSong) {
+      const rank = rankMap.get(`${fullSong.id}-${fullSong.difficulty}`);
+      scoreInsert.rank = rank ?? null;
+    }
+  }
+
+  console.log(`Ranks calculated. B15: ${newSongsB15.length}, B35: ${oldSongsB35.length}, Remaining: ${remainingSongs.length}`);
+
+  return scoreInserts;
+}
+
 async function insertUserScores(
   snapshotId: string,
   region: "intl" | "jp",
@@ -1285,7 +1375,7 @@ async function insertUserScores(
   
   if (scoreInserts.length > 0) {
     console.log(`Batch inserting ${scoreInserts.length} user scores`);
-    await db.insert(userScores).values(scoreInserts);
+    await db.insert(userScores).values(await withRank(scoreInserts, region, gameVersion));
     console.log(`Successfully inserted ${scoreInserts.length} user scores`);
   } else {
     console.warn("No valid scores to insert");
