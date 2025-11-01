@@ -1095,8 +1095,8 @@ function parseEventPeriod(periodStr: string | null): [number, number] | null {
   ] = match;
   
   try {
-    const startDate = new Date(`${startYear}-${startMonth}-${startDay}T${startHour}:${startMin}:00Z`);
-    const endDate = new Date(`${endYear}-${endMonth}-${endDay}T${endHour}:${endMin}:00Z`);
+    const startDate = new Date(`${startYear}-${startMonth}-${startDay}T${startHour}:${startMin}:00+09:00`);
+    const endDate = new Date(`${endYear}-${endMonth}-${endDay}T${endHour}:${endMin}:00+09:00`);
     
     const startTimestamp = startDate.getTime();
     const endTimestamp = endDate.getTime();
