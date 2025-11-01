@@ -157,6 +157,21 @@ export const userScores = sqliteTable("user_scores", {
   songIdIndex: index("user_scores_songid_idx").on(table.songId),
 }));
 
+export const userEvents = sqliteTable("user_events", {
+  id: text("id").primaryKey(),
+  snapshotId: text("snapshotId").notNull().references(() => userSnapshots.id, { onDelete: "cascade" }),
+  eventType: text("eventType", { enum: ["area", "eventArea"] }).notNull(), // area or eventArea
+  name: text("name").notNull(),
+  currentDistance: integer("currentDistance").notNull(),
+  nextRewardDistance: integer("nextRewardDistance"), // nullable
+  state: text("state", { enum: ["not_started", "in_progress", "completed"] }).notNull(),
+  imageUrl: text("imageUrl").notNull(),
+  eventPeriodStart: integer("eventPeriodStart", { mode: "timestamp" }), // nullable for area events
+  eventPeriodEnd: integer("eventPeriodEnd", { mode: "timestamp" }), // nullable for area events
+}, (table) => ({
+  snapshotIdIndex: index("user_events_snapshotid_idx").on(table.snapshotId),
+}));
+
 export const detailedScores = sqliteTable("detailed_scores", {
   id: text("id").primaryKey(),
   snapshotId: text("snapshotId").notNull().references(() => userSnapshots.id, { onDelete: "cascade" }),

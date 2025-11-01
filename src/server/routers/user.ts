@@ -624,10 +624,11 @@ export const userRouter = router({
     .input(z.object({
       region: regionSchema,
       token: z.string().optional(), // Token is now optional - we'll use saved token if not provided
+      flags: z.string().array().default([]), // Add flags parameter
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        return await startFetchServer(ctx.session.user.id, input.region as Region, input.token);
+        return await startFetchServer(ctx.session.user.id, input.region as Region, input.token, input.flags);
       } catch (error) {
         if (error instanceof Error) {
           if (error.message.includes('No token provided')) {
