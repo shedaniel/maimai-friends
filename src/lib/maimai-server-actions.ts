@@ -59,11 +59,39 @@ export async function startFetchServer(userId: string, region: Region, token?: s
         eq(fetchSessions.region, region),
         eq(fetchSessions.status, "pending")
       )
-    )
-    .limit(1);
+    );
 
   if (existingFetch.length > 0) {
-    throw new Error('A fetch is already in progress for this region');
+    const threeMinutes = 3 * 60 * 1000; // 3 minutes in milliseconds
+    const now = Date.now();
+    
+    // Check if any pending fetches are older than 3 minutes
+    const oldFetches = existingFetch.filter(
+      fetch => now - fetch.startedAt.getTime() > threeMinutes
+    );
+    
+    if (oldFetches.length > 0) {
+      // Mark old pending fetches as failed due to timeout
+      for (const oldFetch of oldFetches) {
+        await db
+          .update(fetchSessions)
+          .set({
+            status: "failed",
+            completedAt: new Date(),
+            errorMessage: "Fetch timed out after 3 minutes",
+          })
+          .where(eq(fetchSessions.id, oldFetch.id));
+      }
+    }
+    
+    // Check if there are still any recent pending fetches
+    const recentPendingFetches = existingFetch.filter(
+      fetch => now - fetch.startedAt.getTime() <= threeMinutes
+    );
+    
+    if (recentPendingFetches.length > 0) {
+      throw new Error('A fetch is already in progress for this region');
+    }
   }
 
   // Check rate limit (5 requests per 5 minutes)
@@ -134,7 +162,18 @@ export async function startFetchServer(userId: string, region: Region, token?: s
   // Start the actual data fetch in the background
   (async () => {
     try {
-      await fetchMaimaiData(userId, region, fetchSessionId);
+      // Create a timeout promise (2 minutes)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Fetch operation timed out after 2 minutes'));
+        }, 2 * 60 * 1000); // 2 minutes in milliseconds
+      });
+
+      // Race between the actual fetch and the timeout
+      await Promise.race([
+        fetchMaimaiData(userId, region, fetchSessionId),
+        timeoutPromise
+      ]);
 
       // Mark fetch as completed
       await db
