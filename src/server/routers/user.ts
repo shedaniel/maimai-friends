@@ -342,7 +342,6 @@ export const userRouter = router({
         .where(
           and(
             eq(songs.region, input.region),
-            eq(songs.b50, true), // Only fetch B50 songs for efficiency
             // Use inArray to get all scores for all snapshots at once
             inArray(userScores.snapshotId, allSnapshotIds)
           )
