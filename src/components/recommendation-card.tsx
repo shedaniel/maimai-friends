@@ -226,7 +226,6 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
         category: isNew ? "new" : "old",
         efficiency,
       });
-      break
     }
   });
 
@@ -575,7 +574,13 @@ export function RecommendationCard({ selectedSnapshotData, flags }: { selectedSn
     });
   }
   
-  filteredRecommendations = filteredRecommendations.slice(0, 100);
+  // Deduplicate recommendations by songId and difficulty
+  filteredRecommendations = filteredRecommendations.filter((rec, index, self) =>
+    index === self.findIndex((t) => t.song.songId === rec.song.songId && t.song.difficulty === rec.song.difficulty)
+  );
+  
+  // Limit the number of recommendations to 200
+  filteredRecommendations = filteredRecommendations.slice(0, 200);
 
   if (recommendations.length === 0) {
     return (
