@@ -233,6 +233,7 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
         onRegionChange={handleRegionChange}
         onLogout={handleLogout}
         onSettings={handleSettings}
+        flags={flags}
       />
 
       <div className="space-y-6">

@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User as UserIcon, Info, Users } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, Info, Users, Beaker } from "lucide-react";
 import Image from "next/image";
 import { RegionSwitcher } from "@/components/region-switcher";
 import { Region, User } from "@/lib/types";
@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import { user } from "@/lib/schema";
 import { AdminDialog } from "./dialogs/admin-dialog";
 import { LocaleSwitcher } from "./locale-switcher";
+import { ExperimentsDialog } from "./experiments-dialog";
+import { Flags } from "@/lib/flags";
 
 const SIGNUP_TYPE = process.env.NEXT_PUBLIC_ACCOUNT_SIGNUP_TYPE || 'disabled';
 const APPLICATION_ID = process.env.NEXT_PUBLIC_DISCORD_APPLICATION_ID;
@@ -34,14 +36,16 @@ interface UserHeaderProps {
   onRegionChange: (region: Region) => void;
   onLogout: () => void;
   onSettings: () => void;
+  flags?: Flags;
 }
 
-export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onLogout, onSettings }: UserHeaderProps) {
+export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onLogout, onSettings, flags }: UserHeaderProps) {
   const isMobile = useMediaQuery('(max-width: 640px)');
   const t = useTranslations();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false);
+  const [experimentsOpen, setExperimentsOpen] = useState(false);
 
   const handleDiscordInvite = async () => {
     try {
@@ -157,6 +161,10 @@ export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onL
                   <DropdownMenuSeparator />
                 </>
               )}
+              <DropdownMenuItem onClick={() => setExperimentsOpen(true)}>
+                <Beaker className="mr-2 h-4 w-4" />
+                <span>{t('common.experiments')}</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onSettings}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>{t('common.settings')}</span>
@@ -173,6 +181,7 @@ export function UserHeader({ user, userRole, selectedRegion, onRegionChange, onL
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
       <InvitesDialog isOpen={invitesOpen} onOpenChange={setInvitesOpen} />
       <AdminDialog open={adminOpen} onOpenChange={setAdminOpen} />
+      <ExperimentsDialog open={experimentsOpen} onOpenChange={setExperimentsOpen} initialFlags={flags} />
     </>
   );
 } 

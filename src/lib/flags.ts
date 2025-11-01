@@ -5,6 +5,14 @@ export interface Flags {
   newTokenDialog: boolean;
   historyCard: boolean;
   recommendationFilters: boolean;
+  statsCard: boolean;
+}
+
+export interface FlagDefinition {
+  key: keyof Flags;
+  defaultValue: boolean;
+  userSelectable: boolean;
+  decide: () => Promise<boolean>;
 }
 
 export const useFlags = async (): Promise<Flags> => {
@@ -17,6 +25,8 @@ export const useFlags = async (): Promise<Flags> => {
     historyCard: await useHistoryCard(),
     // eslint-disable-next-line react-hooks/rules-of-hooks
     recommendationFilters: await useRecommendationFilters(),
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    statsCard: await useStatsCard(),
   };
 }
 
@@ -25,6 +35,40 @@ export const defaultFlags: Flags = {
   newTokenDialog: true,
   historyCard: false,
   recommendationFilters: false,
+  statsCard: false,
+};
+
+export const flagDefinitions: Record<keyof Flags, FlagDefinition> = {
+  enableChinaRegion: {
+    key: "enableChinaRegion",
+    defaultValue: false,
+    userSelectable: false,
+    decide: async () => false,
+  },
+  newTokenDialog: {
+    key: "newTokenDialog",
+    defaultValue: true,
+    userSelectable: true,
+    decide: async () => true,
+  },
+  historyCard: {
+    key: "historyCard",
+    defaultValue: false,
+    userSelectable: false,
+    decide: async () => false,
+  },
+  recommendationFilters: {
+    key: "recommendationFilters",
+    defaultValue: true,
+    userSelectable: true,
+    decide: async () => true,
+  },
+  statsCard: {
+    key: "statsCard",
+    defaultValue: false,
+    userSelectable: true,
+    decide: async () => false,
+  },
 };
 
 export const useEnableChinaRegion = flag<boolean>({
@@ -58,3 +102,39 @@ export const useRecommendationFilters = flag<boolean>({
     return true;
   },
 });
+
+export const useStatsCard = flag<boolean>({
+  key: "statsCard",
+  defaultValue: false,
+  async decide() {
+    return false;
+  },
+});
+
+/**
+ * Merge flag overrides from cookies with default flags
+ * Overrides are stored in the flagOverrides cookie as JSON
+ */
+export function applyFlagOverrides(flags: Flags, cookieValue?: string): Flags {
+  if (!cookieValue) {
+    return flags;
+  }
+
+  try {
+    const overrides = JSON.parse(cookieValue) as Partial<Flags>;
+    
+    // Only apply overrides for user-selectable flags
+    const result = { ...flags };
+    for (const [key, value] of Object.entries(overrides)) {
+      const flagKey = key as keyof Flags;
+      if (flagDefinitions[flagKey]?.userSelectable) {
+        result[flagKey] = value as boolean;
+      }
+    }
+    
+    return result;
+  } catch {
+    // If cookie is malformed, just return original flags
+    return flags;
+  }
+}
