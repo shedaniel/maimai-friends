@@ -169,13 +169,6 @@
       "when": 1761926143566,
       "tag": "0023_gorgeous_avengers",
       "breakpoints": true
-    },
-    {
-      "idx": 24,
-      "version": "6",
-      "when": 1761992966750,
-      "tag": "0024_powerful_human_robot",
-      "breakpoints": true
     }
   ]
 }
