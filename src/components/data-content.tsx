@@ -2,7 +2,7 @@
 
 import { Region, SnapshotWithSongs } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, Disc, Heart, Image as ImageIcon, Loader2, Map, Music, TrendingUp, User } from "lucide-react";
+import { BarChart, Database, Disc, Heart, Image as ImageIcon, Loader2, Map, Music, TrendingUp, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -98,19 +98,25 @@ export function DataContent({
       name: t('dataContent.tabs.playerInfo'),
       value: "info",
       icon: User,
-      show: true, // Always show player info
+      show: true,
+    },
+    {
+      name: t('dataContent.tabs.stats'),
+      value: "stats",
+      icon: BarChart,
+      show: flags.statsCard,
     },
     {
       name: t('dataContent.tabs.songs'),
       value: "songs",
       icon: Music,
-      show: true, // Always show songs
+      show: true,
     },
     {
       name: t('dataContent.tabs.recommendations'),
       value: "recommendations",
       icon: Heart,
-      show: true, // Always show recommendations
+      show: true,
     },
     {
       name: t('dataContent.tabs.history'),
@@ -134,7 +140,7 @@ export function DataContent({
       name: t('dataContent.tabs.exportImage'),
       value: "exportImage",
       icon: ImageIcon,
-      show: true, // Always show export image
+      show: true,
     }
   ];
 

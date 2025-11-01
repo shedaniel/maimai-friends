@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -77,9 +78,19 @@ export function ExperimentsDialog({ open, onOpenChange, initialFlags }: Experime
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{t('common.experiments')}</DialogTitle>
+          <DialogDescription>
+            Welcome to the feature flags page for tomomai ともマイ.
+            <br />
+            <br />
+            These features are not yet stable and may be changed or removed at any time.
+            Toggling these features may cause unexpected behavior and data loss.
+            <br />
+            <br />
+            Use at your own risk. Support is not provided for these features.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">

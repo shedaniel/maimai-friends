@@ -1082,22 +1082,22 @@ async function extractPlayerData(region: "intl" | "jp", html: string, cookies: s
   const playCountText = playCountElement.text().trim();
   console.log(`Play count text: ${playCountText}`);
 
-  const playCountRegex = region === "jp" ? /現バージョンプレイ回数[：:]\s*(\d+)/ : /play count of current version[：:]\s*(\d+)/;
-  const totalPlayCountRegex = region === "jp" ? /累計プレイ回数[：:]\s*(\d+)/ : /maimaiDX total play count[：:]\s*(\d+)/;
+  const playCountRegex = region === "jp" ? /現バージョンプレイ回数[：:]\s*([\d,]+)/ : /play count of current version[：:]\s*([\d,]+)/;
+  const totalPlayCountRegex = region === "jp" ? /累計プレイ回数[：:]\s*([\d,]+)/ : /maimaiDX total play count[：:]\s*([\d,]+)/;
   
   // Parse version play count: "play count of current version：195"
   const versionPlayCountMatch = playCountText.match(playCountRegex);
   if (!versionPlayCountMatch) {
     throw new Error(`Could not parse version play count from: ${playCountText}`);
   }
-  const versionPlayCount = parseInt(versionPlayCountMatch[1], 10);
+  const versionPlayCount = parseInt(versionPlayCountMatch[1].replace(/,/g, ''), 10);
   
   // Parse total play count: "maimaiDX total play count：909"
   const totalPlayCountMatch = playCountText.match(totalPlayCountRegex);
   if (!totalPlayCountMatch) {
     throw new Error(`Could not parse total play count from: ${playCountText}`);
   }
-  const totalPlayCount = parseInt(totalPlayCountMatch[1], 10);
+  const totalPlayCount = parseInt(totalPlayCountMatch[1].replace(/,/g, ''), 10);
   
   console.log(`Extracted version play count: ${versionPlayCount}`);
   console.log(`Extracted total play count: ${totalPlayCount}`);
@@ -1389,6 +1389,8 @@ export async function fetchMaimaiData(
         // Don't throw error - continue without hidden songs
       }
     }
+
+    // Fetch events data
     
     // Create user snapshot with real player data
     const snapshotId = await createUserSnapshot(userId, region, playerData);

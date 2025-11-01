@@ -6,6 +6,8 @@ export interface Flags {
   historyCard: boolean;
   recommendationFilters: boolean;
   statsCard: boolean;
+  platesCard: boolean;
+  eventsCard: boolean;
 }
 
 export interface FlagDefinition {
@@ -27,6 +29,10 @@ export const useFlags = async (): Promise<Flags> => {
     recommendationFilters: await useRecommendationFilters(),
     // eslint-disable-next-line react-hooks/rules-of-hooks
     statsCard: await useStatsCard(),
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    platesCard: await usePlatesCard(),
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    eventsCard: await useEventsCard(),
   };
 }
 
@@ -36,6 +42,8 @@ export const defaultFlags: Flags = {
   historyCard: false,
   recommendationFilters: false,
   statsCard: false,
+  platesCard: false,
+  eventsCard: false,
 };
 
 export const flagDefinitions: Record<keyof Flags, FlagDefinition> = {
@@ -65,6 +73,18 @@ export const flagDefinitions: Record<keyof Flags, FlagDefinition> = {
   },
   statsCard: {
     key: "statsCard",
+    defaultValue: false,
+    userSelectable: true,
+    decide: async () => false,
+  },
+  platesCard: {
+    key: "platesCard",
+    defaultValue: false,
+    userSelectable: true,
+    decide: async () => false,
+  },
+  eventsCard: {
+    key: "eventsCard",
     defaultValue: false,
     userSelectable: true,
     decide: async () => false,
@@ -105,6 +125,22 @@ export const useRecommendationFilters = flag<boolean>({
 
 export const useStatsCard = flag<boolean>({
   key: "statsCard",
+  defaultValue: false,
+  async decide() {
+    return false;
+  },
+});
+
+export const usePlatesCard = flag<boolean>({
+  key: "platesCard",
+  defaultValue: false,
+  async decide() {
+    return false;
+  },
+});
+
+export const useEventsCard = flag<boolean>({
+  key: "eventsCard",
   defaultValue: false,
   async decide() {
     return false;
