@@ -200,6 +200,7 @@ function generateRecommendations(songsWithRating: SongWithRating[], version: num
 
     for (const accuracy of ACCURACY_VALUES) {
       if (accuracy <= currentAccuracy) continue;
+      if (version < 12 && accuracy === 101.0) continue;
 
       const factor = getRatingFactor(accuracy);
       const extra = version >= 12 && accuracy === 101.0 ? 1 : 0;
