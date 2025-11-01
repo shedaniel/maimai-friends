@@ -9,6 +9,7 @@ import { UsernameSetupDialog } from "@/components/username-setup-dialog";
 import { useFetchSession } from "@/hooks/useFetchSession";
 import { useSnapshots } from "@/hooks/useSnapshots";
 import { signOut } from "@/lib/auth-client";
+import { Flags } from "@/lib/flags";
 import { trpc } from "@/lib/trpc-client";
 import { Region, User, UserData, ProfileSettings, Snapshot, SnapshotWithSongs } from "@/lib/types";
 import { useEffect, useState } from "react";
@@ -22,11 +23,10 @@ interface DashboardProps {
   initialProfileSettings: ProfileSettings;
   initialSnapshots: Snapshot[];
   initialSnapshotData?: SnapshotWithSongs;
-  newTokenDialog: boolean;
-  historyCard: boolean;
+  flags: Flags;
 }
 
-export function Dashboard({ user, initialUserData, initialHasToken, initialTimezone, initialProfileSettings, initialSnapshots, initialSnapshotData, newTokenDialog, historyCard }: DashboardProps) {
+export function Dashboard({ user, initialUserData, initialHasToken, initialTimezone, initialProfileSettings, initialSnapshots, initialSnapshotData, flags }: DashboardProps) {
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUsernameSetupOpen, setIsUsernameSetupOpen] = useState(false);
@@ -256,7 +256,7 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
           isLoading={isLoadingSnapshots}
           visitableProfileAt={userData?.publishProfile ? userData?.username : null}
           visitedBySelf={true}
-          historyCard={historyCard}
+          flags={flags}
         />
       </div>
 
@@ -265,7 +265,7 @@ export function Dashboard({ user, initialUserData, initialHasToken, initialTimez
         isOpen={isTokenDialogOpen}
         onClose={closeTokenDialog}
         onTokenUpdate={handleTokenUpdate}
-        newTokenDialog={newTokenDialog}
+        newTokenDialog={flags.newTokenDialog}
         startSessionPolling={startSessionPolling}
         stopSessionPolling={stopSessionPolling}
       />

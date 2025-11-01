@@ -3,7 +3,7 @@ import { Dashboard } from "@/components/dashboard";
 import { LoginScreen } from "@/components/login-screen";
 import { getServerSession } from "@/lib/auth-server";
 import { createServerSideTRPC } from "@/lib/trpc-server";
-import { useHistoryCard, useNewTokenDialog } from "@/lib/flags";
+import { useFlags, useHistoryCard, useNewTokenDialog } from "@/lib/flags";
 import { Suspense } from "react";
 
 // Force dynamic rendering since we need to check authentication
@@ -12,10 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function Home() {
   const session = await getServerSession();
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const newTokenDialog = await useNewTokenDialog();
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const historyCard = await useHistoryCard();
-
+  const flags = await useFlags();
   if (!session) {
     // Fetch signup requirements on the server
     const trpc = await createServerSideTRPC();
@@ -85,8 +82,7 @@ export default async function Home() {
       initialProfileSettings={profileSettings}
       initialSnapshots={snapshotsData.snapshots}
       initialSnapshotData={initialSnapshotData}
-      newTokenDialog={newTokenDialog}
-      historyCard={historyCard}
+      flags={flags}
     />
   );
 }

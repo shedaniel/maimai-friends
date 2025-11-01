@@ -11,10 +11,10 @@ import { SongsCard } from "./songs-card";
 import { RecommendationCard } from "./recommendation-card";
 import { ExportImageCard } from "./export-image-card";
 import { HistoryCard } from "./history-card";
+import { Flags } from "@/lib/flags";
 
 interface DataContentProps {
   region: Region;
-  historyCard: boolean;
   selectedSnapshotData: SnapshotWithSongs | null;
   isLoading: boolean;
   privacySettings?: {
@@ -25,10 +25,10 @@ interface DataContentProps {
   visitableProfileAt: string | null;
   initialTab?: string;
   visitedBySelf: boolean;
+  flags: Flags;
 }
 
 export function DataContent({
-  historyCard,
   selectedSnapshotData,
   isLoading,
   privacySettings = {
@@ -40,6 +40,7 @@ export function DataContent({
   initialTab,
   visitedBySelf,
   region,
+  flags,
 }: DataContentProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -115,7 +116,7 @@ export function DataContent({
       name: t('dataContent.tabs.history'),
       value: "history",
       icon: TrendingUp,
-      show: visitedBySelf && historyCard,
+      show: visitedBySelf && flags.historyCard,
     },
     {
       name: t('dataContent.tabs.plates'),
@@ -188,9 +189,9 @@ export function DataContent({
           <SongsCard selectedSnapshotData={selectedSnapshotData} />
         </TabsContent>
         <TabsContent value="recommendations" className="mt-0 flex-1 min-w-0">
-          <RecommendationCard selectedSnapshotData={selectedSnapshotData} />
+          <RecommendationCard selectedSnapshotData={selectedSnapshotData} flags={flags} />
         </TabsContent>
-        {visitedBySelf && historyCard && (
+        {visitedBySelf && flags.historyCard && (
           <TabsContent value="history" className="mt-0 flex-1 min-w-0">
             <HistoryCard region={region} />
           </TabsContent>
