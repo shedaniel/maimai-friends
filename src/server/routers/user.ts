@@ -4,7 +4,7 @@ import { resolveBaseUrl } from '@/lib/base-url';
 import { getFetchStatusServer, Region, startFetchServer } from '@/lib/maimai-server-actions';
 import { getAvailableVersions } from '@/lib/metadata';
 import { splitSongs } from '@/lib/rating-calculator';
-import { invites, songs, user, userScores, userSnapshots, userTokens } from '@/lib/schema';
+import { invites, songs, user, userScores, userSnapshots, userTokens, userEvents } from '@/lib/schema';
 import { protectedProcedure, publicProcedure, router } from '@/lib/trpc';
 import { SongWithScore } from '@/lib/types';
 import { TRPCError } from '@trpc/server';
@@ -555,9 +555,27 @@ export const userRouter = router({
         .where(eq(userScores.snapshotId, input.snapshotId))
         .orderBy(songs.songName, songs.difficulty);
 
+      // Get events for this snapshot
+      const events = await db
+        .select({
+          id: userEvents.id,
+          snapshotId: userEvents.snapshotId,
+          eventType: userEvents.eventType,
+          name: userEvents.name,
+          currentDistance: userEvents.currentDistance,
+          nextRewardDistance: userEvents.nextRewardDistance,
+          state: userEvents.state,
+          imageUrl: userEvents.imageUrl,
+          eventPeriodStart: userEvents.eventPeriodStart,
+          eventPeriodEnd: userEvents.eventPeriodEnd,
+        })
+        .from(userEvents)
+        .where(eq(userEvents.snapshotId, input.snapshotId));
+
       return {
         snapshot: snapshot[0],
         songs: songsWithScores,
+        events: events,
       };
     }),
 
